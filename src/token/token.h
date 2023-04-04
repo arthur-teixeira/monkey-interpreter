@@ -1,23 +1,24 @@
 #define MAX_LEN 100
 
-typedef char TokenType[MAX_LEN];
+typedef enum {
+    ILLEGAL,
+    END_OF_FILE,
+    IDENT,
+    INT,
+    ASSIGN,
+    PLUS,
+    COMMA,
+    SEMICOLON,
+    LPAREN,
+    RPAREN,
+    LBRACE,
+    RBRACE,
+    FUNCTION,
+    LET
+} TokenType;
 
 typedef struct {
     TokenType Type;
-    const char literal[MAX_LEN];
+    char literal[MAX_LEN];
 } Token;
 
-extern const char ILLEGAL;
-extern const char END_OF_FILE;
-extern const char IDENT;
-extern const char INT;
-extern const char ASSIGN;
-extern const char PLUS;
-extern const char COMMA;
-extern const char SEMICOLON;
-extern const char LPAREN;
-extern const char RPAREN;
-extern const char LBRACE;
-extern const char RBRACE;
-extern const char FUNCTION;
-extern const char LET;
