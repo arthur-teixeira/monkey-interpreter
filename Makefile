@@ -20,6 +20,19 @@ $(BINDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 $(BINDIR)/$(BINNAME): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
+TESTFILES := $(shell find ./src -name '*_test.c' -type f)
+
+test:
+	@echo "Building tests..."
+	@for testfile in $(TESTFILES); do \
+		testname=$$(basename $$testfile .c); \
+		echo "Building $$testname..."; \
+		$(CC) $(CFLAGS) $$testfile -o $(BINDIR)/$$testname; \
+		echo "Running $$(testname)..."; \
+		./$$testname; \
+	done
 
 clean:
 	rm -rf $(BINDIR)/*
+
+.PHONY: all test clean
