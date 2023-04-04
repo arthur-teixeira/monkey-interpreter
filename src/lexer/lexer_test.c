@@ -1,8 +1,8 @@
 #include <stdint.h>
-#include <unity/unity.h>
-#include <unity/unity_internals.h>
+#include "../unity/src/unity.h"
+#include "../unity/src/unity_internals.h"
 #include "lexer.h"
-#include "../token/token.h"
+#include "string.h"
 
 void setUp(void) {
 }
@@ -10,19 +10,20 @@ void setUp(void) {
 void test_next_token(void) {
     char input = *"=+(){},;";
 
-    struct {
-      TokenType expected_type;
-      char expected_literal[MAX_LEN];
-    } tests[] = {
-        { ASSIGN, '=' },
-        { PLUS, '+' },
-        { LPAREN, '(' },
-        { RPAREN, ')' },
-        { LBRACE, '{' },
-        { RBRACE, '}' },
-        { COMMA, ',' },
-        { SEMICOLON, ';' },
-        { END_OF_FILE, '\0' },
+    typedef struct {
+        TokenType expected_type;
+        char *expected_literal;
+    } TestCase;
+
+     TestCase tests[] = {
+         { PLUS, "+" },
+         { LPAREN, "(" },
+         { RPAREN, ")" },
+         { LBRACE, "{" },
+         { RBRACE, "}" },
+         { COMMA, "," },
+         { SEMICOLON, ";" },
+         { END_OF_FILE, "\0" }
     };
 
     Lexer *lexer = new_lexer(&input);

@@ -1,3 +1,5 @@
+#include "../token/token.h"
+
 typedef struct {
 } Lexer;
 
