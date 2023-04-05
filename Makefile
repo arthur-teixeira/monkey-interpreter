@@ -27,12 +27,14 @@ test:
 	@for testfile in $(TESTFILES); do \
 		testname=$$(basename $$testfile .c); \
 		echo "Building $$testname..."; \
-		$(CC) $(CFLAGS) $$testfile -o $(BINDIR)/$$testname; \
-		echo "Running $$(testname)..."; \
-		./$$testname; \
+		$(CC) $(CFLAGS) $(filter-out ./bin/main.o, $(OBJS)) $$testfile -o $(BINDIR)/$$testname; \
+		echo "Running $$testname..."; \
+		$(BINDIR)/$$testname; \
 	done
 
 clean:
 	rm -rf $(BINDIR)/*
 
-.PHONY: all test clean
+run: clean all test
+
+.PHONY: all test clean run
