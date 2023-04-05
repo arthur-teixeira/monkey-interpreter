@@ -2,10 +2,8 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "lexer.h"
-#include "string.h"
+#include <string.h>
 
-void setUp(void) {
-}
 
 void test_next_token(void) {
     char input = *"=+(){},;";
