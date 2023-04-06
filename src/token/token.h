@@ -22,3 +22,4 @@ typedef struct {
     char literal[MAX_LEN];
 } Token;
 
+TokenType lookup_ident(char *ident);
