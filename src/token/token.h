@@ -13,14 +13,20 @@ typedef enum {
   RPAREN,
   LBRACE,
   RBRACE,
-  FUNCTION,
-  LET,
   BANG,
   LT,
   GT,
   MINUS,
   SLASH,
   ASTERISK,
+  // Multi character kewyords
+  FUNCTION,
+  LET,
+  TRUE,
+  FALSE,
+  IF,
+  ELSE,
+  RETURN,
 } TokenType;
 
 typedef struct {
