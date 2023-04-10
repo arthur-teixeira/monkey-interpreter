@@ -90,7 +90,7 @@ Token new_token(TokenType type, char literal) {
 }
 
 void skip_whitespace(Lexer *l) {
-  if (l->ch == ' ' || l->ch == '\n' || l->ch == '\t' || l->ch == '\r')
+  while (l->ch == ' ' || l->ch == '\n' || l->ch == '\t' || l->ch == '\r')
     read_char(l);
 }
 
