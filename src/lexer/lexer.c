@@ -56,6 +56,14 @@ void read_char(Lexer *l) {
   l->read_position += 1;
 }
 
+char peek_char(Lexer *l) {
+  if (l->read_position >= strlen(l->input)) {
+    return '\0';
+  }
+
+  return l->input[l->read_position];
+}
+
 bool is_letter(char c) { return isalpha(c) || c == '_'; }
 
 void read_identifier(Lexer *l, char *result) {
@@ -101,7 +109,13 @@ Token next_token(Lexer *l) {
 
   switch (l->ch) {
   case '=':
-    tok = new_token(ASSIGN, l->ch);
+    if (peek_char(l) == '=') {
+      tok.Type = EQ;
+      strlcpy(tok.literal, "==", 3);
+      read_char(l);
+    } else {
+      tok = new_token(ASSIGN, l->ch);
+    }
     break;
   case ';':
     tok = new_token(SEMICOLON, l->ch);
@@ -125,7 +139,14 @@ Token next_token(Lexer *l) {
     tok = new_token(PLUS, l->ch);
     break;
   case '!':
+    //TODO: refactor as an FSM
+    if (peek_char(l) == '=') {
+      tok.Type = NOT_EQ;
+      strlcpy(tok.literal, "!=", 3);
+      read_char(l);
+    } else {
     tok = new_token(BANG, l->ch);
+    }
     break;
   case '<':
     tok = new_token(LT, l->ch);
@@ -152,8 +173,8 @@ Token next_token(Lexer *l) {
       read_number(l, tok.literal);
       return tok;
     } else if (strcmp("\n", &l->ch) || strcmp("\0", &l->ch)) {
-        tok = new_token(END_OF_FILE, '\0');
-        return tok;
+      tok = new_token(END_OF_FILE, '\0');
+      return tok;
     } else {
       tok = new_token(ILLEGAL, l->ch);
     }

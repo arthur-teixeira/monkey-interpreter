@@ -19,6 +19,9 @@ typedef enum {
   MINUS,
   SLASH,
   ASTERISK,
+  //Multi character tokens
+  EQ,
+  NOT_EQ,
   // Multi character kewyords
   FUNCTION,
   LET,
