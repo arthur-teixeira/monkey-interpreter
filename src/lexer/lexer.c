@@ -124,8 +124,24 @@ Token next_token(Lexer *l) {
   case '+':
     tok = new_token(PLUS, l->ch);
     break;
-  case '\0':
-    tok = new_token(END_OF_FILE, '\0');
+  case '!':
+    tok = new_token(BANG, l->ch);
+    break;
+  case '<':
+    tok = new_token(LT, l->ch);
+    break;
+  case '>':
+    tok = new_token(GT, l->ch);
+    break;
+  case '-':
+    tok = new_token(MINUS, l->ch);
+    break;
+  case '/':
+    tok = new_token(SLASH, l->ch);
+    break;
+  case '*':
+    tok = new_token(ASTERISK, l->ch);
+    break;
   default:
     if (is_letter(l->ch)) {
       read_identifier(l, tok.literal);
@@ -135,6 +151,9 @@ Token next_token(Lexer *l) {
       tok.Type = INT;
       read_number(l, tok.literal);
       return tok;
+    } else if (strcmp("\n", &l->ch) || strcmp("\0", &l->ch)) {
+        tok = new_token(END_OF_FILE, '\0');
+        return tok;
     } else {
       tok = new_token(ILLEGAL, l->ch);
     }
