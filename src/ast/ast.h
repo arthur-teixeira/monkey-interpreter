@@ -1,4 +1,4 @@
-#include "../token/token.h"
+#include "../lexer/lexer.h"
 #include <stddef.h>
 
 typedef struct {
