@@ -1,3 +1,9 @@
+#include "./repl/repl.h"
+#include <stdio.h>
+
 int main() {
-    return 0;
+   printf("Hello from Monkey!\n"); 
+   start();
+
+   return 0;
 }

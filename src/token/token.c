@@ -5,8 +5,12 @@
 
 const unsigned initial_size = 2;
 
+const char *TOKEN_STRING[] = {
+    FOREACH_TOKEN_TYPE(GENERATE_STRING)
+};
+
 //TODO: Implement with hash_map
-TokenType lookup_ident(char *ident) {
+enum TokenType lookup_ident(char *ident) {
   if (strcmp(ident, "fn") == 0) {
     return FUNCTION;
   }

@@ -15,6 +15,11 @@ Lexer *new_lexer(char *input) {
   return l;
 }
 
+void free_lexer(Lexer *l) {
+  free(l->input);
+  free(l);
+}
+
 // Stolen from
 // https://android.googlesource.com/platform/system/core.git/+/master/libcutils/strlcpy.c
 // Not using strncpy because it does not null-terminate the string,
@@ -85,7 +90,7 @@ void read_number(Lexer *l, char *result) {
   slice(l->input, result, position, l->position);
 }
 
-Token new_token(TokenType type, char literal) {
+Token new_token(enum TokenType type, char literal) {
   Token tok;
   tok.Type = type;
   char buf[2];
@@ -139,13 +144,13 @@ Token next_token(Lexer *l) {
     tok = new_token(PLUS, l->ch);
     break;
   case '!':
-    //TODO: refactor as an FSM
+    // TODO: refactor as an FSM
     if (peek_char(l) == '=') {
       tok.Type = NOT_EQ;
       strlcpy(tok.literal, "!=", 3);
       read_char(l);
     } else {
-    tok = new_token(BANG, l->ch);
+      tok = new_token(BANG, l->ch);
     }
     break;
   case '<':

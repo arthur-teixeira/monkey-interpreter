@@ -10,4 +10,6 @@ typedef struct {
 
 Lexer* new_lexer(char *input);
 
+void free_lexer(Lexer *l);
+
 Token next_token(Lexer*);
