@@ -24,7 +24,7 @@ void test_next_token(void) {
                 "10 != 9;";
 
   typedef struct {
-    TokenType expected_type;
+    enum TokenType expected_type;
     char expected_literal[100];
   } TestCase;
 
