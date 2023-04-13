@@ -46,18 +46,21 @@ void append(LinkedList *list, void *value) {
   list->size = cur_size + 1;
 }
 
-void free_list(LinkedList * list) {
-    if (list->tail == NULL) {
-        free(list);
-        return;
-    }
+void free_list(LinkedList *list) {
+  if (list->tail == NULL) {
+    free(list);
+    return;
+  }
 
-    Node *cur_node = list->tail;
-    while (cur_node != NULL) {
-        Node *tmp = cur_node->next;
-        cur_node->next = NULL;
-        free(cur_node);
+  Node *cur_node = list->tail;
+  while (cur_node != NULL) {
+    Node *tmp = cur_node->next;
+    cur_node->next = NULL;
+    // This probably leaks memory, if cur_node->value itself has pointers,
+    // they would not be freed
+    // TODO: receive free_value function pointer and execute for each node value
+    free(cur_node);
 
-        cur_node = tmp;
-    }
+    cur_node = tmp;
+  }
 }
