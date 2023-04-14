@@ -4,6 +4,7 @@ typedef struct {
     Lexer *l;
     Token cur_token;
     Token peek_token;
+    LinkedList *errors;
 } Parser;
 
 Parser *new_parser(Lexer*);

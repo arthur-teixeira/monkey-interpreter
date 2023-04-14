@@ -9,14 +9,11 @@ typedef struct {
 
 Identifier *new_identifier(Token token, char *value);
 
-struct Statement {
+typedef struct {
   Token token;
+  void *value; // TODO: implement as Expression struct?
   Identifier *name;
-  void *value;
-};
-typedef struct Statement Statement;
-
-char *literal(Statement *);
+} Statement;
 
 typedef struct {
   LinkedList *statements;
