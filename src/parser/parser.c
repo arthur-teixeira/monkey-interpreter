@@ -55,6 +55,8 @@ bool expect_peek(Parser *p, enum TokenType t) {
 
 Statement *parse_let_statement(Parser *p) {
   Statement *stmt = malloc(sizeof(Statement));
+  stmt->type = LET_STATEMENT;
+
   if (stmt == NULL) {
     printf("ERROR: Could not create statement: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
@@ -90,6 +92,7 @@ Statement *parse_let_statement(Parser *p) {
 
 Statement *parse_return_statement(Parser *p) {
   Statement *stmt = malloc(sizeof(Statement));
+  stmt->type = RETURN_STATEMENT;
   if (stmt == NULL) {
     printf("ERROR: Could not create statement: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
