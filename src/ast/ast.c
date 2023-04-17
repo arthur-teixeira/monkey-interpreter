@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../str_buf/str_buf.h"
 
 Identifier *new_identifier(Token token, char *value) {
   Identifier *ident = malloc(sizeof(Identifier));
@@ -51,20 +52,6 @@ char *value_to_string(Expression *expr) {
     return "TODO: value_to_string\n";
     assert(0 && "unreachable");
   }
-}
-
-void append_to_buf(char *buf, char *src) {
-  if (strlen(buf) + strlen(src) + 1 >= sizeof(buf)) {
-    char *new_buf = realloc(buf, sizeof(buf) * 2);
-    if (new_buf == NULL) {
-      printf("ERROR: Failed to reallocate string buffer: %s\n",
-             strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-    buf = new_buf;
-  }
-
-  strcat(buf, src);
 }
 
 char *let_to_string(Statement *stmt) {
