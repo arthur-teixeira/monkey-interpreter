@@ -41,47 +41,30 @@ Program *new_program(void) {
   return program;
 }
 
-FILE *open_stream(char **buf) {
-  size_t size;
-  FILE *stream = open_memstream(buf, &size);
-  if (stream == NULL) {
-    printf("ERROR: could not open stream: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  return stream;
-}
-
-void flush_stream(FILE *stream) {
-  int result = fflush(stream);
-  if (result == EOF) {
-    printf("ERROR: could not write to stream: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-}
-
-void close_stream(FILE *stream) {
-  int result = fclose(stream);
-  if (result == EOF) {
-    printf("ERROR: could not close stream: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-}
-
-char *ident_expr_to_string(Identifier *expr) {
-  return expr->value;
-}
+char *ident_expr_to_string(Identifier *expr) { return expr->value; }
 
 char *value_to_string(Expression *expr) {
   switch (expr->type) {
-    case IDENT_EXPR:
-      return ident_expr_to_string(expr->value);
-    default:
-      assert(0 && "unreachable");
-      return "";
-  
+  case IDENT_EXPR:
+    return ident_expr_to_string(expr->value);
+  default:
+    return "TODO: value_to_string\n";
+    assert(0 && "unreachable");
   }
-  return "TODO: value_to_string\n";
+}
+
+void append_to_buf(char *buf, char *src) {
+  if (strlen(buf) + strlen(src) + 1 >= sizeof(buf)) {
+    char *new_buf = realloc(buf, sizeof(buf) * 2);
+    if (new_buf == NULL) {
+      printf("ERROR: Failed to reallocate string buffer: %s\n",
+             strerror(errno));
+      exit(EXIT_FAILURE);
+    }
+    buf = new_buf;
+  }
+
+  strcat(buf, src);
 }
 
 char *let_to_string(Statement *stmt) {
@@ -89,47 +72,39 @@ char *let_to_string(Statement *stmt) {
     assert(0 && "unreachable");
   }
 
-  char *buf = "";
-  FILE *stream = open_stream(&buf);
+  char *buf = malloc(2 * MAX_LEN);
+  sprintf(buf, "%s %s = ", stmt->token.literal, stmt->name->value);
 
-  fprintf(stream, "%s %s = ", stmt->token.literal, stmt->name->value);
   if (stmt->value != NULL) {
-    fprintf(stream, "%s", value_to_string(stmt->value));
+    append_to_buf(buf, value_to_string(stmt->value));
   }
 
-  fprintf(stream, ";\n");
-  flush_stream(stream);
-  close_stream(stream);
+  append_to_buf(buf, ";\n");
+
   return buf;
 }
 
 char *return_to_string(Statement *stmt) {
-  char *buf = "";
+  char *buf = malloc(MAX_LEN);
 
-  FILE *stream = open_stream(&buf);
-  fprintf(stream, "%s ", stmt->token.literal);
+  append_to_buf(buf, stmt->token.literal);
 
   if (stmt->value != NULL) {
-    fprintf(stream, "%s", value_to_string(stmt->value));
+    append_to_buf(buf, value_to_string(stmt->value));
   }
 
-  fprintf(stream, ";\n");
-  flush_stream(stream);
-  close_stream(stream);
+  append_to_buf(buf, ";\n");
   return buf;
 }
 
 char *expr_to_string(Statement *stmt) {
-  char *buf = "";
+  char *buf = malloc(MAX_LEN);
 
-  FILE *stream = open_stream(&buf);
   if (stmt->value != NULL) {
-    fprintf(stream, "%s ", value_to_string(stmt->value));
+    append_to_buf(buf, value_to_string(stmt->value));
   }
 
-  fprintf(stream, ";\n");
-  flush_stream(stream);
-  close_stream(stream);
+  append_to_buf(buf, ";\n");
   return buf;
 }
 
@@ -148,21 +123,14 @@ char *stmt_to_string(Statement *stmt) {
 }
 
 char *program_string(Program *p) {
-  char *buf = "";
-
-  FILE *stream = open_stream(&buf);
+  char *buf = malloc(MAX_LEN);
 
   Node *cur = p->statements->tail;
   while (cur != NULL) {
     Statement *cur_stmt = cur->value;
-
-    fprintf(stream, "%s", stmt_to_string(cur_stmt));
-    flush_stream(stream);
-
+    append_to_buf(buf, stmt_to_string(cur_stmt));
     cur = cur->next;
   }
-
-  close_stream(stream);
 
   return buf;
 }
