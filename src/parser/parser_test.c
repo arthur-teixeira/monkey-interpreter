@@ -78,9 +78,30 @@ void test_return_statements(void) {
   }
 }
 
+void test_identifier_expression(void) {
+  char *input = "foobar;";
+
+  Lexer *l = new_lexer(input);
+  Parser *p = new_parser(l);
+
+  Program *program = parse_program(p);
+  check_parser_errors(p);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(IDENT_EXPR, stmt->value->type);
+
+  Identifier *ident = stmt->value->value;
+  TEST_ASSERT_EQUAL_STRING("foobar", ident->token.literal);
+  TEST_ASSERT_EQUAL_STRING("foobar", ident->value);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
   RUN_TEST(test_return_statements);
+  RUN_TEST(test_identifier_expression);
   UNITY_END();
 }

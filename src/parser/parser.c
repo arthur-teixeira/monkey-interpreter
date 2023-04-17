@@ -11,10 +11,34 @@ void parser_next_token(Parser *p) {
   p->peek_token = next_token(p->l);
 }
 
+void register_infix_fn(Parser *p, infix_parse_fn fn, enum TokenType token) {
+  p->infix_parse_fns[token] = fn;
+}
+
+void register_prefix_fn(Parser *p, prefix_parse_fn fn, enum TokenType token) {
+  p->prefix_parse_fns[token] = fn;
+}
+
+Expression *parse_identifier(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  expr->type = IDENT_EXPR;
+  expr->value = new_identifier(p->cur_token, p->cur_token.literal);
+
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
   p->errors = new_list();
+
+  for (uint32_t i = 0; i < TOKEN_COUNT; i++) {
+    p->prefix_parse_fns[i] = NULL;
+    p->infix_parse_fns[i] = NULL;
+  }
+
+  register_prefix_fn(p, &parse_identifier, IDENT);
+
   parser_next_token(p);
   parser_next_token(p);
 
@@ -92,11 +116,11 @@ Statement *parse_let_statement(Parser *p) {
 
 Statement *parse_return_statement(Parser *p) {
   Statement *stmt = malloc(sizeof(Statement));
-  stmt->type = RETURN_STATEMENT;
   if (stmt == NULL) {
     printf("ERROR: Could not create statement: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
+  stmt->type = RETURN_STATEMENT;
   stmt->token = p->cur_token;
   stmt->name = NULL;
 
@@ -109,14 +133,41 @@ Statement *parse_return_statement(Parser *p) {
   return stmt;
 }
 
+Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence) {
+  prefix_parse_fn prefix = p->prefix_parse_fns[p->cur_token.Type];
+  if (prefix == NULL) {
+    return NULL;
+  }
+
+  return prefix(p);
+}
+
+Statement *parse_expression_statement(Parser *p) {
+  Statement *stmt = malloc(sizeof(Statement));
+  if (stmt == NULL) {
+    printf("ERROR: Could not create statement: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  stmt->type = EXPR_STATEMENT;
+  stmt->token = p->cur_token;
+  stmt->value = parse_expression(p, LOWEST);
+  stmt->name = NULL;
+
+  if (peek_token_is(p, SEMICOLON)) {
+    parser_next_token(p);
+  }
+
+  return stmt;
+}
+
 Statement *parse_statement(Parser *p) {
   switch (p->cur_token.Type) {
   case LET:
     return parse_let_statement(p);
-  case RETURN: 
+  case RETURN:
     return parse_return_statement(p);
   default:
-    return NULL;
+    return parse_expression_statement(p);
   }
 }
 
