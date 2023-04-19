@@ -8,7 +8,8 @@ typedef struct {
   char *value;
 } Identifier;
 
-Identifier *new_identifier(Token token, char *value);
+Identifier *new_identifier(Token, char *);
+void free_identifier(Identifier *);
 
 typedef enum {
   LET_STATEMENT,

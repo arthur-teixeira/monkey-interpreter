@@ -22,7 +22,8 @@ void register_prefix_fn(Parser *p, prefix_parse_fn fn, enum TokenType token) {
 Expression *parse_identifier(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
   expr->type = IDENT_EXPR;
-  expr->value = new_identifier(p->cur_token, p->cur_token.literal);
+  Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
+  expr->value = ident;
 
   return expr;
 }
