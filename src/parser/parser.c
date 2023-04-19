@@ -151,7 +151,7 @@ Statement *parse_expression_statement(Parser *p) {
   }
   stmt->type = EXPR_STATEMENT;
   stmt->token = p->cur_token;
-  stmt->value = parse_expression(p, LOWEST);
+  stmt->expression = parse_expression(p, LOWEST);
   stmt->name = NULL;
 
   if (peek_token_is(p, SEMICOLON)) {

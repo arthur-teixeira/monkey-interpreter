@@ -34,8 +34,11 @@ void test_ast_as_string(void) {
   Program p = {
     statements
   };
-  char *result = program_string(&p);
+
+  char *result = malloc(MAX_LEN);
+  program_string(result, &p);
   TEST_ASSERT_EQUAL_STRING("let myVar = anotherVar;\n", result);
+  free(result);
 }
 
 int main(void) {

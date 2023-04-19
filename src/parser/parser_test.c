@@ -22,15 +22,22 @@ void check_parser_errors(Parser *p) {
   TEST_FAIL();
 }
 
-void test_let_statements() {
-  char input[] = "let x = 5;"
-                 "let y = 10;"
-                 "let foobar = 838383;";
+Program *parse_and_check_errors(char *input) {
   Lexer *l = new_lexer(input);
   Parser *p = new_parser(l);
 
   Program *program = parse_program(p);
   check_parser_errors(p);
+
+  return program;
+}
+
+void test_let_statements() {
+  char input[] = "let x = 5;"
+                 "let y = 10;"
+                 "let foobar = 838383;";
+
+  Program *program = parse_and_check_errors(input);
   UNITY_TEST_ASSERT_NOT_NULL(program, __LINE__, "parse_program returned null");
 
   TEST_ASSERT_EQUAL(3, program->statements->size);
@@ -61,11 +68,7 @@ void test_return_statements(void) {
                  "return 10;"
                  "return 993322;";
 
-  Lexer *l = new_lexer(input);
-  Parser *p = new_parser(l);
-
-  Program *program = parse_program(p);
-  check_parser_errors(p);
+  Program *program = parse_and_check_errors(input);
 
   UNITY_TEST_ASSERT_NOT_NULL(program, __LINE__, "parse_program returned null");
   TEST_ASSERT_EQUAL(3, program->statements->size);
@@ -81,21 +84,33 @@ void test_return_statements(void) {
 void test_identifier_expression(void) {
   char *input = "foobar;";
 
-  Lexer *l = new_lexer(input);
-  Parser *p = new_parser(l);
-
-  Program *program = parse_program(p);
-  check_parser_errors(p);
+  Program *program = parse_and_check_errors(input);
 
   TEST_ASSERT_EQUAL(1, program->statements->size);
 
   Statement *stmt = program->statements->tail->value;
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(IDENT_EXPR, stmt->value->type);
+  TEST_ASSERT_EQUAL(IDENT_EXPR, stmt->expression->type);
 
-  Identifier *ident = stmt->value->value;
+  Identifier *ident = stmt->expression->value;
   TEST_ASSERT_EQUAL_STRING("foobar", ident->token.literal);
   TEST_ASSERT_EQUAL_STRING("foobar", ident->value);
+}
+
+void test_integer_literal_expression(void) {
+  char *input = "5;";
+  Program *program = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(INTEGER_LITERAL, stmt->expression->type);
+
+  IntegerLiteral *literal = stmt->expression->value;
+  TEST_ASSERT_EQUAL_INT64(5, literal->value);
+  TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
+
 }
 
 int main() {

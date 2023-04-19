@@ -31,18 +31,15 @@ void free_identifier(Identifier *ident) {
   free(ident);
 }
 
-char *program_token_literal(Program *p) {
+void program_token_literal(char *buf, Program *p) {
   if (p->statements->size == 0) {
-    return "";
+    return;
   }
-
-  if (p->statements->tail == NULL) {
-    assert(0 && "unreachable");
-  }
+  assert(p->statements->tail != NULL);
 
   Statement *value = (Statement *)p->statements->tail->value;
 
-  return value->token.literal;
+  append_to_buf(buf, value->token.literal);
 }
 
 Program *new_program(void) {
@@ -52,82 +49,76 @@ Program *new_program(void) {
   return program;
 }
 
-char *ident_expr_to_string(Identifier *expr) { return expr->value; }
+void ident_expr_to_string(char *buf, Identifier *expr) {
+  append_to_buf(buf, expr->value);
+}
 
-char *value_to_string(Expression *expr) {
+void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
-    return ident_expr_to_string(expr->value);
+    return ident_expr_to_string(buf, expr->value);
   default:
-    return "TODO: value_to_string\n";
+    append_to_buf(buf, "TODO: value_to_string\n");
     assert(0 && "unreachable");
   }
 }
 
-char *let_to_string(Statement *stmt) {
-  if (stmt->name == NULL) {
-    assert(0 && "unreachable");
-  }
+void let_to_string(char *buf, Statement *stmt) {
+  assert(stmt->name != NULL);
 
-  char *buf = malloc(2 * MAX_LEN);
-  sprintf(buf, "%s %s = ", stmt->token.literal, stmt->name->value);
+  char formatted[255];
+  sprintf(formatted, "%s %s = ", stmt->token.literal, stmt->name->value);
+  append_to_buf(buf, formatted);
 
-  if (stmt->value != NULL) {
-    append_to_buf(buf, value_to_string(stmt->value));
+  if (stmt->expression != NULL) {
+    value_to_string(buf, stmt->expression);
   }
 
   append_to_buf(buf, ";\n");
-
-  return buf;
 }
 
-char *return_to_string(Statement *stmt) {
-  char *buf = malloc(MAX_LEN);
-
+void return_to_string(char *buf, Statement *stmt) {
   append_to_buf(buf, stmt->token.literal);
 
-  if (stmt->value != NULL) {
-    append_to_buf(buf, value_to_string(stmt->value));
+  if (stmt->expression != NULL) {
+    value_to_string(buf, stmt->expression);
   }
 
   append_to_buf(buf, ";\n");
-  return buf;
 }
 
-char *expr_to_string(Statement *stmt) {
-  char *buf = malloc(MAX_LEN);
-
-  if (stmt->value != NULL) {
-    append_to_buf(buf, value_to_string(stmt->value));
+void expr_to_string(char *buf, Statement *stmt) {
+  if (stmt->expression != NULL) {
+    value_to_string(buf, stmt->expression);
   }
-
   append_to_buf(buf, ";\n");
-  return buf;
 }
 
-char *stmt_to_string(Statement *stmt) {
+void int_to_string(char *buf, IntegerLiteral *lit) {
+  char formatted[sizeof(long)];
+  sprintf(formatted, "%ld", lit->value);
+
+  append_to_buf(buf, formatted);
+}
+
+void stmt_to_string(char *buf, Statement *stmt) {
   switch (stmt->type) {
   case LET_STATEMENT:
-    return let_to_string(stmt);
+    return let_to_string(buf, stmt);
   case RETURN_STATEMENT:
-    return return_to_string(stmt);
+    return return_to_string(buf, stmt);
   case EXPR_STATEMENT:
-    return expr_to_string(stmt);
+    return expr_to_string(buf, stmt);
   default:
     assert(0 && "unreachable");
-    return "";
   }
 }
 
-char *program_string(Program *p) {
-  char *buf = malloc(MAX_LEN);
-
+void program_string(char *buf, Program *p) {
   Node *cur = p->statements->tail;
   while (cur != NULL) {
     Statement *cur_stmt = cur->value;
-    append_to_buf(buf, stmt_to_string(cur_stmt));
+    stmt_to_string(buf, cur_stmt);
     cur = cur->next;
   }
-
-  return buf;
 }
