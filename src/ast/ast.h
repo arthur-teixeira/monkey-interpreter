@@ -12,15 +12,22 @@ typedef struct {
 Identifier *new_identifier(Token, char *);
 void free_identifier(Identifier *);
 
+typedef struct {
+  Token token;
+  int64_t value;
+} IntegerLiteral;
+
+void int_to_string(char *, IntegerLiteral *);
+
 typedef enum {
   LET_STATEMENT,
   RETURN_STATEMENT,
-  EXPR_STATEMENT,
-  INTEGER_LITERAL
+  EXPR_STATEMENT
 } StatementType;
 
 typedef enum {
   IDENT_EXPR,
+  INT_EXPR
 } ExprType;
 
 typedef struct {
@@ -37,13 +44,6 @@ typedef struct {
 } Statement;
 
 void stmt_to_string(char *, Statement *);
-
-typedef struct {
-  Token token;
-  int64_t value;
-} IntegerLiteral;
-
-void int_to_string(char *, IntegerLiteral *);
 
 typedef struct {
   LinkedList *statements;

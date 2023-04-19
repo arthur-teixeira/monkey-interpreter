@@ -1,5 +1,6 @@
 #include "ast.h"
 #include <assert.h>
+#include <stdint.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -47,6 +48,11 @@ Program *new_program(void) {
   program->statements = new_list();
 
   return program;
+}
+
+void free_program(Program *p) {
+  free_list(p->statements);
+  free(p);
 }
 
 void ident_expr_to_string(char *buf, Identifier *expr) {

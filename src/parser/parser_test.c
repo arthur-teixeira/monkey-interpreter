@@ -105,12 +105,11 @@ void test_integer_literal_expression(void) {
 
   Statement *stmt = program->statements->tail->value;
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(INTEGER_LITERAL, stmt->expression->type);
+  TEST_ASSERT_EQUAL(INT_EXPR, stmt->expression->type);
 
   IntegerLiteral *literal = stmt->expression->value;
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
   TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
-
 }
 
 int main() {
@@ -118,5 +117,6 @@ int main() {
   RUN_TEST(test_let_statements);
   RUN_TEST(test_return_statements);
   RUN_TEST(test_identifier_expression);
+  RUN_TEST(test_integer_literal_expression);
   UNITY_END();
 }

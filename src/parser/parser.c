@@ -28,6 +28,44 @@ Expression *parse_identifier(Parser *p) {
   return expr;
 }
 
+void int_conversion_error(Parser *p) {
+  char *err_msg = malloc(255);
+  sprintf(err_msg, "Could not parse %s to an integer", p->cur_token.literal);
+
+  append(p->errors, err_msg);
+}
+
+IntegerLiteral *new_int_literal(Parser *p) {
+  IntegerLiteral *lit = malloc(sizeof(IntegerLiteral));
+  if (lit == NULL) {
+    printf("Error allocating identifier value: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  char *err = "";
+  int64_t result = strtol(p->cur_token.literal, &err, 10);
+  if (strcmp(err, "") != 0) {
+    int_conversion_error(p);
+    free(lit);
+    return NULL;
+  }
+
+  lit->value = result;
+  lit->token = p->cur_token;
+
+  return lit;
+}
+
+Expression *parse_integer_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  expr->type = INT_EXPR;
+  
+  IntegerLiteral *lit = new_int_literal(p);
+  expr->value = lit;
+
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
@@ -39,6 +77,7 @@ Parser *new_parser(Lexer *l) {
   }
 
   register_prefix_fn(p, &parse_identifier, IDENT);
+  register_prefix_fn(p, &parse_integer_literal, INT);
 
   parser_next_token(p);
   parser_next_token(p);
@@ -93,15 +132,10 @@ Statement *parse_let_statement(Parser *p) {
     return NULL;
   }
 
-  // TODO: how to free this afterwards?
-  Token *copied_token = malloc(sizeof(Token));
-  if (copied_token == NULL) {
-    printf("ERROR: Could not copy token to parse: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+  Token copied_token;
 
-  memcpy(copied_token, &p->cur_token, sizeof(Token));
-  stmt->name = new_identifier(*copied_token, copied_token->literal);
+  memcpy(&copied_token, &p->cur_token, sizeof(Token));
+  stmt->name = new_identifier(copied_token, copied_token.literal);
 
   if (!expect_peek(p, ASSIGN)) {
     return NULL;
