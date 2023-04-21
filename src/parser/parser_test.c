@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void check_parser_errors(Parser *p) {
   if (p->errors->size == 0) {
@@ -152,6 +153,110 @@ void test_parsing_prefix_expressions(void) {
   }
 }
 
+void test_parsing_infix_expressions(void) {
+  struct infix_test_case {
+    char *input;
+    long left_value;
+    char *operator;
+    long right_value;
+  };
+
+  struct infix_test_case infix_tests[] = {
+      {"5 + 5;", 5, "+", 5},   {"5 - 5;", 5, "-", 5},   {"5 * 1;", 5, "*", 1},
+      {"5 / 5;", 5, "/", 5},   {"5 > 5;", 5, ">", 5},   {"5 < 5;", 5, "<", 5},
+      {"5 == 5;", 5, "==", 5}, {"5 != 5;", 5, "!=", 5},
+  };
+
+  for (uint32_t i = 0; i < sizeof(infix_tests) / sizeof(struct infix_test_case);
+       i++) {
+    Program *p = parse_and_check_errors(infix_tests[i].input);
+    TEST_ASSERT_EQUAL(1, p->statements->size);
+
+    Statement *stmt = p->statements->tail->value;
+    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+
+    TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
+    InfixExpression *expr = stmt->expression->value;
+
+    test_integer_literal(expr->left, infix_tests[i].left_value);
+    TEST_ASSERT_EQUAL_STRING(infix_tests[i].operator, expr->operator);
+    test_integer_literal(expr->right, infix_tests[i].right_value);
+  }
+}
+
+void test_operator_precedence_parsing(void) {
+  struct testCase {
+    char *input;
+    char *expected;
+  };
+
+  struct testCase tests[] = {
+      {
+          "-a * b",
+          "((-a) * b);\n",
+      },
+      {
+          "!-a",
+          "(!(-a));\n",
+      },
+      {
+          "a + b + c",
+          "((a + b) + c);\n",
+      },
+      {
+          "a + b - c",
+          "((a + b) - c);\n",
+      },
+      {
+          "a * b * c",
+          "((a * b) * c);\n",
+      },
+      {
+          "a * b / c",
+          "((a * b) / c);\n",
+      },
+      {
+          "a + b / c",
+          "(a + (b / c));\n",
+      },
+      {
+          "a + b * c + d / e - f",
+          "(((a + (b * c)) + (d / e)) - f);\n",
+      },
+      {
+          "3 + 4; -5 * 5",
+          "(3 + 4);\n((-5) * 5);\n",
+      },
+      {
+          "5 > 4 == 3 < 4",
+          "((5 > 4) == (3 < 4));\n",
+      },
+      {
+          "5 < 4 != 3 > 4",
+          "((5 < 4) != (3 > 4));\n",
+      },
+      {
+          "3 + 4 * 5 == 3 * 1 + 4 * 5",
+          "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));\n",
+      },
+      {
+          "3 + 4 * 5 == 3 * 1 + 4 * 5",
+          "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));\n",
+      },
+  };
+
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
+    Program *p = parse_and_check_errors(tests[i].input);
+
+    char *actual = malloc(1000);
+    *actual = '\0';
+    program_string(actual, p);
+
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected, actual);
+    free(actual);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -159,5 +264,7 @@ int main() {
   RUN_TEST(test_identifier_expression);
   RUN_TEST(test_integer_literal_expression);
   RUN_TEST(test_parsing_prefix_expressions);
+  RUN_TEST(test_parsing_infix_expressions);
+  RUN_TEST(test_operator_precedence_parsing);
   UNITY_END();
 }

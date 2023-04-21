@@ -1,8 +1,8 @@
 #include "../lexer/lexer.h"
+#include "../linked_list/linked_list.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "../linked_list/linked_list.h"
 
 typedef struct {
   Token token;
@@ -19,16 +19,13 @@ typedef struct {
 
 void int_to_string(char *, IntegerLiteral *);
 
-typedef enum {
-  LET_STATEMENT,
-  RETURN_STATEMENT,
-  EXPR_STATEMENT
-} StatementType;
+typedef enum { LET_STATEMENT, RETURN_STATEMENT, EXPR_STATEMENT } StatementType;
 
 typedef enum {
   IDENT_EXPR,
   INT_EXPR,
   PREFIX_EXPR,
+  INFIX_EXPR,
 } ExprType;
 
 typedef struct {
@@ -46,10 +43,19 @@ typedef struct {
 void prefix_to_string(char *, PrefixExpression *);
 
 typedef struct {
+  Token token;
+  Expression *left;
+  char *operator;
+  Expression *right;
+} InfixExpression;
+
+void infix_to_string(char *, InfixExpression *);
+
+typedef struct {
   StatementType type;
   Token token;
   Identifier *name;
-  Expression *expression; 
+  Expression *expression;
 } Statement;
 
 void stmt_to_string(char *, Statement *);

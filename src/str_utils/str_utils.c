@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define max(a, b)                                                              \
+  ({                                                                           \
+    __typeof__(a) _a = (a);                                                    \
+    __typeof__(b) _b = (b);                                                    \
+    _a > _b ? _a : _b;                                                         \
+  })
+
 // Stolen from
 // https://android.googlesource.com/platform/system/core.git/+/master/libcutils/strlcpy.c
 // Not using strncpy because it does not null-terminate the string,
@@ -31,7 +38,8 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
 
 void append_to_buf(char *buf, char *src) {
   if (strlen(buf) + strlen(src) + 1 >= sizeof(buf)) {
-    char *new_buf = realloc(buf, sizeof(buf) * 2);
+    size_t new_size = max(sizeof(buf) + sizeof(src), sizeof(buf) *2);
+    char *new_buf = realloc(buf, new_size);
     if (new_buf == NULL) {
       printf("ERROR: Failed to reallocate string buffer: %s\n",
              strerror(errno));

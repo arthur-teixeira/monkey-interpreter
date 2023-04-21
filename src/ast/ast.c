@@ -67,15 +67,18 @@ void value_to_string(char *buf, Expression *expr) {
     return int_to_string(buf, expr->value);
   case PREFIX_EXPR:
     return prefix_to_string(buf, expr->value);
+  case INFIX_EXPR:
+    return infix_to_string(buf, expr->value);
   }
 }
 
 void let_to_string(char *buf, Statement *stmt) {
   assert(stmt->name != NULL);
 
-  char formatted[255];
-  sprintf(formatted, "%s %s = ", stmt->token.literal, stmt->name->value);
-  append_to_buf(buf, formatted);
+  append_to_buf(buf, stmt->token.literal);
+  append_to_buf(buf, " ");
+  append_to_buf(buf, stmt->name->value);
+  append_to_buf(buf, " = ");
 
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
@@ -109,12 +112,24 @@ void int_to_string(char *buf, IntegerLiteral *lit) {
 }
 
 void prefix_to_string(char * buf, PrefixExpression *expr) {
-  char formatted[MAX_LEN];
-  sprintf(formatted, "(%s", expr->operator);
-  append_to_buf(buf, formatted);
+  append_to_buf(buf, "(");
+  append_to_buf(buf,expr->operator);
 
   value_to_string(buf, expr->right);
 
+  append_to_buf(buf, ")");
+}
+
+void infix_to_string(char *buf, InfixExpression *expr) {
+
+  append_to_buf(buf, "(");
+  value_to_string(buf, expr->left);
+
+  append_to_buf(buf, " ");
+  append_to_buf(buf, expr->operator);
+  append_to_buf(buf, " ");
+
+  value_to_string(buf, expr->right);
   append_to_buf(buf, ")");
 }
 

@@ -10,6 +10,7 @@ struct Parser {
   LinkedList *errors; // TODO: implement as string buffer
   prefix_parse_fn prefix_parse_fns[TOKEN_COUNT];
   infix_parse_fn infix_parse_fns[TOKEN_COUNT];
+  uint32_t precedences[TOKEN_COUNT];
 };
 
 Parser *new_parser(Lexer *);

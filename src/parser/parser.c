@@ -1,11 +1,11 @@
 #include "parser.h"
+#include "../str_utils/str_utils.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../str_utils/str_utils.h"
 
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
@@ -19,6 +19,24 @@ void register_infix_fn(Parser *p, infix_parse_fn fn, enum TokenType token) {
 void register_prefix_fn(Parser *p, prefix_parse_fn fn, enum TokenType token) {
   p->prefix_parse_fns[token] = fn;
 }
+
+void build_precedence_table(Parser *p) {
+  p->precedences[EQ] = EQUALS;
+  p->precedences[NOT_EQ] = EQUALS;
+  p->precedences[LT] = LESSGREATER;
+  p->precedences[GT] = LESSGREATER;
+  p->precedences[PLUS] = SUM;
+  p->precedences[MINUS] = SUM;
+  p->precedences[SLASH] = PRODUCT;
+  p->precedences[ASTERISK] = PRODUCT;
+}
+
+uint32_t peek_precedence(Parser *p) {
+  return p->precedences[p->peek_token.Type];
+}
+
+uint32_t cur_precedence(Parser *p) { return p->precedences[p->cur_token.Type]; }
+
 
 Expression *parse_identifier(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
@@ -60,7 +78,7 @@ IntegerLiteral *new_int_literal(Parser *p) {
 Expression *parse_integer_literal(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
   expr->type = INT_EXPR;
-  
+
   IntegerLiteral *lit = new_int_literal(p);
   expr->value = lit;
 
@@ -74,7 +92,7 @@ PrefixExpression *new_prefix_expression(Parser *p) {
     exit(EXIT_FAILURE);
   }
 
-  prefix->operator = malloc(sizeof(p->cur_token.literal));
+  prefix->operator= malloc(sizeof(p->cur_token.literal));
   strlcpy(prefix->operator, p->cur_token.literal, sizeof(prefix->operator));
   prefix->token = p->cur_token;
 
@@ -97,12 +115,49 @@ Expression *parse_prefix_expression(Parser *p) {
   return expr;
 }
 
+InfixExpression *new_infix_expression(Parser *p) {
+  InfixExpression *infix = malloc(sizeof(InfixExpression));
+  if (infix == NULL) {
+    printf("ERROR: Could not create infix expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  infix->operator= malloc(sizeof(p->cur_token.literal));
+  strlcpy(infix->operator, p->cur_token.literal, sizeof(infix->operator));
+
+  infix->token = p->cur_token;
+
+  return infix;
+}
+
+Expression *parse_infix_expression(Parser *p, Expression *left) {
+  Expression *expr = malloc(sizeof(Expression));
+  if (expr == NULL) {
+    printf("ERROR: Could not create expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  expr->type = INFIX_EXPR;
+  InfixExpression *infix_expr = new_infix_expression(p);
+
+  uint32_t precedence = cur_precedence(p);
+  parser_next_token(p);
+
+  infix_expr->left = left;
+  infix_expr->right = parse_expression(p, precedence);
+
+  expr->value = infix_expr;
+
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
   p->errors = new_list();
 
   for (uint32_t i = 0; i < TOKEN_COUNT; i++) {
+    p->precedences[i] = LOWEST;
+
     p->prefix_parse_fns[i] = NULL;
     p->infix_parse_fns[i] = NULL;
   }
@@ -111,6 +166,17 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_integer_literal, INT);
   register_prefix_fn(p, &parse_prefix_expression, BANG);
   register_prefix_fn(p, &parse_prefix_expression, MINUS);
+
+  register_infix_fn(p, &parse_infix_expression, PLUS);
+  register_infix_fn(p, &parse_infix_expression, MINUS);
+  register_infix_fn(p, &parse_infix_expression, SLASH);
+  register_infix_fn(p, &parse_infix_expression, ASTERISK);
+  register_infix_fn(p, &parse_infix_expression, EQ);
+  register_infix_fn(p, &parse_infix_expression, NOT_EQ);
+  register_infix_fn(p, &parse_infix_expression, LT);
+  register_infix_fn(p, &parse_infix_expression, GT);
+
+  build_precedence_table(p);
 
   parser_next_token(p);
   parser_next_token(p);
@@ -214,7 +280,20 @@ Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence) {
     return NULL;
   }
 
-  return prefix(p);
+  Expression *left_exp = prefix(p);
+
+  while (!peek_token_is(p, SEMICOLON) && precedence < peek_precedence(p)) {
+    infix_parse_fn infix = p->infix_parse_fns[p->peek_token.Type];
+    if (infix == NULL) {
+      return left_exp;
+    }
+
+    parser_next_token(p);
+
+    left_exp = infix(p, left_exp);
+  }
+
+  return left_exp;
 }
 
 Statement *parse_expression_statement(Parser *p) {
