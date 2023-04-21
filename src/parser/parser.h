@@ -30,3 +30,5 @@ typedef enum {
   PREFIX,
   CALL
 } OperatorPrecedenceOrder;
+
+Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence);

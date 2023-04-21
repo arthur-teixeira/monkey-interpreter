@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../str_utils/str_utils.h"
 
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
@@ -66,6 +67,36 @@ Expression *parse_integer_literal(Parser *p) {
   return expr;
 }
 
+PrefixExpression *new_prefix_expression(Parser *p) {
+  PrefixExpression *prefix = malloc(sizeof(PrefixExpression));
+  if (prefix == NULL) {
+    printf("ERROR: Could not create prefix expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  prefix->operator = malloc(sizeof(p->cur_token.literal));
+  strlcpy(prefix->operator, p->cur_token.literal, sizeof(prefix->operator));
+  prefix->token = p->cur_token;
+
+  parser_next_token(p);
+  prefix->right = parse_expression(p, PREFIX);
+
+  return prefix;
+}
+
+Expression *parse_prefix_expression(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  if (expr == NULL) {
+    printf("ERROR: Could not create expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  expr->type = PREFIX_EXPR;
+  expr->value = new_prefix_expression(p);
+
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
@@ -78,6 +109,8 @@ Parser *new_parser(Lexer *l) {
 
   register_prefix_fn(p, &parse_identifier, IDENT);
   register_prefix_fn(p, &parse_integer_literal, INT);
+  register_prefix_fn(p, &parse_prefix_expression, BANG);
+  register_prefix_fn(p, &parse_prefix_expression, MINUS);
 
   parser_next_token(p);
   parser_next_token(p);
@@ -168,9 +201,16 @@ Statement *parse_return_statement(Parser *p) {
   return stmt;
 }
 
+void no_prefix_parse_fn_error(Parser *p, enum TokenType type) {
+  char *msg = malloc(255);
+  sprintf(msg, "No prefix parse function for %s found", TOKEN_STRING[type]);
+  append(p->errors, msg);
+}
+
 Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence) {
   prefix_parse_fn prefix = p->prefix_parse_fns[p->cur_token.Type];
   if (prefix == NULL) {
+    no_prefix_parse_fn_error(p, p->cur_token.Type);
     return NULL;
   }
 

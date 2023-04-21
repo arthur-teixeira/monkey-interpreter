@@ -63,9 +63,10 @@ void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
     return ident_expr_to_string(buf, expr->value);
-  default:
-    append_to_buf(buf, "TODO: value_to_string\n");
-    assert(0 && "unreachable");
+  case INT_EXPR:
+    return int_to_string(buf, expr->value);
+  case PREFIX_EXPR:
+    return prefix_to_string(buf, expr->value);
   }
 }
 
@@ -107,6 +108,16 @@ void int_to_string(char *buf, IntegerLiteral *lit) {
   append_to_buf(buf, formatted);
 }
 
+void prefix_to_string(char * buf, PrefixExpression *expr) {
+  char formatted[MAX_LEN];
+  sprintf(formatted, "(%s", expr->operator);
+  append_to_buf(buf, formatted);
+
+  value_to_string(buf, expr->right);
+
+  append_to_buf(buf, ")");
+}
+
 void stmt_to_string(char *buf, Statement *stmt) {
   switch (stmt->type) {
   case LET_STATEMENT:
@@ -115,8 +126,6 @@ void stmt_to_string(char *buf, Statement *stmt) {
     return return_to_string(buf, stmt);
   case EXPR_STATEMENT:
     return expr_to_string(buf, stmt);
-  default:
-    assert(0 && "unreachable");
   }
 }
 

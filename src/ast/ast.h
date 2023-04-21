@@ -27,7 +27,8 @@ typedef enum {
 
 typedef enum {
   IDENT_EXPR,
-  INT_EXPR
+  INT_EXPR,
+  PREFIX_EXPR,
 } ExprType;
 
 typedef struct {
@@ -35,6 +36,14 @@ typedef struct {
   void *value;
 } Expression;
 void value_to_string(char *, Expression *);
+
+typedef struct {
+  Token token;
+  char *operator;
+  Expression *right;
+} PrefixExpression;
+
+void prefix_to_string(char *, PrefixExpression *);
 
 typedef struct {
   StatementType type;
@@ -52,5 +61,7 @@ typedef struct {
 void program_token_literal(char *, Program *);
 
 Program *new_program(void);
+
+void free_program(Program *p);
 
 void program_string(char *, Program *);
