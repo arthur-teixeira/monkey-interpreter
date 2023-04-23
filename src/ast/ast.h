@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef struct {
   Token token;
@@ -26,6 +27,7 @@ typedef enum {
   INT_EXPR,
   PREFIX_EXPR,
   INFIX_EXPR,
+  BOOL_EXPR,
 } ExprType;
 
 typedef struct {
@@ -50,6 +52,13 @@ typedef struct {
 } InfixExpression;
 
 void infix_to_string(char *, InfixExpression *);
+
+typedef struct {
+  Token token;
+  bool value;
+} Boolean;
+
+void bool_to_string(char *, Boolean *);
 
 typedef struct {
   StatementType type;

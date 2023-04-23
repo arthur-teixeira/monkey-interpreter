@@ -69,6 +69,8 @@ void value_to_string(char *buf, Expression *expr) {
     return prefix_to_string(buf, expr->value);
   case INFIX_EXPR:
     return infix_to_string(buf, expr->value);
+  case BOOL_EXPR:
+    return bool_to_string(buf, expr->value);
   }
 }
 
@@ -131,6 +133,10 @@ void infix_to_string(char *buf, InfixExpression *expr) {
 
   value_to_string(buf, expr->right);
   append_to_buf(buf, ")");
+}
+
+void bool_to_string(char *buf, Boolean *expr) {
+  append_to_buf(buf, expr->token.literal);
 }
 
 void stmt_to_string(char *buf, Statement *stmt) {

@@ -37,6 +37,33 @@ uint32_t peek_precedence(Parser *p) {
 
 uint32_t cur_precedence(Parser *p) { return p->precedences[p->cur_token.Type]; }
 
+bool cur_token_is(Parser *p, enum TokenType t) {
+  return p->cur_token.Type == t;
+}
+
+bool peek_token_is(Parser *p, enum TokenType t) {
+  return p->peek_token.Type == t;
+}
+
+void peek_error(Parser *p, enum TokenType t) {
+  char *err_msg = malloc(50);
+  sprintf(err_msg, "Expected next token to be %s, got %s.\n", TOKEN_STRING[t],
+          TOKEN_STRING[p->peek_token.Type]);
+
+  append(p->errors, err_msg);
+}
+
+bool expect_peek(Parser *p, enum TokenType t) {
+  if (peek_token_is(p, t)) {
+    parser_next_token(p);
+    return true;
+  }
+
+  peek_error(p, t);
+  return false;
+}
+
+
 
 Expression *parse_identifier(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
@@ -115,6 +142,32 @@ Expression *parse_prefix_expression(Parser *p) {
   return expr;
 }
 
+Boolean *new_boolean_expression(Parser *p) {
+  Boolean *expr = malloc(sizeof(Boolean));
+  if (expr == NULL) {
+    printf("ERROR: Could not create boolean expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  expr->token = p->cur_token;
+  expr->value = cur_token_is(p, TRUE);
+
+  return expr;
+}
+
+Expression *parse_boolean(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  if (expr == NULL) {
+    printf("ERROR: Could not create expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  expr->type = BOOL_EXPR;
+  expr->value = new_boolean_expression(p);
+
+  return expr;
+}
+
 InfixExpression *new_infix_expression(Parser *p) {
   InfixExpression *infix = malloc(sizeof(InfixExpression));
   if (infix == NULL) {
@@ -166,6 +219,8 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_integer_literal, INT);
   register_prefix_fn(p, &parse_prefix_expression, BANG);
   register_prefix_fn(p, &parse_prefix_expression, MINUS);
+  register_prefix_fn(p, &parse_boolean, TRUE);
+  register_prefix_fn(p, &parse_boolean, FALSE);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);
@@ -188,32 +243,6 @@ void free_parser(Parser *p) {
   free_lexer(p->l);
   free_list(p->errors);
   free(p);
-}
-
-void peek_error(Parser *p, enum TokenType t) {
-  char *err_msg = malloc(50);
-  sprintf(err_msg, "Expected next token to be %s, got %s.\n", TOKEN_STRING[t],
-          TOKEN_STRING[p->peek_token.Type]);
-
-  append(p->errors, err_msg);
-}
-
-bool cur_token_is(Parser *p, enum TokenType t) {
-  return p->cur_token.Type == t;
-}
-
-bool peek_token_is(Parser *p, enum TokenType t) {
-  return p->peek_token.Type == t;
-}
-
-bool expect_peek(Parser *p, enum TokenType t) {
-  if (peek_token_is(p, t)) {
-    parser_next_token(p);
-    return true;
-  }
-
-  peek_error(p, t);
-  return false;
 }
 
 Statement *parse_let_statement(Parser *p) {

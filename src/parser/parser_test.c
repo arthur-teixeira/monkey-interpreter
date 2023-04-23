@@ -99,6 +99,33 @@ void test_identifier_expression(void) {
   TEST_ASSERT_EQUAL_STRING("foobar", ident->value);
 }
 
+void test_boolean_expressions(void) {
+
+  struct test_case {
+    char *input;
+    bool expected_value;
+    char *expected_literal;
+  };
+
+  struct test_case tests[] = {{"false;", false, "false"},
+                              {"true;", true, "true"}};
+
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
+    Program *program = parse_and_check_errors(tests[i].input);
+
+    TEST_ASSERT_EQUAL(1, program->statements->size);
+
+    Statement *stmt = program->statements->tail->value;
+    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+    TEST_ASSERT_EQUAL(BOOL_EXPR, stmt->expression->type);
+
+    Boolean *boolean = stmt->expression->value;
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, boolean->token.literal);
+    TEST_ASSERT_EQUAL(tests[i].expected_value, boolean->value);
+  }
+}
+
+
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
@@ -266,5 +293,6 @@ int main() {
   RUN_TEST(test_parsing_prefix_expressions);
   RUN_TEST(test_parsing_infix_expressions);
   RUN_TEST(test_operator_precedence_parsing);
+  RUN_TEST(test_boolean_expressions);
   UNITY_END();
 }
