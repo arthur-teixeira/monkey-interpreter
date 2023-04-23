@@ -28,6 +28,7 @@ typedef enum {
   PREFIX_EXPR,
   INFIX_EXPR,
   BOOL_EXPR,
+  IF_EXPR,
 } ExprType;
 
 typedef struct {
@@ -59,6 +60,22 @@ typedef struct {
 } Boolean;
 
 void bool_to_string(char *, Boolean *);
+
+typedef struct {
+  Token token;
+  LinkedList *statements;
+} BlockStatement;
+
+void block_to_string(char *, BlockStatement *);
+
+typedef struct {
+  Token token;
+  Expression *condition;
+  BlockStatement *consequence;
+  BlockStatement *alternative;
+} IfExpression;
+
+void if_to_string(char *, IfExpression *);
 
 typedef struct {
   StatementType type;

@@ -125,7 +125,6 @@ void test_boolean_expressions(void) {
   }
 }
 
-
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
@@ -270,6 +269,22 @@ void test_operator_precedence_parsing(void) {
           "3 + 4 * 5 == 3 * 1 + 4 * 5",
           "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));\n",
       },
+      {
+          "(5 + 5) * 2",
+          "((5 + 5) * 2);\n",
+      },
+      {
+          "2 / (5 + 5)",
+          "(2 / (5 + 5));\n",
+      },
+      {
+          "-(5 + 5)",
+          "(-(5 + 5));\n",
+      },
+      {
+          "!(true == true)",
+          "(!(true == true));\n",
+      },
   };
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
@@ -284,6 +299,23 @@ void test_operator_precedence_parsing(void) {
   }
 }
 
+void test_if_expression(void) {
+  char *input = "if (x < y) { x } else { y }";
+
+  Program *program = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
+
+  IfExpression *expr = stmt->expression->value;
+
+  TEST_ASSERT_EQUAL(1, expr->consequence->statements->size);
+  TEST_ASSERT_NOT_NULL(expr->alternative);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -294,5 +326,6 @@ int main() {
   RUN_TEST(test_parsing_infix_expressions);
   RUN_TEST(test_operator_precedence_parsing);
   RUN_TEST(test_boolean_expressions);
+  RUN_TEST(test_if_expression);
   UNITY_END();
 }

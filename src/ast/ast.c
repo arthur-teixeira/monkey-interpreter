@@ -59,6 +59,27 @@ void ident_expr_to_string(char *buf, Identifier *expr) {
   append_to_buf(buf, expr->value);
 }
 
+void block_to_string(char *buf, BlockStatement *block) {
+  Node *cur_node = block->statements->tail;
+
+  while (cur_node != NULL) {
+    value_to_string(buf, cur_node->value);
+    cur_node = cur_node->next;
+  }
+}
+
+void if_to_string(char *buf, IfExpression *expr) {
+  append_to_buf(buf, "if");
+  value_to_string(buf, expr->condition);
+  append_to_buf(buf, " ");
+  block_to_string(buf, expr->consequence);
+
+  if(expr->alternative != NULL) {
+    append_to_buf(buf, "else");
+    block_to_string(buf, expr->alternative);
+  }
+}
+
 void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -71,6 +92,8 @@ void value_to_string(char *buf, Expression *expr) {
     return infix_to_string(buf, expr->value);
   case BOOL_EXPR:
     return bool_to_string(buf, expr->value);
+  case IF_EXPR:
+    return if_to_string(buf, expr->value);
   }
 }
 
