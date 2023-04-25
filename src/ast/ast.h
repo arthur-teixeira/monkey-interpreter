@@ -30,6 +30,7 @@ typedef enum {
   BOOL_EXPR,
   IF_EXPR,
   FN_EXPR,
+  CALL_EXPR,
 } ExprType;
 
 typedef struct {
@@ -85,6 +86,14 @@ typedef struct {
 } FunctionLiteral;
 
 void fn_to_string(char *, FunctionLiteral *);
+
+typedef struct {
+  Token token;
+  Expression *function;
+  LinkedList *arguments; //Expression*[];
+} CallExpression;
+
+void call_to_string(char *, CallExpression *);
 
 typedef struct {
   StatementType type;

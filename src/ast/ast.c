@@ -1,12 +1,12 @@
 #include "ast.h"
+#include "../str_utils/str_utils.h"
 #include <assert.h>
-#include <stdint.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../str_utils/str_utils.h"
 
 Identifier *new_identifier(Token token, char *value) {
   Identifier *ident = malloc(sizeof(Identifier));
@@ -74,7 +74,7 @@ void if_to_string(char *buf, IfExpression *expr) {
   append_to_buf(buf, " ");
   block_to_string(buf, expr->consequence);
 
-  if(expr->alternative != NULL) {
+  if (expr->alternative != NULL) {
     append_to_buf(buf, "else");
     block_to_string(buf, expr->alternative);
   }
@@ -97,6 +97,20 @@ void fn_to_string(char *buf, FunctionLiteral *fn) {
   append_to_buf(buf, ") ");
 }
 
+void call_to_string(char *buf, CallExpression *call) {
+  value_to_string(buf, call->function);
+  append_to_buf(buf, "(");
+
+  Node *cur_node = call->arguments->tail;
+  for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
+    value_to_string(buf, cur_node->value);
+    if (i < call->arguments->size - 1) {
+      append_to_buf(buf, ", ");
+    }
+  }
+  append_to_buf(buf, ") ");
+}
+
 void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -113,6 +127,8 @@ void value_to_string(char *buf, Expression *expr) {
     return if_to_string(buf, expr->value);
   case FN_EXPR:
     return fn_to_string(buf, expr->value);
+  case CALL_EXPR:
+    return call_to_string(buf, expr->value);
   }
 }
 
@@ -155,9 +171,9 @@ void int_to_string(char *buf, IntegerLiteral *lit) {
   append_to_buf(buf, formatted);
 }
 
-void prefix_to_string(char * buf, PrefixExpression *expr) {
+void prefix_to_string(char *buf, PrefixExpression *expr) {
   append_to_buf(buf, "(");
-  append_to_buf(buf,expr->operator);
+  append_to_buf(buf, expr->operator);
 
   value_to_string(buf, expr->right);
 

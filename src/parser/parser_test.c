@@ -332,8 +332,6 @@ void test_function_literal(void) {
   TEST_ASSERT_NOT_NULL(fn->body);
 }
 
-void test_identifier(Identifier *ident, char *expected_identifier) {}
-
 void test_function_parameter_parsing(void) {
   struct test_case {
     char *input;
@@ -362,10 +360,58 @@ void test_function_parameter_parsing(void) {
     for (uint32_t j = 0; j < i && cur_node != NULL;
          j++, cur_node = cur_node->next) {
       Identifier *ident = cur_node->value;
-      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->token.literal);
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j],
+                               ident->token.literal);
       TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
     }
+
+    free(p);
   }
+}
+
+void test_identifier(Expression *expr, char *expected_identifier) {
+  TEST_ASSERT_EQUAL(IDENT_EXPR, expr->type);
+
+  Identifier *ident = expr->value;
+
+  TEST_ASSERT_EQUAL_STRING(expected_identifier, ident->value);
+  TEST_ASSERT_EQUAL_STRING(expected_identifier, ident->token.literal);
+}
+
+void test_infix_expression(Expression *expr, char *expected_operator,
+                           long left, long right) {
+  TEST_ASSERT_EQUAL(INFIX_EXPR, expr->type);
+
+  InfixExpression *expression = expr->value;
+
+  TEST_ASSERT_EQUAL_STRING(expected_operator, expression->operator);
+
+  test_integer_literal(expression->right, right);
+  test_integer_literal(expression->left, left);
+}
+
+void test_call_expression_parsing(void) {
+  char *input = "add(1, 2 * 3, 4 + 5);";
+
+  Program *program = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(CALL_EXPR, stmt->expression->type);
+
+  CallExpression *expr = stmt->expression->value;
+  test_identifier(expr->function, "add");
+
+  Node *cur_node = expr->arguments->tail;
+
+  TEST_ASSERT_EQUAL(3, expr->arguments->size);
+  test_integer_literal(cur_node->value, 1); // 1st argument
+  cur_node = cur_node->next;
+  test_infix_expression(cur_node->value, "*", 2, 3); // 2nd argument
+  cur_node = cur_node->next;
+  test_infix_expression(cur_node->value, "+", 4, 5); // 3rd argument
 }
 
 int main() {
@@ -381,5 +427,6 @@ int main() {
   RUN_TEST(test_if_expression);
   RUN_TEST(test_function_literal);
   RUN_TEST(test_function_parameter_parsing);
+  RUN_TEST(test_call_expression_parsing);
   UNITY_END();
 }

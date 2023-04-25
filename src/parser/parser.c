@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "../str_utils/str_utils.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,6 +30,7 @@ void build_precedence_table(Parser *p) {
   p->precedences[MINUS] = SUM;
   p->precedences[SLASH] = PRODUCT;
   p->precedences[ASTERISK] = PRODUCT;
+  p->precedences[LPAREN] = CALL;
 }
 
 uint32_t peek_precedence(Parser *p) {
@@ -394,7 +396,7 @@ LinkedList *parse_function_parameters(Parser *p) {
 
   while (peek_token_is(p, COMMA)) {
     parser_next_token(p);
-    parser_next_token(p); 
+    parser_next_token(p);
     Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
     append(parameters, ident);
   }
@@ -493,6 +495,58 @@ Expression *parse_infix_expression(Parser *p, Expression *left) {
   return expr;
 }
 
+LinkedList *parse_call_arguments(Parser *p) {
+  LinkedList *arguments = new_list();
+
+  if (peek_token_is(p, RPAREN)) {
+    parser_next_token(p);
+    return arguments;
+  }
+
+  parser_next_token(p);
+  append(arguments, parse_expression(p, LOWEST));
+
+  while (peek_token_is(p, COMMA)) {
+    parser_next_token(p);
+    parser_next_token(p);
+    append(arguments, parse_expression(p, LOWEST));
+  }
+
+  if (!expect_peek(p, RPAREN)) {
+    free_list( arguments); // TODO: Need to free each expression
+                           // based on its type
+    return NULL;
+  }
+
+  return arguments;
+}
+
+Expression *parse_call_expression(Parser *p, Expression *function) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "ERROR: could not allocate memory for expression");
+
+  expr->type = CALL_EXPR;
+
+  CallExpression *call = malloc(sizeof(CallExpression));
+  assert(call != NULL &&
+         "ERROR: could not allocate memory for call expression");
+
+  call->token = p->cur_token;
+  call->function = function;
+  LinkedList *args = parse_call_arguments(p);
+
+  if (args == NULL) {
+    free(call);
+    free(expr);
+    return NULL;
+  }
+
+  call->arguments = args;
+
+  expr->value = call;
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
@@ -523,6 +577,7 @@ Parser *new_parser(Lexer *l) {
   register_infix_fn(p, &parse_infix_expression, NOT_EQ);
   register_infix_fn(p, &parse_infix_expression, LT);
   register_infix_fn(p, &parse_infix_expression, GT);
+  register_infix_fn(p, &parse_call_expression, LPAREN);
 
   build_precedence_table(p);
 
