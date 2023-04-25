@@ -316,6 +316,52 @@ void test_if_expression(void) {
   TEST_ASSERT_NOT_NULL(expr->alternative);
 }
 
+void test_function_literal(void) {
+  char *input = "fn (x, y) { x + y; };";
+
+  Program *program = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(FN_EXPR, stmt->expression->type);
+
+  FunctionLiteral *fn = stmt->expression->value;
+  TEST_ASSERT_EQUAL(2, fn->parameters->size);
+  TEST_ASSERT_NOT_NULL(fn->body);
+}
+
+void test_function_parameter_parsing(void) {
+  struct test_case {
+    char *input;
+    char expected_params[10][50];
+  };
+
+  struct test_case tests[] = {
+      {"fn() {};", {}},
+      {"fn(x) {};", {"x"}},
+      {"fn(x, y) {};", {"x", "y"}},
+      {"fn(x, y, z) {};", {"x", "y", "z"}},
+  };
+
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
+    Program *p = parse_and_check_errors(tests[i].input);
+
+    Statement *stmt = p->statements->tail->value;
+    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+    TEST_ASSERT_EQUAL(FN_EXPR, stmt->expression->type);
+
+    FunctionLiteral *fn = stmt->expression->value;
+
+    TEST_ASSERT_EQUAL(i, fn->parameters->size);
+
+    for (uint32_t j = 0; j < i; j++) {
+      printf("%s", tests[i].expected_params[j]);
+    }
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -327,5 +373,6 @@ int main() {
   RUN_TEST(test_operator_precedence_parsing);
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_if_expression);
+  RUN_TEST(test_function_literal);
   UNITY_END();
 }

@@ -63,7 +63,6 @@ bool expect_peek(Parser *p, enum TokenType t) {
   return false;
 }
 
-
 Statement *parse_let_statement(Parser *p) {
   Statement *stmt = malloc(sizeof(Statement));
   stmt->type = LET_STATEMENT;
@@ -172,7 +171,6 @@ Statement *parse_statement(Parser *p) {
     return parse_expression_statement(p);
   }
 }
-
 
 Expression *parse_identifier(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
@@ -302,7 +300,7 @@ BlockStatement *parse_block_statement(Parser *p) {
 
   parser_next_token(p);
 
-  while(!cur_token_is(p, RBRACE) && !cur_token_is(p, END_OF_FILE)) {
+  while (!cur_token_is(p, RBRACE) && !cur_token_is(p, END_OF_FILE)) {
     Statement *stmt = parse_statement(p);
     if (stmt != NULL) {
       append(block->statements, stmt);
@@ -335,7 +333,7 @@ IfExpression *new_if_expression(Parser *p) {
     return NULL;
   }
 
-  if(!expect_peek(p, LBRACE)) {
+  if (!expect_peek(p, LBRACE)) {
     free(expr->condition->value);
     free(expr->condition);
     free(expr);
@@ -349,7 +347,7 @@ IfExpression *new_if_expression(Parser *p) {
   }
 
   parser_next_token(p);
-  if(!expect_peek(p, LBRACE)) {
+  if (!expect_peek(p, LBRACE)) {
     free(expr->condition->value);
     free(expr->condition);
     free_list(expr->consequence->statements);
@@ -372,8 +370,90 @@ Expression *parse_if_expression(Parser *p) {
   expr->type = IF_EXPR;
 
   IfExpression *iff = new_if_expression(p);
-
+  if (iff == NULL) {
+    free(expr);
+    return NULL;
+  }
   expr->value = iff;
+
+  return expr;
+}
+
+LinkedList *parse_function_parameters(Parser *p) {
+  LinkedList *parameters = new_list();
+
+  if (peek_token_is(p, RPAREN)) {
+    parser_next_token(p);
+    return parameters;
+  }
+
+  parser_next_token(p);
+
+  Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
+  append(parameters, ident);
+
+  while (peek_token_is(p, COMMA)) {
+    parser_next_token(p);
+    parser_next_token(p); 
+    Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
+    append(parameters, ident);
+  }
+
+  if (!expect_peek(p, RPAREN)) {
+    free_list(parameters);
+  }
+
+  return parameters;
+}
+
+FunctionLiteral *new_function_literal(Parser *p) {
+  FunctionLiteral *fn = malloc(sizeof(FunctionLiteral));
+  if (fn == NULL) {
+    printf("ERROR: Could not create function literal: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  fn->token = p->cur_token;
+
+  if (!expect_peek(p, LPAREN)) {
+    free(fn);
+    return NULL;
+  }
+
+  LinkedList *parameters = parse_function_parameters(p);
+  if (parameters == NULL) {
+    free(fn);
+    return NULL;
+  }
+
+  fn->parameters = parameters;
+
+  if (!expect_peek(p, LBRACE)) {
+    free_list(fn->parameters);
+    free(fn);
+
+    return NULL;
+  }
+
+  fn->body = parse_block_statement(p);
+  return fn;
+}
+
+Expression *parse_function_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  if (expr == NULL) {
+    printf("ERROR: Could not create expression: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  expr->type = FN_EXPR;
+
+  FunctionLiteral *value = new_function_literal(p);
+
+  if (value == NULL) {
+    free(expr);
+    return NULL;
+  }
+
+  expr->value = value;
 
   return expr;
 }
@@ -433,6 +513,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_boolean, FALSE);
   register_prefix_fn(p, &parse_grouped_expression, LPAREN);
   register_prefix_fn(p, &parse_if_expression, IF);
+  register_prefix_fn(p, &parse_function_literal, FUNCTION);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);

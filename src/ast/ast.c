@@ -80,6 +80,23 @@ void if_to_string(char *buf, IfExpression *expr) {
   }
 }
 
+void fn_to_string(char *buf, FunctionLiteral *fn) {
+  append_to_buf(buf, fn->token.literal);
+  append_to_buf(buf, "(");
+
+  Node *cur_node = fn->parameters->tail;
+  for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
+    Identifier *ident = cur_node->value;
+    append_to_buf(buf, ident->value);
+
+    if (i < fn->parameters->size - 1) {
+      append_to_buf(buf, ", ");
+    }
+  }
+
+  append_to_buf(buf, ") ");
+}
+
 void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -94,6 +111,8 @@ void value_to_string(char *buf, Expression *expr) {
     return bool_to_string(buf, expr->value);
   case IF_EXPR:
     return if_to_string(buf, expr->value);
+  case FN_EXPR:
+    return fn_to_string(buf, expr->value);
   }
 }
 
