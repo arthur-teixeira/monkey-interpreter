@@ -17,7 +17,6 @@ Lexer *new_lexer(char *input) {
 }
 
 void free_lexer(Lexer *l) {
-  free(l->input);
   free(l);
 }
 

@@ -94,7 +94,7 @@ void fn_to_string(char *buf, FunctionLiteral *fn) {
     }
   }
 
-  append_to_buf(buf, ") ");
+  append_to_buf(buf, ")");
 }
 
 void call_to_string(char *buf, CallExpression *call) {
@@ -108,7 +108,7 @@ void call_to_string(char *buf, CallExpression *call) {
       append_to_buf(buf, ", ");
     }
   }
-  append_to_buf(buf, ") ");
+  append_to_buf(buf, ")");
 }
 
 void value_to_string(char *buf, Expression *expr) {
@@ -143,8 +143,6 @@ void let_to_string(char *buf, Statement *stmt) {
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
   }
-
-  append_to_buf(buf, ";\n");
 }
 
 void return_to_string(char *buf, Statement *stmt) {
@@ -153,15 +151,12 @@ void return_to_string(char *buf, Statement *stmt) {
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
   }
-
-  append_to_buf(buf, ";\n");
 }
 
 void expr_to_string(char *buf, Statement *stmt) {
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
   }
-  append_to_buf(buf, ";\n");
 }
 
 void int_to_string(char *buf, IntegerLiteral *lit) {
@@ -215,4 +210,5 @@ void program_string(char *buf, Program *p) {
     stmt_to_string(buf, cur_stmt);
     cur = cur->next;
   }
+  append_to_buf(buf, ";\n");
 }

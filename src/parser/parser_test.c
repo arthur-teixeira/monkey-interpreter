@@ -290,7 +290,7 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "3 + 4; -5 * 5",
-          "(3 + 4);\n((-5) * 5);\n",
+          "(3 + 4)((-5) * 5);\n",
       },
       {
           "5 > 4 == 3 < 4",
@@ -326,15 +326,15 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "a + add(b * c) + d",
-          "((a + add((b * c)) ) + d);\n",
+          "((a + add((b * c))) + d);\n",
       },
       {
           "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-          "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)) ) ;\n",
+          "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)));\n",
       },
       {
           "add(a + b + c * d / f + g)",
-          "add((((a + b) + ((c * d) / f)) + g)) ;\n",
+          "add((((a + b) + ((c * d) / f)) + g));\n",
       }};
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
