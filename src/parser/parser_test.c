@@ -1,6 +1,7 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "parser.h"
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -34,52 +35,90 @@ Program *parse_and_check_errors(char *input) {
   return program;
 }
 
+void test_int_value(IntegerLiteral *integer, long value) {
+  TEST_ASSERT_EQUAL(value, integer->value);
+}
+
+void test_bool_value(Boolean *boll, bool value) {
+  TEST_ASSERT_EQUAL(value, boll->value);
+}
+
+void test_ident_value(Identifier *ident, char *value) {
+  TEST_ASSERT_EQUAL_STRING(value, ident->value);
+}
+
+void test_expr_value(Expression *expr, void *expected_value) {
+  switch (expr->type) {
+    case INT_EXPR:
+      return test_int_value(expr->value, *(long *)expected_value);
+    case BOOL_EXPR:
+      return test_bool_value(expr->value, *(bool *)expected_value);
+    case IDENT_EXPR:
+      return test_ident_value(expr->value, expected_value);
+    default:
+      TEST_FAIL();
+  }
+}
+
 void test_let_statements() {
-  char input[] = "let x = 5;"
-                 "let y = 10;"
-                 "let foobar = 838383;";
-
-  Program *program = parse_and_check_errors(input);
-  UNITY_TEST_ASSERT_NOT_NULL(program, __LINE__, "parse_program returned null");
-
-  TEST_ASSERT_EQUAL(3, program->statements->size);
-
   typedef struct {
-    char expected_identifier[100];
+    char *input;
+    char *expected_identifier;
+    void *expected_value;
   } TestCase;
 
-  TestCase tests[] = {{"x"}, {"y"}, {"foobar"}};
+  long x_value = 5;
+  bool y_value = true;
+  char *foobar_value = "y";
 
-  Node *stmt_node = program->statements->tail;
+  TestCase tests[] = {{"let x = 5;", "x", &x_value},
+                      {"let y = true;", "y", &y_value},
+                      {"let foobar = y;", "foobar", foobar_value}};
+
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(TestCase); i++) {
-    if (i > 0) {
-      stmt_node = stmt_node->next;
-    }
+    Program *program = parse_and_check_errors(tests[i].input);
+    Node *stmt_node = program->statements->tail;
+
+    TEST_ASSERT_NOT_NULL(program);
+    TEST_ASSERT_EQUAL(1, program->statements->size);
 
     Statement *stmt = stmt_node->value;
 
     TEST_ASSERT_EQUAL_STRING("let", stmt->token.literal);
+    TEST_ASSERT_EQUAL(LET_STATEMENT, stmt->type);
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier, stmt->name->value);
-    TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier,
-                             stmt->name->token.literal);
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier, stmt->name->token.literal);
+    test_expr_value(stmt->expression, tests[i].expected_value);
+
+    free(program);
   }
 }
 
 void test_return_statements(void) {
-  char input[] = "return 5;"
-                 "return 10;"
-                 "return 993322;";
+  struct testCase {
+    char *input;
+    void *expected_value;
+  };
 
-  Program *program = parse_and_check_errors(input);
+  long value1 = 5;
+  bool value2 = true;
 
-  UNITY_TEST_ASSERT_NOT_NULL(program, __LINE__, "parse_program returned null");
-  TEST_ASSERT_EQUAL(3, program->statements->size);
+  struct testCase tests[] = {
+    {"return 5;", &value1},
+    {"return true;", &value2},
+    {"return y;", "y"},
+  };
 
-  Node *stmt_node = program->statements->tail;
-  while (stmt_node != NULL) {
+  for (uint32_t i = 0; i < sizeof(tests)/sizeof(struct testCase); i++) {
+    Program *program = parse_and_check_errors(tests[i].input);
+    TEST_ASSERT_NOT_NULL(program);
+    TEST_ASSERT_EQUAL(1, program->statements->size);
+
+    Node *stmt_node = program->statements->tail;
     Statement *stmt = stmt_node->value;
     TEST_ASSERT_EQUAL_STRING("return", stmt->token.literal);
-    stmt_node = stmt_node->next;
+    test_expr_value(stmt->expression, tests[i].expected_value);
+    free(program);
   }
 }
 
@@ -290,14 +329,13 @@ void test_operator_precedence_parsing(void) {
           "((a + add((b * c)) ) + d);\n",
       },
       {
-        "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)) ) ;\n",
+          "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+          "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)) ) ;\n",
       },
       {
-        "add(a + b + c * d / f + g)",
-        "add((((a + b) + ((c * d) / f)) + g)) ;\n",
-      }
-  };
+          "add(a + b + c * d / f + g)",
+          "add((((a + b) + ((c * d) / f)) + g)) ;\n",
+      }};
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Program *p = parse_and_check_errors(tests[i].input);
@@ -390,8 +428,8 @@ void test_identifier(Expression *expr, char *expected_identifier) {
   TEST_ASSERT_EQUAL_STRING(expected_identifier, ident->token.literal);
 }
 
-void test_infix_expression(Expression *expr, char *expected_operator,
-                           long left, long right) {
+void test_infix_expression(Expression *expr, char *expected_operator, long left,
+                           long right) {
   TEST_ASSERT_EQUAL(INFIX_EXPR, expr->type);
 
   InfixExpression *expression = expr->value;

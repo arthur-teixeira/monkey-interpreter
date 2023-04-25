@@ -89,8 +89,12 @@ Statement *parse_let_statement(Parser *p) {
     return NULL;
   }
 
-  // TODO: Skipping expressions until we find a semicolon
-  while (!cur_token_is(p, SEMICOLON)) {
+  parser_next_token(p);
+
+  stmt->expression = parse_expression(p, LOWEST);
+  parser_next_token(p);
+
+  if (cur_token_is(p, SEMICOLON)) {
     parser_next_token(p);
   }
 
@@ -108,8 +112,11 @@ Statement *parse_return_statement(Parser *p) {
   stmt->name = NULL;
 
   parser_next_token(p);
-  // TODO: Skipping expressions until we find a semicolon
-  while (!cur_token_is(p, SEMICOLON)) {
+
+  stmt->expression = parse_expression(p, LOWEST);
+  parser_next_token(p);
+
+  if (cur_token_is(p, SEMICOLON)) {
     parser_next_token(p);
   }
 
@@ -513,8 +520,8 @@ LinkedList *parse_call_arguments(Parser *p) {
   }
 
   if (!expect_peek(p, RPAREN)) {
-    free_list( arguments); // TODO: Need to free each expression
-                           // based on its type
+    free_list(arguments); // TODO: Need to free each expression
+                          // based on its type
     return NULL;
   }
 
