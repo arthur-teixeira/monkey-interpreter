@@ -258,8 +258,8 @@ Expression *parse_prefix_expression(Parser *p) {
   return expr;
 }
 
-Boolean *new_boolean_expression(Parser *p) {
-  Boolean *expr = malloc(sizeof(Boolean));
+BooleanLiteral *new_boolean_expression(Parser *p) {
+  BooleanLiteral *expr = malloc(sizeof(BooleanLiteral));
   if (expr == NULL) {
     printf("ERROR: Could not create boolean expression: %s\n", strerror(errno));
     exit(EXIT_FAILURE);

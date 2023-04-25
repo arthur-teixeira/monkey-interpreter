@@ -39,7 +39,7 @@ void test_int_value(IntegerLiteral *integer, long value) {
   TEST_ASSERT_EQUAL(value, integer->value);
 }
 
-void test_bool_value(Boolean *boll, bool value) {
+void test_bool_value(BooleanLiteral *boll, bool value) {
   TEST_ASSERT_EQUAL(value, boll->value);
 }
 
@@ -158,7 +158,7 @@ void test_boolean_expressions(void) {
     TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
     TEST_ASSERT_EQUAL(BOOL_EXPR, stmt->expression->type);
 
-    Boolean *boolean = stmt->expression->value;
+    BooleanLiteral *boolean = stmt->expression->value;
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, boolean->token.literal);
     TEST_ASSERT_EQUAL(tests[i].expected_value, boolean->value);
   }

@@ -59,9 +59,9 @@ void infix_to_string(char *, InfixExpression *);
 typedef struct {
   Token token;
   bool value;
-} Boolean;
+} BooleanLiteral;
 
-void bool_to_string(char *, Boolean *);
+void bool_to_string(char *, BooleanLiteral *);
 
 typedef struct {
   Token token;
@@ -105,7 +105,7 @@ typedef struct {
 void stmt_to_string(char *, Statement *);
 
 typedef struct {
-  LinkedList *statements;
+  LinkedList *statements; //Statement*[];
 } Program;
 
 void program_token_literal(char *, Program *);

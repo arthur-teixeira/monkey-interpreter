@@ -188,7 +188,7 @@ void infix_to_string(char *buf, InfixExpression *expr) {
   append_to_buf(buf, ")");
 }
 
-void bool_to_string(char *buf, Boolean *expr) {
+void bool_to_string(char *buf, BooleanLiteral *expr) {
   append_to_buf(buf, expr->token.literal);
 }
 
