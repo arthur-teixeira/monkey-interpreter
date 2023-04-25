@@ -332,6 +332,8 @@ void test_function_literal(void) {
   TEST_ASSERT_NOT_NULL(fn->body);
 }
 
+void test_identifier(Identifier *ident, char *expected_identifier) {}
+
 void test_function_parameter_parsing(void) {
   struct test_case {
     char *input;
@@ -356,8 +358,12 @@ void test_function_parameter_parsing(void) {
 
     TEST_ASSERT_EQUAL(i, fn->parameters->size);
 
-    for (uint32_t j = 0; j < i; j++) {
-      printf("%s", tests[i].expected_params[j]);
+    Node *cur_node = fn->parameters->tail;
+    for (uint32_t j = 0; j < i && cur_node != NULL;
+         j++, cur_node = cur_node->next) {
+      Identifier *ident = cur_node->value;
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->token.literal);
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
     }
   }
 }
@@ -374,5 +380,6 @@ int main() {
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_if_expression);
   RUN_TEST(test_function_literal);
+  RUN_TEST(test_function_parameter_parsing);
   UNITY_END();
 }
