@@ -1,15 +1,15 @@
-#include "../lexer/lexer.h"
+#include "../parser/parser.h"
+#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
 
 #define PROMPT ">> "
 
 typedef struct {
-    char *buffer;
-    size_t buffer_length;
-    ssize_t input_length;
+  char *buffer;
+  size_t buffer_length;
+  ssize_t input_length;
 } InputBuffer;
 
 InputBuffer *new_input_buffer() {
@@ -26,8 +26,6 @@ void close_input_buffer(InputBuffer *input_buffer) {
   free(input_buffer);
 }
 
-void print_prompt() { printf(PROMPT); }
-
 void read_input(InputBuffer *input_buffer) {
   ssize_t bytes_read =
       getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
@@ -42,30 +40,50 @@ void read_input(InputBuffer *input_buffer) {
 }
 
 void print_token(Token *tok) {
-    printf("Type: %s\n", TOKEN_STRING[tok->Type]);
-    printf("Value: %s\n", tok->literal);
-    printf("---------\n");
+  printf("Type: %s\n", TOKEN_STRING[tok->Type]);
+  printf("Value: %s\n", tok->literal);
+  printf("---------\n");
+}
+
+void print_parser_errors(Parser *p) {
+  Node *cur_error = p->errors->tail;
+  assert(cur_error != NULL);
+
+  while (cur_error != NULL) {
+    printf("%s\n", (char *)cur_error->value);
+    cur_error = cur_error->next;
+  }
 }
 
 void start() {
-    InputBuffer *buf = new_input_buffer();
-    while (true) {
-        print_prompt();
-        read_input(buf);
+  while (true) {
+    InputBuffer *input_buf = new_input_buffer();
+    printf(PROMPT);
+    read_input(input_buf);
 
-        if (*(buf->buffer) == '\0') {
-            return;
-        }
-
-        Lexer *l = new_lexer(buf->buffer);
-
-        for (Token tok = next_token(l); tok.Type != END_OF_FILE; tok = next_token(l)) {
-            print_token(&tok);
-        }
-
-        free_lexer(l);
+    if (*(input_buf->buffer) == '\0') {
+      return;
     }
 
-    assert(0 && "unreachable");
-    close_input_buffer(buf);
+    char *buf = malloc(255);
+    *buf = '\0';
+
+
+    Lexer *l = new_lexer(input_buf->buffer);
+    Parser *p = new_parser(l);
+    Program *program = parse_program(p);
+    if (p->errors->size > 0) {
+      print_parser_errors(p);
+      free(buf);
+      free_parser(p);
+      continue;
+    }
+    program_string(buf, program);
+
+    printf("%s\n", buf);
+
+    close_input_buffer(input_buf);
+    free(buf);
+    free_parser(p);
+  }
 }
