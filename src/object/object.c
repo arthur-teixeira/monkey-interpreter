@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 void inspect_integer_object(char *buf, Integer *obj) {
-  sprintf(buf, "%zu\n", obj->value);
+  sprintf(buf, "%ld\n", obj->value);
 }
 
 void inspect_boolean_object(char *buf, Boolean *obj) {
