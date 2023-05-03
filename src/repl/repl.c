@@ -1,4 +1,4 @@
-#include "../parser/parser.h"
+#include "../evaluator/evaluator.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -68,7 +68,6 @@ void start() {
     char *buf = malloc(255);
     *buf = '\0';
 
-
     Lexer *l = new_lexer(input_buf->buffer);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
@@ -78,9 +77,12 @@ void start() {
       free_parser(p);
       continue;
     }
-    program_string(buf, program);
 
-    printf("%s\n", buf);
+    Object *evaluated = eval_program(program);
+    if (evaluated != NULL) {
+      inspect_object(buf, evaluated);
+      printf("%s\n", buf);
+    }
 
     close_input_buffer(input_buf);
     free(buf);
