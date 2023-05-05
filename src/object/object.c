@@ -13,6 +13,10 @@ void inspect_boolean_object(char *buf, Boolean *obj) {
   }
 }
 
+void inspect_return_object(char *buf, ReturnValue *obj) {
+  return inspect_object(buf, obj->value);
+}
+
 void inspect_null_object(char *buf) {
   sprintf(buf, "null");
 }
@@ -23,6 +27,8 @@ void inspect_object(char *buf, Object *obj) {
     return inspect_integer_object(buf, obj->object);
   case BOOLEAN_OBJ:
     return inspect_boolean_object(buf, obj->object);
+  case RETURN_OBJ:
+    return inspect_return_object(buf, obj->object);
   case NULL_OBJ:
     return inspect_null_object(buf);
   }

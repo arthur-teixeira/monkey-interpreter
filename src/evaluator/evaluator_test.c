@@ -113,10 +113,66 @@ void test_bang_operator(void) {
   }
 }
 
+void test_if_else_expressions(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+      {"if (true) { 10 }", 10},
+      {"if (1) { 10 }", 10},
+      {"if (1 < 2) { 10 }", 10},
+      {"if (1 > 2) { 10 } else { 20 }", 20},
+      {"if (1 < 2) { 10 } else { 20 }", 10},
+  };
+
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+    test_integer_object(evaluated, tests[i].expected);
+  }
+}
+
+void test_null_if_else_expressions(void) {
+  char *tests[] = {
+    "if (false) { 10 }",
+    "if (1 > 2) { 10 }",
+  };
+
+  for (uint32_t i = 0; i < 2; i++) {
+    Object *evaluated = test_eval(tests[i]);
+    TEST_ASSERT_NULL(evaluated);
+  }
+}
+
+void test_return_statements(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+    {"return 10;", 10},
+    {"return 10; 9;", 10},
+    {"return 2 * 5; 9;", 10},
+    {"9; return 2 * 5; 9", 10},
+    {"if (10 > 1) { if (10 > 1) { return 10; } return 1; }", 10},
+    {"if (10 > 1) { if (1 > 10) { return 10; } return 1; }", 1},
+  };
+
+  for (uint32_t i = 0 ; i < sizeof(tests) / sizeof(struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+    test_integer_object(evaluated, tests[i].expected);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
   RUN_TEST(test_bang_operator);
+  RUN_TEST(test_if_else_expressions);
+  RUN_TEST(test_null_if_else_expressions);
+  RUN_TEST(test_return_statements);
   UNITY_END();
 }

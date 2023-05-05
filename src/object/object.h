@@ -4,6 +4,7 @@ typedef enum {
   INTEGER_OBJ,
   BOOLEAN_OBJ,
   NULL_OBJ,
+  RETURN_OBJ,
 } ObjectType;
 
 typedef struct {
@@ -20,6 +21,10 @@ typedef struct {
 typedef struct {
   bool value;
 } Boolean;
+
+typedef struct {
+  Object *value;
+} ReturnValue;
 
 typedef struct {
 } Null;
