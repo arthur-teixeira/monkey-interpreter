@@ -366,6 +366,30 @@ void test_if_expression(void) {
   TEST_ASSERT_NOT_NULL(expr->alternative);
 }
 
+void test_nested_if_expression(void) {
+  char *input = "if (10 > 1) { if (10 > 1) { return 10; } return 1; }";
+
+  Program *program = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, program->statements->size);
+
+  Statement *stmt = program->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
+
+  IfExpression *parent = stmt->expression->value;
+
+  Statement *nested_stmt = parent->consequence->statements->tail->value;
+
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, nested_stmt->type);
+  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
+
+  IfExpression *nested_if = nested_stmt->expression->value;
+
+  TEST_ASSERT_EQUAL(2, parent->consequence->statements->size);
+  TEST_ASSERT_EQUAL(1, nested_if->consequence->statements->size);
+}
+
 void test_function_literal(void) {
   char *input = "fn (x, y) { x + y; };";
 
@@ -478,5 +502,6 @@ int main() {
   RUN_TEST(test_function_literal);
   RUN_TEST(test_function_parameter_parsing);
   RUN_TEST(test_call_expression_parsing);
+  RUN_TEST(test_nested_if_expression);
   UNITY_END();
 }

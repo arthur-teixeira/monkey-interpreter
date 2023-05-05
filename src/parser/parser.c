@@ -94,7 +94,7 @@ Statement *parse_let_statement(Parser *p) {
   stmt->expression = parse_expression(p, LOWEST);
   parser_next_token(p);
 
-  if (cur_token_is(p, SEMICOLON)) {
+  if (peek_token_is(p, SEMICOLON)) {
     parser_next_token(p);
   }
 
@@ -116,7 +116,7 @@ Statement *parse_return_statement(Parser *p) {
   stmt->expression = parse_expression(p, LOWEST);
   parser_next_token(p);
 
-  if (cur_token_is(p, SEMICOLON)) {
+  if (peek_token_is(p, SEMICOLON)) {
     parser_next_token(p);
   }
 
