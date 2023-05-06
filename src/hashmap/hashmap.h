@@ -211,7 +211,7 @@ int hashmap_create(const hashmap_uint32_t initial_capacity,
   return hashmap_create_ex(options, out_hashmap);
 }
 
-int hashmap_create_ex(struct hashmap_create_options_s options,
+inline int hashmap_create_ex(struct hashmap_create_options_s options,
                       struct hashmap_s *const out_hashmap) {
   if (2 > options.initial_capacity) {
     options.initial_capacity = 2;

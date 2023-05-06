@@ -56,8 +56,10 @@ void print_parser_errors(Parser *p) {
 }
 
 void start() {
+  InputBuffer *input_buf = new_input_buffer();
+  Environment *env = new_environment();
+
   while (true) {
-    InputBuffer *input_buf = new_input_buffer();
     printf(PROMPT);
     read_input(input_buf);
 
@@ -78,14 +80,14 @@ void start() {
       continue;
     }
 
-    Object *evaluated = eval_program(program);
+    Object *evaluated = eval_program(program, env);
     if (evaluated != NULL) {
       inspect_object(buf, evaluated);
       printf("%s\n", buf);
     }
 
-    close_input_buffer(input_buf);
     free(buf);
     free_parser(p);
   }
+  close_input_buffer(input_buf);
 }

@@ -12,10 +12,13 @@ Object *test_eval(char *input) {
   Parser *parser = new_parser(lexer);
   Program *program = parse_program(parser);
 
-  Object *result = eval_program(program);
+  Environment *env = new_environment();
+
+  Object *result = eval_program(program, env);
 
   free_parser(parser);
   free_program(program);
+  free_environment(env);
 
   return result;
 }
@@ -202,6 +205,10 @@ void test_error_handling(void) {
     {
       "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }",
       "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "foobar;",
+      "undeclared identifier 'foobar'",
     }
   };
 
@@ -216,6 +223,24 @@ void test_error_handling(void) {
   }
 }
 
+void test_let_statements(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+    {"let a = 5; a;", 5},
+    {"let a = 5 * 5; a;", 25},
+    {"let a = 5; let b = a; b;", 5},
+    {"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+  };
+
+  for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    test_integer_object(test_eval(tests[i].input), tests[i].expected);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -225,5 +250,6 @@ int main() {
   RUN_TEST(test_null_if_else_expressions);
   RUN_TEST(test_return_statements);
   RUN_TEST(test_error_handling);
+  RUN_TEST(test_let_statements);
   UNITY_END();
 }

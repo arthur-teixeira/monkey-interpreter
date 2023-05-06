@@ -33,12 +33,12 @@ bool is_error(Object *obj) {
   return false;
 }
 
-Object *eval_block_statement(LinkedList *statements) {
+Object *eval_block_statement(LinkedList *statements, Environment *env) {
   Object *result;
 
   Node *cur_node = statements->tail;
   while (cur_node != NULL) {
-    result = eval(cur_node->value);
+    result = eval(cur_node->value, env);
 
     if (result != NULL 
         && (result->type == RETURN_OBJ
@@ -52,12 +52,12 @@ Object *eval_block_statement(LinkedList *statements) {
   return result;
 }
 
-Object *eval_program(Program *program) {
+Object *eval_program(Program *program, Environment *env) {
   Object *result;
 
   Node *cur_node = program->statements->tail;
   while (cur_node != NULL) {
-    result = eval(cur_node->value);
+    result = eval(cur_node->value, env);
 
     if (result != NULL && result->type == RETURN_OBJ) {
       ReturnValue *ret = result->object;
@@ -234,55 +234,41 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   return obj;
 }
 
-Object *eval_prefix_expression(PrefixExpression *expr) {
-  Object *right = eval_expression(expr->right);
+Object *eval_prefix_expression(PrefixExpression *expr, Environment *env) {
+  Object *right = eval_expression(expr->right, env);
   if (is_error(right)) {
     return right;
   }
 
   if (strcmp(expr->operator, "!") == 0) {
-    Object *result = eval_bang_operator_expression(right);
-    free_object(right);
-
-    return result;
+    return eval_bang_operator_expression(right);
   }
 
   if (strcmp(expr->operator, "-") == 0) {
-    Object *result = eval_minus_operator_expression(right);
-    free_object(right);
-
-    return result;
+    return eval_minus_operator_expression(right);
   }
 
   char error_message[255];
   sprintf(error_message, "unknown operator: %s%s", expr->operator,
           ObjectTypeString[right->type]);
-  free_object(right);
 
   return new_error(error_message);
 }
 
-Object *eval_infix_expression(InfixExpression *expr) {
-  Object *right = eval_expression(expr->right);
-  Object *left = eval_expression(expr->left);
+Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
+  Object *right = eval_expression(expr->right, env);
+  Object *left = eval_expression(expr->left, env);
 
   if (is_error(left)) {
-    free_object(right);
     return left;
   }
 
   if (is_error(right)) {
-    free_object(left);
     return right;
   }
 
   if (right->type == INTEGER_OBJ && left->type == INTEGER_OBJ) {
-    Object *result = eval_integer_infix_expression(left, expr->operator, right);
-
-    free_object(right);
-    free_object(left);
-
-    return result;
+    return eval_integer_infix_expression(left, expr->operator, right);
   }
 
   // These work because we only have a single instance for the true and false
@@ -306,8 +292,6 @@ Object *eval_infix_expression(InfixExpression *expr) {
             ObjectTypeString[left->type], expr->operator,
             ObjectTypeString[right->type]);
   }
-  free_object(right);
-  free_object(left);
 
   return new_error(error_message);
 }
@@ -320,40 +304,53 @@ bool is_truthy(Object *obj) {
   return true;
 }
 
-Object *eval_if_expression(IfExpression *expr) {
-  Object *condition = eval_expression(expr->condition);
+Object *eval_if_expression(IfExpression *expr, Environment *env) {
+  Object *condition = eval_expression(expr->condition, env);
 
   if (is_error(condition)) {
     return condition;
   }
 
   if (is_truthy(condition)) {
-    return eval_block_statement(expr->consequence->statements);
+    return eval_block_statement(expr->consequence->statements, env);
   } else if (expr->alternative != NULL) {
-    return eval_block_statement(expr->alternative->statements);
+    return eval_block_statement(expr->alternative->statements, env);
   }
 
   return NULL;
 }
 
-Object *eval_expression(Expression *expr) {
+Object *eval_identifier(Identifier *ident, Environment *env) {
+  Object *val = env_get(env, ident->value);
+  if (val == NULL) {
+    char error_message[255];
+    sprintf(error_message, "undeclared identifier '%s'", ident->value);
+    return new_error(error_message);
+  }
+
+  return val;
+}
+
+Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
     return new_integer(expr->value);
   case BOOL_EXPR:
     return new_boolean(expr->value);
   case PREFIX_EXPR:
-    return eval_prefix_expression(expr->value);
+    return eval_prefix_expression(expr->value, env);
   case INFIX_EXPR:
-    return eval_infix_expression(expr->value);
+    return eval_infix_expression(expr->value, env);
   case IF_EXPR:
-    return eval_if_expression(expr->value);
+    return eval_if_expression(expr->value, env);
+  case IDENT_EXPR: 
+    return eval_identifier(expr->value, env);
   default:
     assert(0 && "not implemented");
   }
 }
 
-Object *eval_return_statement(Expression *expr) {
+Object *eval_return_statement(Expression *expr, Environment *env) {
   Object *ret_obj = malloc(sizeof(Object));
   assert(ret_obj != NULL && "error allocating memory for return object");
   ret_obj->type = RETURN_OBJ;
@@ -361,7 +358,7 @@ Object *eval_return_statement(Expression *expr) {
   ReturnValue *ret = malloc(sizeof(ReturnValue));
   assert(ret != NULL && "error allocating memory for return value");
 
-  ret->value = eval_expression(expr);
+  ret->value = eval_expression(expr, env);
 
   ret_obj->object = ret;
 
@@ -374,15 +371,24 @@ Object *eval_return_statement(Expression *expr) {
   return ret_obj;
 }
 
-Object *eval(Statement *stmt) {
+Object *eval_let_statement(Statement *stmt, Environment *env) {
+  Object *val = eval_expression(stmt->expression, env);
+  if (is_error(val)) {
+    return val;
+  }
+  env_set(env, stmt->name->value, val);
+
+  return val; // TODO: ????
+}
+
+Object *eval(Statement *stmt, Environment *env) {
   switch (stmt->type) {
   case EXPR_STATEMENT:
-    return eval_expression(stmt->expression);
+    return eval_expression(stmt->expression, env);
   case RETURN_STATEMENT:
-    return eval_return_statement(stmt->expression);
+    return eval_return_statement(stmt->expression, env);
   case LET_STATEMENT:
-    assert(0 && "not implemented");
-    return NULL;
+    return eval_let_statement(stmt, env);
   default:
     assert(0 && "unreachable");
     return NULL;
