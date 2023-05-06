@@ -6,8 +6,31 @@
 #include <string.h>
 
 void free_object(Object *obj) {
-  free(obj->object);
-  free(obj);
+  if (obj->type != BOOLEAN_OBJ) {
+    free(obj->object);
+    free(obj);
+  }
+}
+
+Object *new_error(char *message) {
+  Object *error_obj = malloc(sizeof(Object));
+  assert(error_obj != NULL && "Error allocating memory for error object");
+  error_obj->type = ERROR_OBJ;
+
+  Error *err = malloc(sizeof(Error));
+  assert(err != NULL && "Error allocating memory for error");
+  err->message = strdup(message);
+  error_obj->object = err;
+
+  return error_obj;
+}
+
+bool is_error(Object *obj) {
+  if (obj != NULL) {
+    return obj->type == ERROR_OBJ;
+  }
+
+  return false;
 }
 
 Object *eval_block_statement(LinkedList *statements) {
@@ -17,7 +40,10 @@ Object *eval_block_statement(LinkedList *statements) {
   while (cur_node != NULL) {
     result = eval(cur_node->value);
 
-    if (result != NULL && result->type == RETURN_OBJ) {
+    if (result != NULL 
+        && (result->type == RETURN_OBJ
+        || result->type == ERROR_OBJ)
+    ) {
       return result;
     }
     cur_node = cur_node->next;
@@ -40,11 +66,14 @@ Object *eval_program(Program *program) {
       return ret_value;
     }
 
+    if (result != NULL && result->type == ERROR_OBJ) {
+      return result;
+    }
+
     cur_node = cur_node->next;
   }
 
   return result;
-
 }
 
 Object *new_integer(IntegerLiteral *lit) {
@@ -126,8 +155,13 @@ Object *eval_bang_operator_expression(Object *right) {
 }
 
 Object *eval_minus_operator_expression(Object *right) {
-  assert(right->type == INTEGER_OBJ &&
-         "should be an integer"); // TODO: should be a parser error as well
+  if (right->type != INTEGER_OBJ) {
+    char error_message[255];
+    sprintf(error_message, "unknown operator: -%s",
+            ObjectTypeString[right->type]);
+
+    return new_error(error_message);
+  };
 
   Integer *intt = right->object;
 
@@ -144,8 +178,12 @@ Object *eval_minus_operator_expression(Object *right) {
   return new_int_obj;
 }
 
-Object *eval_integer_boolean_operation(Integer *left, char *operator,
-                                       Integer * right) {
+Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
+                                       Object * right_obj) {
+
+  Integer *left = left_obj->object;
+  Integer *right = right_obj->object;
+
   if (strcmp(operator, ">") == 0) {
     return native_bool_to_boolean_object(left->value > right->value);
   } else if (strcmp(operator, "<") == 0) {
@@ -154,19 +192,28 @@ Object *eval_integer_boolean_operation(Integer *left, char *operator,
     return native_bool_to_boolean_object(left->value != right->value);
   } else if (strcmp(operator, "==") == 0) {
     return native_bool_to_boolean_object(left->value == right->value);
-  } else {
-    return NULL;
   }
+
+  char error_message[255];
+
+  sprintf(error_message, "unknown operator: %s %s %s",
+          ObjectTypeString[left_obj->type], operator,
+          ObjectTypeString[right_obj->type]);
+
+  return new_error(error_message);
 }
 
-Object *eval_integer_infix_expression(Integer *left, char *operator,
-                                      Integer * right) {
+Object *eval_integer_infix_expression(Object *left_obj, char *operator,
+                                      Object * right_obj) {
   Object *obj = malloc(sizeof(Object));
   assert(obj != NULL && "error allocating memory for infix integer");
   obj->type = INTEGER_OBJ;
 
   Integer *evaluated = malloc(sizeof(Integer));
   assert(evaluated != NULL && "error allocating memory for evaluated integer");
+
+  Integer *left = left_obj->object;
+  Integer *right = right_obj->object;
 
   // TODO: add %, >=, <=
   if (strcmp(operator, "+") == 0) {
@@ -180,7 +227,7 @@ Object *eval_integer_infix_expression(Integer *left, char *operator,
   } else {
     free(obj);
     free(evaluated);
-    return eval_integer_boolean_operation(left, operator, right);
+    return eval_integer_boolean_operation(left_obj, operator, right_obj);
   }
 
   obj->object = evaluated;
@@ -189,36 +236,80 @@ Object *eval_integer_infix_expression(Integer *left, char *operator,
 
 Object *eval_prefix_expression(PrefixExpression *expr) {
   Object *right = eval_expression(expr->right);
+  if (is_error(right)) {
+    return right;
+  }
 
   if (strcmp(expr->operator, "!") == 0) {
-    return eval_bang_operator_expression(right);
+    Object *result = eval_bang_operator_expression(right);
+    free_object(right);
+
+    return result;
   }
 
   if (strcmp(expr->operator, "-") == 0) {
-    return eval_minus_operator_expression(right);
+    Object *result = eval_minus_operator_expression(right);
+    free_object(right);
+
+    return result;
   }
 
-  assert(0 && "unreachable");
+  char error_message[255];
+  sprintf(error_message, "unknown operator: %s%s", expr->operator,
+          ObjectTypeString[right->type]);
+  free_object(right);
+
+  return new_error(error_message);
 }
 
 Object *eval_infix_expression(InfixExpression *expr) {
   Object *right = eval_expression(expr->right);
   Object *left = eval_expression(expr->left);
 
+  if (is_error(left)) {
+    free_object(right);
+    return left;
+  }
+
+  if (is_error(right)) {
+    free_object(left);
+    return right;
+  }
+
   if (right->type == INTEGER_OBJ && left->type == INTEGER_OBJ) {
-    return eval_integer_infix_expression(left->object, expr->operator,
-                                         right->object);
+    Object *result = eval_integer_infix_expression(left, expr->operator, right);
+
+    free_object(right);
+    free_object(left);
+
+    return result;
   }
 
   // These work because we only have a single instance for the true and false
   // objects, so we can simply do a pointer comparison.
-  if (strcmp(expr->operator, "==") == 0) { 
+  if (strcmp(expr->operator, "==") == 0) {
+    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
     return native_bool_to_boolean_object(right == left);
   } else if (strcmp(expr->operator, "!=") == 0) {
+    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
     return native_bool_to_boolean_object(right != left);
   }
 
-  return NULL;
+  char error_message[255];
+  if (right->type != left->type) {
+    sprintf(error_message, "type mismatch: %s %s %s",
+            ObjectTypeString[left->type], expr->operator,
+            ObjectTypeString[right->type]);
+
+  } else {
+    sprintf(error_message, "unknown operator: %s %s %s",
+            ObjectTypeString[left->type], expr->operator,
+            ObjectTypeString[right->type]);
+  }
+  free_object(right);
+  free_object(left);
+
+  return new_error(error_message);
 }
 
 bool is_truthy(Object *obj) {
@@ -231,6 +322,10 @@ bool is_truthy(Object *obj) {
 
 Object *eval_if_expression(IfExpression *expr) {
   Object *condition = eval_expression(expr->condition);
+
+  if (is_error(condition)) {
+    return condition;
+  }
 
   if (is_truthy(condition)) {
     return eval_block_statement(expr->consequence->statements);
@@ -269,6 +364,13 @@ Object *eval_return_statement(Expression *expr) {
   ret->value = eval_expression(expr);
 
   ret_obj->object = ret;
+
+  if (is_error(ret->value)) {
+    Object *err = ret->value;
+    free(ret_obj);
+
+    return err;
+  }
   return ret_obj;
 }
 

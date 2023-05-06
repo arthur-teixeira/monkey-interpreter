@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ARRAY_LEN(arr, type) sizeof(arr) / sizeof(type)
+
 Object *test_eval(char *input) {
   Lexer *lexer = new_lexer(input);
   Parser *parser = new_parser(lexer);
@@ -166,6 +168,54 @@ void test_return_statements(void) {
   }
 }
 
+void test_error_handling(void) {
+  struct testCase {
+    char *input;
+    char *expected_message;
+  };
+
+  struct testCase tests[] = {
+    {
+      "5 + true;",
+      "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "5 + true; 5;",
+      "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "-true;",
+      "unknown operator: -BOOLEAN_OBJ",
+    },
+    {
+      "true + false;",
+      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "5; true + false; 5;",
+      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "if (10 > 1) { true + false; }",
+      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+    },
+    {
+      "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }",
+      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+    }
+  };
+
+  for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+    TEST_ASSERT_NOT_NULL(evaluated);
+
+    TEST_ASSERT_EQUAL(ERROR_OBJ, evaluated->type);
+
+    Error *error_obj = evaluated->object;
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected_message, error_obj->message);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -174,5 +224,6 @@ int main() {
   RUN_TEST(test_if_else_expressions);
   RUN_TEST(test_null_if_else_expressions);
   RUN_TEST(test_return_statements);
+  RUN_TEST(test_error_handling);
   UNITY_END();
 }

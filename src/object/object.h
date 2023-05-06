@@ -5,7 +5,10 @@ typedef enum {
   BOOLEAN_OBJ,
   NULL_OBJ,
   RETURN_OBJ,
+  ERROR_OBJ,
 } ObjectType;
+
+extern const char *ObjectTypeString[];
 
 typedef struct {
  ObjectType type; 
@@ -25,6 +28,10 @@ typedef struct {
 typedef struct {
   Object *value;
 } ReturnValue;
+
+typedef struct {
+  char *message;
+} Error;
 
 typedef struct {
 } Null;
