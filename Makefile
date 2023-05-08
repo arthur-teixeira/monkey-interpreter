@@ -20,26 +20,34 @@ $(BINDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 $(BINDIR)/$(BINNAME): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
+clean:
+	rm -rf $(BINDIR)/*
+
+run: clean all test
+
+
 TESTFILES := $(shell find ./src -name '*_test.c' -type f)
+
+.ONESHELL:
 
 test:
 	@echo "Building tests..."
+	failed=""
 	@for testfile in $(TESTFILES); do \
 		testname=$$(basename $$testfile .c); \
 		echo "Building $$testname..."; \
 		$(CC) $(CFLAGS) $(filter-out ./bin/main.o, $(OBJS)) $$testfile -o $(BINDIR)/$$testname; \
 		echo "Running $$testname..."; \
-		if $(BINDIR)/$$testname; then \
-			echo "$$testname PASSED"; \
-		else \
-			echo "$$testname FAILED"; \
-			exit 1; \
+		if ! $(BINDIR)/$$testname; then \
+			failed="$$failed\n$$testname"; \
 		fi; \
-	done
+	done; \
 
-clean:
-	rm -rf $(BINDIR)/*
-
-run: clean all test
+	@if [ -n "$$failed" ]; then \
+		echo "The following tests failed: $$failed"; \
+		exit 1; \
+	else \
+		echo "All tests passed!"; \
+	fi
 
 .PHONY: all test clean run
