@@ -63,7 +63,7 @@ void block_to_string(char *buf, BlockStatement *block) {
   Node *cur_node = block->statements->tail;
 
   while (cur_node != NULL) {
-    value_to_string(buf, cur_node->value);
+    stmt_to_string(buf, cur_node->value);
     cur_node = cur_node->next;
   }
 }
