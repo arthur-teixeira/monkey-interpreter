@@ -2,10 +2,18 @@ import subprocess
 import os
 import time
 import signal
-
+import sys
 
 SRC_FOLDER_NAME = './src'
 COMPILE_CMD = 'make all'
+TEST_CMD = 'make run'
+
+ARGC = len(sys.argv)
+TESTING = False
+
+if (ARGC > 1):
+    TESTING = sys.argv[1] == '-t'
+
 
 path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(path)
@@ -24,19 +32,32 @@ def has_changes():
 
 
 def recompile():
-    cmd = COMPILE_CMD.split()
+    cmd = None
+    if (TESTING):
+        cmd = TEST_CMD.split()
+    else:
+        cmd = COMPILE_CMD.split()
     subprocess.call(cmd)
 
 
 recompile()
 
-process = subprocess.Popen(['./bin/program'])
 
-while True:
-    if (has_changes()):
+def get_new_process():
+    return subprocess.Popen(['./bin/program']) if not TESTING else None
+
+
+def restart_process(process):
+    if process:
         os.kill(process.pid, signal.SIGINT)
+    recompile()
 
-        recompile()
-        process = subprocess.Popen(['./bin/program'])
+
+process = get_new_process()
+while True:
+    if has_changes():
+        subprocess.call(['clear'])
+        restart_process(process)
+        process = get_new_process()
 
         time.sleep(1)
