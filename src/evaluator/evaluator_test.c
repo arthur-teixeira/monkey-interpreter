@@ -241,6 +241,30 @@ void test_let_statements(void) {
   }
 }
 
+void test_function_object(void) {
+  char *input = "fn(x) { x + 2; };";
+
+  Object *evaluated = test_eval(input);
+  TEST_ASSERT_EQUAL(FUNCTION_OBJ, evaluated->type);
+
+  Function *fn = evaluated->object;
+
+  TEST_ASSERT_EQUAL(1, fn->parameters->size);
+
+  Identifier *param = fn->parameters->tail->value;
+  char *buf = malloc(100);
+  ident_expr_to_string(buf, param);
+
+  TEST_ASSERT_EQUAL_STRING("x", buf);
+
+  memset(buf, 0, 100);
+
+  block_to_string(buf, fn->body);
+  TEST_ASSERT_EQUAL_STRING("(x + 2)", buf);
+
+  free(buf);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -251,5 +275,6 @@ int main() {
   RUN_TEST(test_return_statements);
   RUN_TEST(test_error_handling);
   RUN_TEST(test_let_statements);
+  RUN_TEST(test_function_object);
   UNITY_END();
 }

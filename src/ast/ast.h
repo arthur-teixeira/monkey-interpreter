@@ -115,3 +115,5 @@ Program *new_program(void);
 void free_program(Program *p);
 
 void program_string(char *, Program *);
+void ident_expr_to_string(char *buf, Identifier *expr);
+void block_to_string(char *buf, BlockStatement *block);

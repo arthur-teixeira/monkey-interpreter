@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include "../environment/environment.h"
-#include "../ast/ast.h"
+#include "../parser/parser.h"
 
 typedef enum {
   INTEGER_OBJ,

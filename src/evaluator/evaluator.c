@@ -331,6 +331,22 @@ Object *eval_identifier(Identifier *ident, Environment *env) {
   return val;
 }
 
+Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
+  Object *fn_obj = malloc(sizeof(Object));
+  fn_obj->type = FUNCTION_OBJ;
+
+  Function *fn = malloc(sizeof(Function));
+  fn->env = env;
+  
+  // should I memcpy this or simply use the same pointers?
+  fn->body = lit->body;
+  fn->parameters = lit->parameters;
+
+  fn_obj->object = fn;
+
+  return fn_obj;
+}
+
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
@@ -345,6 +361,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_if_expression(expr->value, env);
   case IDENT_EXPR: 
     return eval_identifier(expr->value, env);
+  case FN_EXPR:
+    return eval_function_literal(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

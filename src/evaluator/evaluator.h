@@ -1,5 +1,4 @@
-#include "../parser/parser.h"
-#include "../environment/environment.h"
+#include "../object/object.h"
 
 Object *eval(Statement *stmt, Environment *env);
 Object *eval_program(Program *, Environment *env);
