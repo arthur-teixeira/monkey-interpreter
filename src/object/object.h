@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include "../environment/environment.h"
+#include "../ast/ast.h"
 
 typedef enum {
   INTEGER_OBJ,
@@ -6,6 +8,7 @@ typedef enum {
   NULL_OBJ,
   RETURN_OBJ,
   ERROR_OBJ,
+  FUNCTION_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -32,6 +35,12 @@ typedef struct {
 typedef struct {
   char *message;
 } Error;
+
+typedef struct {
+  LinkedList *parameters;
+  BlockStatement *body;
+  Environment *env;
+} Function;
 
 typedef struct {
 } Null;

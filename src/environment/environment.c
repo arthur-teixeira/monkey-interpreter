@@ -16,11 +16,11 @@ Environment *new_environment() {
   return env;
 }
 
-Object *env_get(Environment *env, char *name) {
+void *env_get(Environment *env, char *name) {
   return hashmap_get(env->store, name, strlen(name));
 }
 
-Object *env_set(Environment *env, char *name, Object *value) {
+void *env_set(Environment *env, char *name, void *value) {
   hashmap_put(env->store, name, strlen(name),
               value); // TODO: handle error as runtime error
   return value;

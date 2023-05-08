@@ -1,5 +1,6 @@
 #include "./object.h"
 #include <stdio.h>
+#include "../str_utils/str_utils.h"
 
 const char *ObjectTypeString[] = {
   "INTEGER_OBJ",
@@ -35,6 +36,26 @@ void inspect_error_object(char *buf, Error *obj) {
   sprintf(buf, "ERROR: %s\n", obj->message);
 }
 
+void inspect_function_object(char *buf, Function *obj) {
+ buf += sprintf(buf, "fn (");
+ 
+ Node *cur_node = obj->parameters->tail;
+ int i = 0;
+ while (cur_node != NULL) {
+   Identifier *ident = cur_node->value;
+
+   buf += sprintf(buf, "%s", ident->value);
+
+   if (++i < obj->parameters->size) {
+     buf += sprintf(buf, ", ");
+   }
+
+   cur_node = cur_node->next;
+ }
+
+ buf += sprintf(buf, ")");
+}
+
 void inspect_object(char *buf, Object *obj) {
   switch (obj->type) {
   case INTEGER_OBJ:
@@ -47,5 +68,7 @@ void inspect_object(char *buf, Object *obj) {
     return inspect_null_object(buf);
   case ERROR_OBJ:
     return inspect_error_object(buf, obj->object);
+  case FUNCTION_OBJ:
+    return inspect_function_object(buf, obj->object);
   }
 }

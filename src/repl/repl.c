@@ -77,6 +77,7 @@ void start() {
       print_parser_errors(p);
       free(buf);
       free_parser(p);
+      free_program(program);
       continue;
     }
 
@@ -88,6 +89,7 @@ void start() {
 
     free(buf);
     free_parser(p);
+    free_program(program);
   }
   close_input_buffer(input_buf);
 }

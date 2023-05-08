@@ -378,7 +378,7 @@ Object *eval_let_statement(Statement *stmt, Environment *env) {
   }
   env_set(env, stmt->name->value, val);
 
-  return val; // TODO: ????
+  return NULL;
 }
 
 Object *eval(Statement *stmt, Environment *env) {
