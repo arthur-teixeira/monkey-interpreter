@@ -29,7 +29,12 @@ test:
 		echo "Building $$testname..."; \
 		$(CC) $(CFLAGS) $(filter-out ./bin/main.o, $(OBJS)) $$testfile -o $(BINDIR)/$$testname; \
 		echo "Running $$testname..."; \
-		$(BINDIR)/$$testname; \
+		if $(BINDIR)/$$testname; then \
+			echo "$$testname PASSED"; \
+		else \
+			echo "$$testname FAILED"; \
+			exit 1; \
+		fi; \
 	done
 
 clean:
