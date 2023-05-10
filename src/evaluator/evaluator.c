@@ -347,6 +347,95 @@ Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
   return fn_obj;
 }
 
+LinkedList *eval_expressions(LinkedList *expressions, Environment *env) {
+  LinkedList *evaluated = new_list();
+
+  Node *cur_expression_node = expressions->tail;
+  while(cur_expression_node != NULL) {
+    Expression *cur_expression = cur_expression_node->value;
+    Object *evaluated_expression = eval_expression(cur_expression, env);
+
+    if (is_error(evaluated_expression)) {
+      free_list(evaluated);
+
+      LinkedList *list_with_error = new_list();
+      append(list_with_error, evaluated);
+      return list_with_error;
+    }
+
+    append(evaluated, evaluated_expression);
+
+    cur_expression_node = cur_expression_node->next;
+  }
+
+  return evaluated;
+}
+
+Environment *extend_function_env(Function *fn, LinkedList *args) {
+  assert(args->size == fn->parameters->size);
+
+  Environment *env = new_enclosed_environment(fn->env);
+  Node *cur_argument_node = args->tail; // Object *
+  Node *cur_parameter_node = fn->parameters->tail; //Expression *
+
+  while (cur_parameter_node != NULL  && cur_parameter_node != NULL) {
+    Expression *cur_parameter = cur_parameter_node->value;
+    printf("type is %d\n", cur_parameter->type);
+    assert(cur_parameter->type == IDENT_EXPR);
+    Identifier *parameter_ident = cur_parameter->value;
+
+    env_set(env, parameter_ident->value, cur_argument_node->value);
+
+    cur_argument_node = cur_argument_node->next;
+    cur_parameter_node = cur_parameter_node->next;
+  }
+
+  return env;
+}
+
+Object *unwrap_return_value(Object *evaluated) {
+  if (evaluated->type == RETURN_OBJ) {
+    ReturnValue *ret = evaluated->object;
+    return ret->value;
+  }
+
+  return evaluated;
+}
+
+Object *apply_function(Object *fn_obj, LinkedList *args) {
+  if (fn_obj->type != FUNCTION_OBJ) {
+    char err_msg[255];
+    sprintf(err_msg, "Not a function: %s", ObjectTypeString[FUNCTION_OBJ]);
+    return new_error(err_msg);
+  }
+
+  Function *fn = fn_obj->object;
+
+  Environment *extended_env = extend_function_env(fn, args);
+  Object *evaluated = eval_block_statement(fn->body->statements, extended_env);
+
+  return unwrap_return_value(evaluated);
+}
+
+Object *eval_function_call(CallExpression *call, Environment *env) {
+  Object *fn = eval_expression(call->function, env);
+  if (is_error(fn)) {
+    return fn;
+  }
+
+  LinkedList *args = eval_expressions(call->arguments, env);
+  if (args->size == 1 && is_error(args->tail->value)) {
+    free_object(fn);
+    Object *ret_value = malloc(sizeof(Object));
+
+    memcpy(args->tail->value, ret_value, sizeof(Object));
+    free_list(args);
+    return ret_value;
+  }
+
+  return apply_function(fn, args);
+}
+
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
@@ -363,6 +452,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_identifier(expr->value, env);
   case FN_EXPR:
     return eval_function_literal(expr->value, env);
+  case CALL_EXPR:
+    return eval_function_call(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

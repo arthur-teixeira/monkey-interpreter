@@ -265,6 +265,26 @@ void test_function_object(void) {
   free(buf);
 }
 
+void test_function_application(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+    {"let identity = fn(x) { x; }; identity(5);", 5},
+    {"let identity = fn(x) { return x; }; identity(5);", 5},
+    {"let double = fn(x) { 2 * x; }; double(5);", 10},
+    {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+    {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+    {"fn(x) { x; }(5)", 5},
+  };
+
+  for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    test_integer_object(test_eval(tests[i].input), tests[i].expected);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -276,5 +296,6 @@ int main() {
   RUN_TEST(test_error_handling);
   RUN_TEST(test_let_statements);
   RUN_TEST(test_function_object);
-  UNITY_END();
+  RUN_TEST(test_function_application);
+  return UNITY_END();
 }

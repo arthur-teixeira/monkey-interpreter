@@ -72,5 +72,5 @@ void test_next_token(void) {
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_next_token);
-  UNITY_END();
+  return UNITY_END();
 }

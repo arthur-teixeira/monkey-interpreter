@@ -44,5 +44,5 @@ void test_ast_as_string(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_ast_as_string);
-  UNITY_END();
+  return UNITY_END();
 }

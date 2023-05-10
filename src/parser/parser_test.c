@@ -503,5 +503,5 @@ int main() {
   RUN_TEST(test_function_parameter_parsing);
   RUN_TEST(test_call_expression_parsing);
   RUN_TEST(test_nested_if_expression);
-  UNITY_END();
+  return UNITY_END();
 }
