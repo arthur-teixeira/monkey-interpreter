@@ -140,8 +140,8 @@ void test_if_else_expressions(void) {
 
 void test_null_if_else_expressions(void) {
   char *tests[] = {
-    "if (false) { 10 }",
-    "if (1 > 2) { 10 }",
+      "if (false) { 10 }",
+      "if (1 > 2) { 10 }",
   };
 
   for (uint32_t i = 0; i < 2; i++) {
@@ -157,15 +157,15 @@ void test_return_statements(void) {
   };
 
   struct testCase tests[] = {
-    {"return 10;", 10},
-    {"return 10; 9;", 10},
-    {"return 2 * 5; 9;", 10},
-    {"9; return 2 * 5; 9", 10},
-    {"if (10 > 1) { if (10 > 1) { return 10; } return 1; }", 10},
-    {"if (10 > 1) { if (1 > 10) { return 10; } return 1; }", 1},
+      {"return 10;", 10},
+      {"return 10; 9;", 10},
+      {"return 2 * 5; 9;", 10},
+      {"9; return 2 * 5; 9", 10},
+      {"if (10 > 1) { if (10 > 1) { return 10; } return 1; }", 10},
+      {"if (10 > 1) { if (1 > 10) { return 10; } return 1; }", 1},
   };
 
-  for (uint32_t i = 0 ; i < sizeof(tests) / sizeof(struct testCase); i++) {
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
     test_integer_object(evaluated, tests[i].expected);
   }
@@ -178,39 +178,38 @@ void test_error_handling(void) {
   };
 
   struct testCase tests[] = {
-    {
-      "5 + true;",
-      "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "5 + true; 5;",
-      "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "-true;",
-      "unknown operator: -BOOLEAN_OBJ",
-    },
-    {
-      "true + false;",
-      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "5; true + false; 5;",
-      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "if (10 > 1) { true + false; }",
-      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }",
-      "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
-    },
-    {
-      "foobar;",
-      "undeclared identifier 'foobar'",
-    }
-  };
+      {
+          "5 + true;",
+          "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "5 + true; 5;",
+          "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "-true;",
+          "unknown operator: -BOOLEAN_OBJ",
+      },
+      {
+          "true + false;",
+          "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "5; true + false; 5;",
+          "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "if (10 > 1) { true + false; }",
+          "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }",
+          "unknown operator: BOOLEAN_OBJ + BOOLEAN_OBJ",
+      },
+      {
+          "foobar;",
+          "undeclared identifier 'foobar'",
+      }};
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
@@ -230,10 +229,10 @@ void test_let_statements(void) {
   };
 
   struct testCase tests[] = {
-    {"let a = 5; a;", 5},
-    {"let a = 5 * 5; a;", 25},
-    {"let a = 5; let b = a; b;", 5},
-    {"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+      {"let a = 5; a;", 5},
+      {"let a = 5 * 5; a;", 25},
+      {"let a = 5; let b = a; b;", 5},
+      {"let a = 5; let b = a; let c = a + b + 5; c;", 15},
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
@@ -272,17 +271,28 @@ void test_function_application(void) {
   };
 
   struct testCase tests[] = {
-    {"let identity = fn(x) { x; }; identity(5);", 5},
-    {"let identity = fn(x) { return x; }; identity(5);", 5},
-    {"let double = fn(x) { 2 * x; }; double(5);", 10},
-    {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
-    {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
-    {"fn(x) { x; }(5)", 5},
+      {"let identity = fn(x) { x; }; identity(5);", 5},
+      {"let identity = fn(x) { return x; }; identity(5);", 5},
+      {"let double = fn(x) { 2 * x; }; double(5);", 10},
+      {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+      {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+      {"fn(x) { x; }(5)", 5},
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     test_integer_object(test_eval(tests[i].input), tests[i].expected);
   }
+}
+
+void test_closures(void) {
+  char *input = "let newAdder = fn(x) {   "
+                "  fn(y) { x + y };       "
+                "};                       "
+                "                         "
+                "let addTwo = newAdder(2);"
+                "addTwo(2);               ";
+
+  test_integer_object(test_eval(input), 4);
 }
 
 int main() {
@@ -297,5 +307,6 @@ int main() {
   RUN_TEST(test_let_statements);
   RUN_TEST(test_function_object);
   RUN_TEST(test_function_application);
+  RUN_TEST(test_closures);
   return UNITY_END();
 }
