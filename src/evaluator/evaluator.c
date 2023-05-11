@@ -376,13 +376,10 @@ Environment *extend_function_env(Function *fn, LinkedList *args) {
 
   Environment *env = new_enclosed_environment(fn->env);
   Node *cur_argument_node = args->tail; // Object *
-  Node *cur_parameter_node = fn->parameters->tail; //Expression *
+  Node *cur_parameter_node = fn->parameters->tail; //Identifier *
 
   while (cur_parameter_node != NULL  && cur_parameter_node != NULL) {
-    Expression *cur_parameter = cur_parameter_node->value;
-    printf("type is %d\n", cur_parameter->type);
-    assert(cur_parameter->type == IDENT_EXPR);
-    Identifier *parameter_ident = cur_parameter->value;
+    Identifier *parameter_ident = cur_parameter_node->value;
 
     env_set(env, parameter_ident->value, cur_argument_node->value);
 
