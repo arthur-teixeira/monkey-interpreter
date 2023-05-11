@@ -11,3 +11,10 @@ an exercise to learn the language.
 $ make
 $ ./bin/program
 ```
+
+## To-do list
+- [ ] Garbage collection
+- [ ] Interpret source files
+- [ ] For/while loops
+- [ ] Turing completeness proof (rule 110)
+- [ ] Concurrent GC
