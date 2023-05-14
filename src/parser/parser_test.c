@@ -488,6 +488,19 @@ void test_call_expression_parsing(void) {
   test_infix_expression(cur_node->value, "+", 4, 5); // 3rd argument
 }
 
+void test_string_literal_expression(void) {
+  char *input = "\"hello world\"";
+
+  Program *p = parse_and_check_errors(input);
+
+  TEST_ASSERT_EQUAL(1, p->statements->size);
+  Statement *stmt = p->statements->tail->value;
+  TEST_ASSERT_EQUAL(STRING_EXPR, stmt->expression->type);
+
+  StringLiteral *str = stmt->expression->value;
+  TEST_ASSERT_EQUAL_STRING("hello world", str->value);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -503,5 +516,6 @@ int main() {
   RUN_TEST(test_function_parameter_parsing);
   RUN_TEST(test_call_expression_parsing);
   RUN_TEST(test_nested_if_expression);
+  RUN_TEST(test_string_literal_expression);
   return UNITY_END();
 }

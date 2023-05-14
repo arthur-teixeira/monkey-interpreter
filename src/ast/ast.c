@@ -40,7 +40,7 @@ void program_token_literal(char *buf, Program *p) {
 
   Statement *value = (Statement *)p->statements->tail->value;
 
-  append_to_buf(buf, value->token.literal);
+  append_to_buf(&buf, value->token.literal);
 }
 
 Program *new_program(void) {
@@ -56,7 +56,7 @@ void free_program(Program *p) {
 }
 
 void ident_expr_to_string(char *buf, Identifier *expr) {
-  append_to_buf(buf, expr->value);
+  append_to_buf(&buf, expr->value);
 }
 
 void block_to_string(char *buf, BlockStatement *block) {
@@ -69,46 +69,50 @@ void block_to_string(char *buf, BlockStatement *block) {
 }
 
 void if_to_string(char *buf, IfExpression *expr) {
-  append_to_buf(buf, "if");
+  append_to_buf(&buf, "if");
   value_to_string(buf, expr->condition);
-  append_to_buf(buf, " ");
+  append_to_buf(&buf, " ");
   block_to_string(buf, expr->consequence);
 
   if (expr->alternative != NULL) {
-    append_to_buf(buf, "else");
+    append_to_buf(&buf, "else");
     block_to_string(buf, expr->alternative);
   }
 }
 
 void fn_to_string(char *buf, FunctionLiteral *fn) {
-  append_to_buf(buf, fn->token.literal);
-  append_to_buf(buf, "(");
+append_to_buf(&buf, fn->token.literal);
+  append_to_buf(&buf, "(");
 
   Node *cur_node = fn->parameters->tail;
   for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
     Identifier *ident = cur_node->value;
-    append_to_buf(buf, ident->value);
+    append_to_buf(&buf, ident->value);
 
     if (i < fn->parameters->size - 1) {
-      append_to_buf(buf, ", ");
+      append_to_buf(&buf, ", ");
     }
   }
 
-  append_to_buf(buf, ")");
+  append_to_buf(&buf, ")");
 }
 
 void call_to_string(char *buf, CallExpression *call) {
   value_to_string(buf, call->function);
-  append_to_buf(buf, "(");
+  append_to_buf(&buf, "(");
 
   Node *cur_node = call->arguments->tail;
   for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
     value_to_string(buf, cur_node->value);
     if (i < call->arguments->size - 1) {
-      append_to_buf(buf, ", ");
+      append_to_buf(&buf, ", ");
     }
   }
-  append_to_buf(buf, ")");
+  append_to_buf(&buf, ")");
+}
+
+void string_literal_to_string(char *buf, StringLiteral *str) {
+  append_to_buf(&buf, str->token.literal);
 }
 
 void value_to_string(char *buf, Expression *expr) {
@@ -129,16 +133,18 @@ void value_to_string(char *buf, Expression *expr) {
     return fn_to_string(buf, expr->value);
   case CALL_EXPR:
     return call_to_string(buf, expr->value);
+  case STRING_EXPR:
+    return string_literal_to_string(buf, expr->value);
   }
 }
 
 void let_to_string(char *buf, Statement *stmt) {
   assert(stmt->name != NULL);
 
-  append_to_buf(buf, stmt->token.literal);
-  append_to_buf(buf, " ");
-  append_to_buf(buf, stmt->name->value);
-  append_to_buf(buf, " = ");
+  append_to_buf(&buf, stmt->token.literal);
+  append_to_buf(&buf, " ");
+  append_to_buf(&buf, stmt->name->value);
+  append_to_buf(&buf, " = ");
 
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
@@ -146,7 +152,7 @@ void let_to_string(char *buf, Statement *stmt) {
 }
 
 void return_to_string(char *buf, Statement *stmt) {
-  append_to_buf(buf, stmt->token.literal);
+  append_to_buf(&buf, stmt->token.literal);
 
   if (stmt->expression != NULL) {
     value_to_string(buf, stmt->expression);
@@ -163,33 +169,32 @@ void int_to_string(char *buf, IntegerLiteral *lit) {
   char formatted[sizeof(long)];
   sprintf(formatted, "%ld", lit->value);
 
-  append_to_buf(buf, formatted);
+  append_to_buf(&buf, formatted);
 }
 
 void prefix_to_string(char *buf, PrefixExpression *expr) {
-  append_to_buf(buf, "(");
-  append_to_buf(buf, expr->operator);
+  append_to_buf(&buf, "(");
+  append_to_buf(&buf, expr->operator);
 
   value_to_string(buf, expr->right);
 
-  append_to_buf(buf, ")");
+  append_to_buf(&buf, ")");
 }
 
 void infix_to_string(char *buf, InfixExpression *expr) {
-
-  append_to_buf(buf, "(");
+  append_to_buf(&buf, "(");
   value_to_string(buf, expr->left);
 
-  append_to_buf(buf, " ");
-  append_to_buf(buf, expr->operator);
-  append_to_buf(buf, " ");
+  append_to_buf(&buf, " ");
+  append_to_buf(&buf, expr->operator);
+  append_to_buf(&buf, " ");
 
   value_to_string(buf, expr->right);
-  append_to_buf(buf, ")");
+  append_to_buf(&buf, ")");
 }
 
 void bool_to_string(char *buf, BooleanLiteral *expr) {
-  append_to_buf(buf, expr->token.literal);
+  append_to_buf(&buf, expr->token.literal);
 }
 
 void stmt_to_string(char *buf, Statement *stmt) {
@@ -210,5 +215,5 @@ void program_string(char *buf, Program *p) {
     stmt_to_string(buf, cur_stmt);
     cur = cur->next;
   }
-  append_to_buf(buf, ";\n");
+  append_to_buf(&buf, ";\n");
 }

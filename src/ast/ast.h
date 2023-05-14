@@ -31,6 +31,7 @@ typedef enum {
   IF_EXPR,
   FN_EXPR,
   CALL_EXPR,
+  STRING_EXPR,
 } ExprType;
 
 typedef struct {
@@ -86,6 +87,14 @@ typedef struct {
 } FunctionLiteral;
 
 void fn_to_string(char *, FunctionLiteral *);
+
+typedef struct {
+  Token token;
+  char *value;
+  uint32_t len;
+} StringLiteral;
+
+void string_literal_to_string(char *, StringLiteral *);
 
 typedef struct {
   Token token;

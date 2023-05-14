@@ -191,8 +191,8 @@ Expression *parse_identifier(Parser *p) {
 }
 
 void int_conversion_error(Parser *p) {
-  char *err_msg = malloc(255);
-  sprintf(err_msg, "Could not parse %s to an integer", p->cur_token.literal);
+  char *err_msg = malloc(MAX_LEN + 50);
+  snprintf(err_msg, MAX_LEN + 50, "Could not parse %s to an integer", p->cur_token.literal);
 
   append(p->errors, err_msg);
 }
@@ -467,6 +467,31 @@ Expression *parse_function_literal(Parser *p) {
   return expr;
 }
 
+StringLiteral *new_string_literal(Parser *p) {
+  StringLiteral *str = malloc(sizeof(StringLiteral));
+  assert(str != NULL && "error allocating memory for string literal");
+
+  str->token = p->cur_token;
+  str->len = strlen(p->cur_token.literal);
+  str->value = malloc(str->len + 1); // adding one to count for null terminator
+  assert(str->value != NULL &&
+         "error allocating memory for string literal value");
+  strlcpy(str->value, p->cur_token.literal, str->len + 1);
+
+  return str;
+}
+
+Expression *parse_string_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "Error allocating memory for string expression");
+  expr->type = STRING_EXPR;
+
+  StringLiteral *str = new_string_literal(p);
+  expr->value = str;
+
+  return expr;
+}
+
 InfixExpression *new_infix_expression(Parser *p) {
   InfixExpression *infix = malloc(sizeof(InfixExpression));
   if (infix == NULL) {
@@ -575,6 +600,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_grouped_expression, LPAREN);
   register_prefix_fn(p, &parse_if_expression, IF);
   register_prefix_fn(p, &parse_function_literal, FUNCTION);
+  register_prefix_fn(p, &parse_string_literal, STRING);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);

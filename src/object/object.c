@@ -8,6 +8,8 @@ const char *ObjectTypeString[] = {
   "NULL_OBJ",
   "RETURN_OBJ",
   "ERROR_OBJ",
+  "FUNCTION_OBJ",
+  "STRING_OBJ",
 };
 
 void inspect_integer_object(char *buf, Integer *obj) {
@@ -56,6 +58,10 @@ void inspect_function_object(char *buf, Function *obj) {
  buf += sprintf(buf, ")");
 }
 
+void inspect_string_object(char *buf, String *str) {
+  sprintf(buf, "%s", str->value);
+}
+
 void inspect_object(char *buf, Object *obj) {
   switch (obj->type) {
   case INTEGER_OBJ:
@@ -70,5 +76,7 @@ void inspect_object(char *buf, Object *obj) {
     return inspect_error_object(buf, obj->object);
   case FUNCTION_OBJ:
     return inspect_function_object(buf, obj->object);
+  case STRING_OBJ:
+    return inspect_string_object(buf, obj->object);
   }
 }

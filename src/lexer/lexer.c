@@ -81,6 +81,21 @@ void skip_whitespace(Lexer *l) {
     read_char(l);
 }
 
+void read_string(char *result, Lexer *l) {
+  int start = l->read_position;
+  for (;;) {
+    read_char(l);
+
+    if (l->ch == '"' || l->ch == 0) {
+      break;
+    }
+  }
+
+  int end = l->position;
+
+  slice(l->input, result, start, end);
+}
+
 Token next_token(Lexer *l) {
   Token tok;
 
@@ -116,6 +131,10 @@ Token next_token(Lexer *l) {
     break;
   case '+':
     tok = new_token(PLUS, l->ch);
+    break;
+  case '"':
+    tok.Type = STRING;
+    read_string(tok.literal, l);
     break;
   case '!':
     // TODO: refactor as an FSM

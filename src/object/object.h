@@ -9,6 +9,7 @@ typedef enum {
   RETURN_OBJ,
   ERROR_OBJ,
   FUNCTION_OBJ,
+  STRING_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -41,6 +42,11 @@ typedef struct {
   BlockStatement *body;
   Environment *env;
 } Function;
+
+typedef struct {
+  char *value;
+  uint32_t len;
+} String;
 
 typedef struct {
 } Null;

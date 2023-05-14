@@ -36,17 +36,17 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
   return (s - src - 1); /* count does not include NUL */
 }
 
-void append_to_buf(char *buf, char *src) {
-  if (strlen(buf) + strlen(src) + 1 >= sizeof(buf)) {
-    size_t new_size = max(sizeof(buf) + sizeof(src), sizeof(buf) *2);
-    char *new_buf = realloc(buf, new_size);
+void append_to_buf(char **buf, char *src) {
+  if (strlen(*buf) + strlen(src) + 1 >= sizeof(*buf)) {
+    size_t new_size = max(sizeof(*buf) + sizeof(src), sizeof(*buf) *2);
+    char *new_buf = realloc(*buf, new_size);
     if (new_buf == NULL) {
       printf("ERROR: Failed to reallocate string buffer: %s\n",
              strerror(errno));
       exit(EXIT_FAILURE);
     }
-    buf = new_buf;
+    *buf = new_buf;
   }
 
-  strcat(buf, src);
+  strcat(*buf, src);
 }

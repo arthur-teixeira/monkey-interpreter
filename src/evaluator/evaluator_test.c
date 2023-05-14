@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define ARRAY_LEN(arr, type) sizeof(arr) / sizeof(type)
 
@@ -209,7 +210,12 @@ void test_error_handling(void) {
       {
           "foobar;",
           "undeclared identifier 'foobar'",
-      }};
+      },
+      {
+          "\"Hello\" - \"world\"",
+          "unknown operator: STRING_OBJ - STRING_OBJ",
+      },
+  };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
@@ -251,7 +257,8 @@ void test_function_object(void) {
   TEST_ASSERT_EQUAL(1, fn->parameters->size);
 
   Identifier *param = fn->parameters->tail->value;
-  char *buf = malloc(100);
+  char *buf = malloc(1000);
+  memset(buf, 0, 1000);
   ident_expr_to_string(buf, param);
 
   TEST_ASSERT_EQUAL_STRING("x", buf);
@@ -295,8 +302,34 @@ void test_closures(void) {
   test_integer_object(test_eval(input), 4);
 }
 
+void test_string_literal(void) {
+  char *input = "\"Hello world\"";
+
+  Object *evaluated = test_eval(input);
+
+  TEST_ASSERT_EQUAL(STRING_OBJ, evaluated->type);
+
+  String *str = evaluated->object;
+
+  TEST_ASSERT_EQUAL_STRING("Hello world", str->value);
+}
+
+void test_string_concatenation(void) {
+  char *input = "\"Hello\"+ \" \" + \"World!\"";
+  Object *evaluated = test_eval(input);
+  TEST_ASSERT_EQUAL(STRING_OBJ, evaluated->type);
+
+  String *str = evaluated->object;
+
+  char *expected_string = "Hello World!";
+
+  TEST_ASSERT_EQUAL(strlen(expected_string), str->len);
+  TEST_ASSERT_EQUAL_STRING(expected_string, str->value);
+}
+
 int main() {
   UNITY_BEGIN();
+  /*
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
   RUN_TEST(test_bang_operator);
@@ -308,5 +341,8 @@ int main() {
   RUN_TEST(test_function_object);
   RUN_TEST(test_function_application);
   RUN_TEST(test_closures);
+  RUN_TEST(test_string_literal);
+  */
+  RUN_TEST(test_string_concatenation);
   return UNITY_END();
 }

@@ -1,4 +1,4 @@
-#define MAX_LEN 100
+#define MAX_LEN 1000
 
 #define FOREACH_TOKEN_TYPE(TYPE) \
   TYPE(ILLEGAL) \
@@ -29,6 +29,7 @@
   TYPE(ELSE) \
   TYPE(RETURN) \
   TYPE(TOKEN_COUNT) \
+  TYPE(STRING) \
 
 
 #define GENERATE_ENUM(ENUM) ENUM,

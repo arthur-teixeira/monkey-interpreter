@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../str_utils/str_utils.h"
 
 void free_object(Object *obj) {
   if (obj->type != BOOLEAN_OBJ) {
@@ -133,6 +134,22 @@ Object *inverted_boolean(Boolean *bol) {
   return &obj_true;
 }
 
+Object *eval_string_expression(StringLiteral *expr) {
+  Object *str_obj = malloc(sizeof(Object));
+  assert(str_obj != NULL && "Error allocating memory for string object");
+  str_obj->type = STRING_OBJ;
+
+  String *str = malloc(sizeof(String));
+  assert(str != NULL && "error allocating memory for string");
+
+  str->len = expr->len;
+  str->value = strdup(expr->value);
+
+  str_obj->object = str;
+
+  return str_obj;
+}
+
 Object *cast_int_to_boolean(Integer *intt) {
   if (intt->value) {
     return &obj_false;
@@ -234,6 +251,37 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   return obj;
 }
 
+Object *eval_string_infix_expression(Object *left, char *operator, Object*right) {
+  assert(left->type == STRING_OBJ && "left object should be string");
+  assert(right->type == STRING_OBJ && "right object should be string");
+
+  if (strcmp(operator, "+") != 0) {
+    char error_message[255];
+    sprintf(error_message, "unknown operator: %s %s %s",
+            ObjectTypeString[left->type], operator,
+            ObjectTypeString[right->type]);
+
+    return new_error(error_message);
+  }
+
+  String *left_str = left->object;
+  String *right_str = right->object;
+
+  Object *new_str_obj = malloc(sizeof(Object));
+  new_str_obj->type = STRING_OBJ;
+
+  String *new_string = malloc(sizeof(String));
+  new_string->len = left_str->len + right_str->len;
+
+  new_string->value = malloc(new_string->len + 1);
+
+  strlcpy(new_string->value, left_str->value, new_string->len + 1);
+  strncat(new_string->value, right_str->value, new_string->len + 1);
+
+  new_str_obj->object = new_string;
+  return new_str_obj;
+}
+
 Object *eval_prefix_expression(PrefixExpression *expr, Environment *env) {
   Object *right = eval_expression(expr->right, env);
   if (is_error(right)) {
@@ -269,6 +317,10 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
 
   if (right->type == INTEGER_OBJ && left->type == INTEGER_OBJ) {
     return eval_integer_infix_expression(left, expr->operator, right);
+  }
+
+  if (right->type == STRING_OBJ && left->type == STRING_OBJ) {
+    return eval_string_infix_expression(left, expr->operator, right);
   }
 
   // These work because we only have a single instance for the true and false
@@ -439,6 +491,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return new_integer(expr->value);
   case BOOL_EXPR:
     return new_boolean(expr->value);
+  case STRING_EXPR:
+    return eval_string_expression(expr->value);
   case PREFIX_EXPR:
     return eval_prefix_expression(expr->value, env);
   case INFIX_EXPR:
