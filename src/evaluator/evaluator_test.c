@@ -327,9 +327,35 @@ void test_string_concatenation(void) {
   TEST_ASSERT_EQUAL_STRING(expected_string, str->value);
 }
 
+void test_builtin_len_function(void) {
+  struct testCase {
+    char *input;
+    char *expected_error;
+    long expected_value;
+  };
+
+  struct testCase tests[] = {
+    {"len(\"\")", NULL, 0},
+    {"len(\"four\")", NULL, 4},
+    {"len(3)", "argument to 'len' not supported, got INTEGER_OBJ", -1},
+    {"len(\"one\", \"two\")", "wrong number of arguments: Expected 1 got 2", -1},
+  };
+
+  for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+
+    if (tests[i].expected_error != NULL) {
+      TEST_ASSERT_EQUAL(ERROR_OBJ, evaluated->type);
+      Error *err = evaluated->object;
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_error, err->message);
+    } else {
+      test_integer_object(evaluated, tests[i].expected_value);
+    }
+  }
+}
+
 int main() {
   UNITY_BEGIN();
-  /*
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
   RUN_TEST(test_bang_operator);
@@ -342,7 +368,7 @@ int main() {
   RUN_TEST(test_function_application);
   RUN_TEST(test_closures);
   RUN_TEST(test_string_literal);
-  */
   RUN_TEST(test_string_concatenation);
+  RUN_TEST(test_builtin_len_function);
   return UNITY_END();
 }

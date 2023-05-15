@@ -1,3 +1,6 @@
+#ifndef OBJECT_H
+#define OBJECT_H
+
 #include <stdbool.h>
 #include "../environment/environment.h"
 #include "../parser/parser.h"
@@ -10,6 +13,7 @@ typedef enum {
   ERROR_OBJ,
   FUNCTION_OBJ,
   STRING_OBJ,
+  BUILTIN_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -48,5 +52,12 @@ typedef struct {
   uint32_t len;
 } String;
 
+typedef Object *(*BuiltinFunction)(LinkedList *args); //Takes Object*[]
+
+typedef struct {
+  BuiltinFunction fn;
+} Builtin;
+
 typedef struct {
 } Null;
+#endif

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../str_utils/str_utils.h"
+#include "./builtins/builtins.h"
 
 void free_object(Object *obj) {
   if (obj->type != BOOLEAN_OBJ) {
@@ -373,6 +374,13 @@ Object *eval_if_expression(IfExpression *expr, Environment *env) {
 }
 
 Object *eval_identifier(Identifier *ident, Environment *env) {
+  hashmap_t *builtins = get_builtins();
+  Object *builtin = hashmap_get(builtins, ident->value, strlen(ident->value));
+  hashmap_destroy(builtins);
+  if (builtin != NULL) {
+    return builtin;
+  }
+
   Object *val = env_get(env, ident->value);
   if (val == NULL) {
     char error_message[255];
@@ -452,13 +460,25 @@ Object *unwrap_return_value(Object *evaluated) {
 }
 
 Object *apply_function(Object *fn_obj, LinkedList *args) {
+  if (fn_obj->type == BUILTIN_OBJ) {
+    Builtin *builtin = fn_obj->object;
+    Object *result = builtin->fn(args);
+    
+    return result;
+  }
+
   if (fn_obj->type != FUNCTION_OBJ) {
     char err_msg[255];
     sprintf(err_msg, "Not a function: %s", ObjectTypeString[FUNCTION_OBJ]);
     return new_error(err_msg);
   }
-
   Function *fn = fn_obj->object;
+
+  if (fn->parameters->size != args->size) {
+    char err_msg[255];
+    sprintf(err_msg, "Wrong parameter count: Expected %ld got %ld", fn->parameters->size, args->size);
+    return new_error(err_msg);
+  }
 
   Environment *extended_env = extend_function_env(fn, args);
   Object *evaluated = eval_block_statement(fn->body->statements, extended_env);
