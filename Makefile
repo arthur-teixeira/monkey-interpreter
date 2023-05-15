@@ -23,7 +23,7 @@ $(BINDIR)/$(BINNAME): $(OBJS)
 clean:
 	rm -rf $(BINDIR)/*
 
-run: clean all test
+run: all test
 
 
 TESTFILES := $(shell find ./src -name '*_test.c' -type f)
