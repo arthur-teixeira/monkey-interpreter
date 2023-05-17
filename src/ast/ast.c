@@ -115,6 +115,28 @@ void string_literal_to_string(char *buf, StringLiteral *str) {
   append_to_buf(&buf, str->token.literal);
 }
 
+void array_to_string(char *buf, ArrayLiteral *array_literal) {
+  append_to_buf(&buf, "[");
+
+  for (size_t i = 0; i < array_literal->elements->len; i++) {
+    value_to_string(buf, array_literal->elements->arr[i]);
+
+    if (i < array_literal->elements->len -1) {
+      append_to_buf(&buf, ", ");
+    }
+  }
+
+  append_to_buf(&buf, "]");
+}
+
+void index_expression_to_string(char *buf, IndexExpression *expr) {
+  append_to_buf(&buf, "(");
+  value_to_string(buf, expr->left);
+  append_to_buf(&buf, "[");
+  value_to_string(buf, expr->index);
+  append_to_buf(&buf, "])");
+}
+
 void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -135,6 +157,10 @@ void value_to_string(char *buf, Expression *expr) {
     return call_to_string(buf, expr->value);
   case STRING_EXPR:
     return string_literal_to_string(buf, expr->value);
+  case ARRAY_EXPR:
+    return array_to_string(buf, expr->value);
+  case INDEX_EXPR:
+    return index_expression_to_string(buf, expr->value);
   }
 }
 

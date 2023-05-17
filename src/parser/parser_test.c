@@ -35,6 +35,16 @@ Program *parse_and_check_errors(char *input) {
   return program;
 }
 
+void *test_single_expression(Program *p, ExprType type) {
+  TEST_ASSERT_EQUAL(1, p->statements->size);
+
+  Statement *stmt = p->statements->tail->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(type, stmt->expression->type);
+
+  return stmt->expression->value;
+}
+
 void test_int_value(IntegerLiteral *integer, long value) {
   TEST_ASSERT_EQUAL(value, integer->value);
 }
@@ -49,14 +59,14 @@ void test_ident_value(Identifier *ident, char *value) {
 
 void test_expr_value(Expression *expr, void *expected_value) {
   switch (expr->type) {
-    case INT_EXPR:
-      return test_int_value(expr->value, *(long *)expected_value);
-    case BOOL_EXPR:
-      return test_bool_value(expr->value, *(bool *)expected_value);
-    case IDENT_EXPR:
-      return test_ident_value(expr->value, expected_value);
-    default:
-      TEST_FAIL();
+  case INT_EXPR:
+    return test_int_value(expr->value, *(long *)expected_value);
+  case BOOL_EXPR:
+    return test_bool_value(expr->value, *(bool *)expected_value);
+  case IDENT_EXPR:
+    return test_ident_value(expr->value, expected_value);
+  default:
+    TEST_FAIL();
   }
 }
 
@@ -78,7 +88,6 @@ void test_let_statements() {
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(TestCase); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
     Node *stmt_node = program->statements->tail;
-
     TEST_ASSERT_NOT_NULL(program);
     TEST_ASSERT_EQUAL(1, program->statements->size);
 
@@ -87,7 +96,8 @@ void test_let_statements() {
     TEST_ASSERT_EQUAL_STRING("let", stmt->token.literal);
     TEST_ASSERT_EQUAL(LET_STATEMENT, stmt->type);
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier, stmt->name->value);
-    TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier, stmt->name->token.literal);
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected_identifier,
+                             stmt->name->token.literal);
     test_expr_value(stmt->expression, tests[i].expected_value);
 
     free(program);
@@ -104,12 +114,12 @@ void test_return_statements(void) {
   bool value2 = true;
 
   struct testCase tests[] = {
-    {"return 5;", &value1},
-    {"return true;", &value2},
-    {"return y;", "y"},
+      {"return 5;", &value1},
+      {"return true;", &value2},
+      {"return y;", "y"},
   };
 
-  for (uint32_t i = 0; i < sizeof(tests)/sizeof(struct testCase); i++) {
+  for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
     TEST_ASSERT_NOT_NULL(program);
     TEST_ASSERT_EQUAL(1, program->statements->size);
@@ -126,14 +136,8 @@ void test_identifier_expression(void) {
   char *input = "foobar;";
 
   Program *program = parse_and_check_errors(input);
+  Identifier *ident = test_single_expression(program, IDENT_EXPR);
 
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(IDENT_EXPR, stmt->expression->type);
-
-  Identifier *ident = stmt->expression->value;
   TEST_ASSERT_EQUAL_STRING("foobar", ident->token.literal);
   TEST_ASSERT_EQUAL_STRING("foobar", ident->value);
 }
@@ -151,14 +155,8 @@ void test_boolean_expressions(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
+    BooleanLiteral *boolean = test_single_expression(program, BOOL_EXPR);
 
-    TEST_ASSERT_EQUAL(1, program->statements->size);
-
-    Statement *stmt = program->statements->tail->value;
-    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-    TEST_ASSERT_EQUAL(BOOL_EXPR, stmt->expression->type);
-
-    BooleanLiteral *boolean = stmt->expression->value;
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, boolean->token.literal);
     TEST_ASSERT_EQUAL(tests[i].expected_value, boolean->value);
   }
@@ -167,14 +165,8 @@ void test_boolean_expressions(void) {
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
+  IntegerLiteral *literal = test_single_expression(program, INT_EXPR);
 
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(INT_EXPR, stmt->expression->type);
-
-  IntegerLiteral *literal = stmt->expression->value;
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
   TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
 }
@@ -202,14 +194,8 @@ void test_parsing_prefix_expressions(void) {
   for (uint32_t i = 0;
        i < sizeof(prefix_tests) / sizeof(struct prefix_test_case); i++) {
     Program *p = parse_and_check_errors(prefix_tests[i].input);
+    PrefixExpression *exp = test_single_expression(p, PREFIX_EXPR);
 
-    TEST_ASSERT_EQUAL(1, p->statements->size);
-
-    Statement *stmt = p->statements->tail->value;
-    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-    TEST_ASSERT_EQUAL(PREFIX_EXPR, stmt->expression->type);
-
-    PrefixExpression *exp = stmt->expression->value;
     TEST_ASSERT_EQUAL_STRING(prefix_tests[i].operator, exp->operator);
 
     test_integer_literal(exp->right, prefix_tests[i].integer_value);
@@ -235,13 +221,7 @@ void test_parsing_infix_expressions(void) {
   for (uint32_t i = 0; i < sizeof(infix_tests) / sizeof(struct infix_test_case);
        i++) {
     Program *p = parse_and_check_errors(infix_tests[i].input);
-    TEST_ASSERT_EQUAL(1, p->statements->size);
-
-    Statement *stmt = p->statements->tail->value;
-    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-
-    TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
-    InfixExpression *expr = stmt->expression->value;
+    InfixExpression *expr = test_single_expression(p, INFIX_EXPR);
 
     test_integer_literal(expr->left, infix_tests[i].left_value);
     TEST_ASSERT_EQUAL_STRING(infix_tests[i].operator, expr->operator);
@@ -335,7 +315,16 @@ void test_operator_precedence_parsing(void) {
       {
           "add(a + b + c * d / f + g)",
           "add((((a + b) + ((c * d) / f)) + g));\n",
-      }};
+      },
+      {
+          "a * [1, 2, 3, 4][b * c] * d",
+          "((a * ([1, 2, 3, 4][(b * c)])) * d);\n",
+      },
+      {
+          "add(a * b[2], b[1], 2 * [1, 2][1])",
+          "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])));\n",
+      },
+  };
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Program *p = parse_and_check_errors(tests[i].input);
@@ -353,14 +342,7 @@ void test_if_expression(void) {
   char *input = "if (x < y) { x } else { y }";
 
   Program *program = parse_and_check_errors(input);
-
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
-
-  IfExpression *expr = stmt->expression->value;
+  IfExpression *expr = test_single_expression(program, IF_EXPR);
 
   TEST_ASSERT_EQUAL(1, expr->consequence->statements->size);
   TEST_ASSERT_NOT_NULL(expr->alternative);
@@ -370,19 +352,12 @@ void test_nested_if_expression(void) {
   char *input = "if (10 > 1) { if (10 > 1) { return 10; } return 1; }";
 
   Program *program = parse_and_check_errors(input);
-
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
-
-  IfExpression *parent = stmt->expression->value;
+  IfExpression *parent = test_single_expression(program, IF_EXPR);
 
   Statement *nested_stmt = parent->consequence->statements->tail->value;
 
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, nested_stmt->type);
-  TEST_ASSERT_EQUAL(IF_EXPR, stmt->expression->type);
+  TEST_ASSERT_EQUAL(IF_EXPR, nested_stmt->expression->type);
 
   IfExpression *nested_if = nested_stmt->expression->value;
 
@@ -394,14 +369,8 @@ void test_function_literal(void) {
   char *input = "fn (x, y) { x + y; };";
 
   Program *program = parse_and_check_errors(input);
+  FunctionLiteral *fn = test_single_expression(program, FN_EXPR);
 
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(FN_EXPR, stmt->expression->type);
-
-  FunctionLiteral *fn = stmt->expression->value;
   TEST_ASSERT_EQUAL(2, fn->parameters->size);
   TEST_ASSERT_NOT_NULL(fn->body);
 }
@@ -421,12 +390,7 @@ void test_function_parameter_parsing(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
     Program *p = parse_and_check_errors(tests[i].input);
-
-    Statement *stmt = p->statements->tail->value;
-    TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-    TEST_ASSERT_EQUAL(FN_EXPR, stmt->expression->type);
-
-    FunctionLiteral *fn = stmt->expression->value;
+    FunctionLiteral *fn = test_single_expression(p, FN_EXPR);
 
     TEST_ASSERT_EQUAL(i, fn->parameters->size);
 
@@ -468,14 +432,8 @@ void test_call_expression_parsing(void) {
   char *input = "add(1, 2 * 3, 4 + 5);";
 
   Program *program = parse_and_check_errors(input);
+  CallExpression *expr = test_single_expression(program, CALL_EXPR);
 
-  TEST_ASSERT_EQUAL(1, program->statements->size);
-
-  Statement *stmt = program->statements->tail->value;
-  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
-  TEST_ASSERT_EQUAL(CALL_EXPR, stmt->expression->type);
-
-  CallExpression *expr = stmt->expression->value;
   test_identifier(expr->function, "add");
 
   Node *cur_node = expr->arguments->tail;
@@ -492,13 +450,32 @@ void test_string_literal_expression(void) {
   char *input = "\"hello world\"";
 
   Program *p = parse_and_check_errors(input);
+  StringLiteral *str = test_single_expression(p, STRING_EXPR);
 
-  TEST_ASSERT_EQUAL(1, p->statements->size);
-  Statement *stmt = p->statements->tail->value;
-  TEST_ASSERT_EQUAL(STRING_EXPR, stmt->expression->type);
-
-  StringLiteral *str = stmt->expression->value;
   TEST_ASSERT_EQUAL_STRING("hello world", str->value);
+}
+
+void test_parsing_array_literals(void) {
+  char *input = "[1, 2 * 2, 3 + 3]";
+
+  Program *p = parse_and_check_errors(input);
+  ArrayLiteral *arr = test_single_expression(p, ARRAY_EXPR);
+
+  TEST_ASSERT_EQUAL(3, arr->elements->len);
+
+  test_integer_literal(arr->elements->arr[0], 1);
+  test_infix_expression(arr->elements->arr[1], "*", 2, 2);
+  test_infix_expression(arr->elements->arr[2], "+", 3, 3);
+}
+
+void test_parsing_index_expressions(void) {
+  char *input = "myArray[1 + 1]";
+
+  Program *p = parse_and_check_errors(input);
+  IndexExpression *expr = test_single_expression(p, INDEX_EXPR);
+
+  test_identifier(expr->left, "myArray");
+  test_infix_expression(expr->index, "+", 1, 1);
 }
 
 int main() {
@@ -517,5 +494,7 @@ int main() {
   RUN_TEST(test_call_expression_parsing);
   RUN_TEST(test_nested_if_expression);
   RUN_TEST(test_string_literal_expression);
+  RUN_TEST(test_parsing_array_literals);
+  RUN_TEST(test_parsing_index_expressions);
   return UNITY_END();
 }

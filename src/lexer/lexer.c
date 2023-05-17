@@ -132,6 +132,12 @@ Token next_token(Lexer *l) {
   case '+':
     tok = new_token(PLUS, l->ch);
     break;
+  case '[':
+    tok = new_token(LBRACKET, l->ch);
+    break;
+  case ']':
+    tok = new_token(RBRACKET, l->ch);
+    break;
   case '"':
     tok.Type = STRING;
     read_string(tok.literal, l);

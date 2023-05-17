@@ -398,7 +398,6 @@ Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
   Function *fn = malloc(sizeof(Function));
   fn->env = env;
   
-  // should I memcpy this or simply use the same pointers?
   fn->body = lit->body;
   fn->parameters = lit->parameters;
 

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "../dyn_array/dyn_array.h"
 
 typedef struct {
   Token token;
@@ -32,6 +33,8 @@ typedef enum {
   FN_EXPR,
   CALL_EXPR,
   STRING_EXPR,
+  ARRAY_EXPR,
+  INDEX_EXPR,
 } ExprType;
 
 typedef struct {
@@ -99,10 +102,25 @@ void string_literal_to_string(char *, StringLiteral *);
 typedef struct {
   Token token;
   Expression *function;
-  LinkedList *arguments; //Expression*[];
+  LinkedList *arguments; //TODO: Expression*[];
 } CallExpression;
 
 void call_to_string(char *, CallExpression *);
+
+typedef struct {
+  Token token;
+  DynamicArray *elements;
+} ArrayLiteral;
+
+void array_to_string(char *, ArrayLiteral *);
+
+typedef struct {
+  Token token;
+  Expression *left;
+  Expression *index;
+} IndexExpression;
+
+void index_expression_to_string(char *, IndexExpression *);
 
 typedef struct {
   StatementType type;

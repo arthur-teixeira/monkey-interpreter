@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include "../dyn_array/dyn_array.h"
 
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
@@ -31,6 +33,7 @@ void build_precedence_table(Parser *p) {
   p->precedences[SLASH] = PRODUCT;
   p->precedences[ASTERISK] = PRODUCT;
   p->precedences[LPAREN] = CALL;
+  p->precedences[LBRACKET] = INDEX;
 }
 
 uint32_t peek_precedence(Parser *p) {
@@ -410,6 +413,7 @@ LinkedList *parse_function_parameters(Parser *p) {
 
   if (!expect_peek(p, RPAREN)) {
     free_list(parameters);
+    return NULL;
   }
 
   return parameters;
@@ -488,6 +492,45 @@ Expression *parse_string_literal(Parser *p) {
 
   StringLiteral *str = new_string_literal(p);
   expr->value = str;
+
+  return expr;
+}
+
+ArrayLiteral *new_array_literal(Parser *p) {
+  ArrayLiteral *arr = malloc(sizeof(ArrayLiteral));
+  arr->token = p->cur_token;
+  arr->elements = malloc(sizeof(DynamicArray));
+  array_init(arr->elements, 10);
+
+  if (peek_token_is(p, RBRACKET)) {
+    parser_next_token(p);
+    return arr;
+  }
+
+  parser_next_token(p);
+  array_append(arr->elements, parse_expression(p, LOWEST));
+
+  while (peek_token_is(p, COMMA)) {
+    parser_next_token(p);
+    parser_next_token(p);
+    array_append(arr->elements, parse_expression(p, LOWEST));
+  };
+
+  if (!expect_peek(p, RBRACKET)) {
+    array_free(arr->elements);
+    return NULL;
+  }
+
+  return arr;
+}
+
+Expression *parse_array_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "Error allocating memory for array expression");
+  expr->type = ARRAY_EXPR;
+
+  ArrayLiteral *arr = new_array_literal(p);
+  expr->value = arr;
 
   return expr;
 }
@@ -579,6 +622,32 @@ Expression *parse_call_expression(Parser *p, Expression *function) {
   return expr;
 }
 
+
+Expression *parse_index_expression(Parser *p, Expression *left) {
+  Expression *exp = malloc(sizeof(Expression));
+  assert(exp != NULL && "Error allocating memory for index expression");
+  exp->type = INDEX_EXPR;
+
+  IndexExpression *index_expr = malloc(sizeof(IndexExpression));
+  assert(index_expr != NULL && "Error allocating memory for index expression");
+  index_expr->token = p->cur_token;
+  index_expr->left = left;
+
+  parser_next_token(p);
+
+  index_expr->index = parse_expression(p, LOWEST);
+
+  if (!expect_peek(p, RBRACKET)) {
+    free(index_expr);
+    free(exp);
+    return NULL;
+  }
+
+  exp->value = index_expr;
+
+  return exp;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
@@ -601,6 +670,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_if_expression, IF);
   register_prefix_fn(p, &parse_function_literal, FUNCTION);
   register_prefix_fn(p, &parse_string_literal, STRING);
+  register_prefix_fn(p, &parse_array_literal, LBRACKET);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);
@@ -611,6 +681,7 @@ Parser *new_parser(Lexer *l) {
   register_infix_fn(p, &parse_infix_expression, LT);
   register_infix_fn(p, &parse_infix_expression, GT);
   register_infix_fn(p, &parse_call_expression, LPAREN);
+  register_infix_fn(p, &parse_index_expression, LBRACKET);
 
   build_precedence_table(p);
 
