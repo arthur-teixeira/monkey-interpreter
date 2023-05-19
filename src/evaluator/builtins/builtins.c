@@ -1,7 +1,22 @@
+#include "./builtins.h"
 #include "../../object/object.h"
 #include "../evaluator.h"
-#include "./builtins.h"
 #include <assert.h>
+
+Object *make_result(long value) {
+  Object *result = malloc(sizeof(Object));
+  assert(result != NULL);
+
+  result->type = INTEGER_OBJ;
+
+  Integer *intt = malloc(sizeof(Integer));
+  assert(intt != NULL);
+  intt->value = value;
+
+  result->object = intt;
+
+  return result;
+}
 
 Object *len(LinkedList *args) {
   if (args->size != 1) {
@@ -13,30 +28,23 @@ Object *len(LinkedList *args) {
     return new_error(err_msg);
   }
   assert(args->size == 1 && "implement arg count error");
-  Object *str_obj = args->tail->value;
-  
-  if (str_obj->type != STRING_OBJ) {
-    char err_msg[255];
-    sprintf(err_msg, "argument to 'len' not supported, got %s",
-            ObjectTypeString[str_obj->type]);
 
-    return new_error(err_msg);
+  Object *obj = args->tail->value;
+
+  switch (obj->type) {
+  case STRING_OBJ:
+    return make_result(((String *)obj->object)->len);
+  case ARRAY_OBJ:
+    return make_result(((Array *)obj->object)->elements.len);
+  default:
+    break;
   }
 
-  String *str = str_obj->object;
+  char err_msg[255];
+  sprintf(err_msg, "argument to 'len' not supported, got %s",
+          ObjectTypeString[obj->type]);
 
-  Object *result = malloc(sizeof(Object));
-  assert(result != NULL);
-
-  result->type = INTEGER_OBJ;
-
-  Integer *intt = malloc(sizeof(Integer));
-  assert(intt != NULL);
-  intt->value = str->len;
-
-  result->object = intt;
-
-  return result;
+  return new_error(err_msg);
 }
 
 void set_len_builtin(hashmap_t *builtins) {
