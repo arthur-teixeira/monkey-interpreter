@@ -335,10 +335,11 @@ void test_builtin_len_function(void) {
   };
 
   struct testCase tests[] = {
-    {"len(\"\")", NULL, 0},
-    {"len(\"four\")", NULL, 4},
-    {"len(3)", "argument to 'len' not supported, got INTEGER_OBJ", -1},
-    {"len(\"one\", \"two\")", "wrong number of arguments: Expected 1 got 2", -1},
+      {"len(\"\")", NULL, 0},
+      {"len(\"four\")", NULL, 4},
+      {"len(3)", "argument to 'len' not supported, got INTEGER_OBJ", -1},
+      {"len(\"one\", \"two\")", "wrong number of arguments: Expected 1 got 2",
+       -1},
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
@@ -351,6 +352,79 @@ void test_builtin_len_function(void) {
     } else {
       test_integer_object(evaluated, tests[i].expected_value);
     }
+  }
+}
+
+void test_array_literals(void) {
+  char *input = "[1, 2 * 2, 3 + 3]";
+
+  Object *evaluated = test_eval(input);
+
+  TEST_ASSERT_EQUAL(ARRAY_OBJ, evaluated->type);
+
+  Array *arr = evaluated->object;
+
+  test_integer_object(arr->elements.arr[0], 1);
+  test_integer_object(arr->elements.arr[1], 4);
+  test_integer_object(arr->elements.arr[2], 6);
+}
+
+void test_array_indexing(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+      {
+          "[1, 2, 3][0]",
+          1,
+      },
+      {
+          "[1, 2, 3][1]",
+          2,
+      },
+      {
+          "[1, 2, 3][2]",
+          3,
+      },
+      {
+          "let i = 0; [1][i];",
+          1,
+      },
+      {
+          "[1, 2, 3][1 + 1];",
+          3,
+      },
+      {
+          "let myArray = [1, 2, 3]; myArray[2];",
+          3,
+      },
+      {
+          "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+          6,
+      },
+      {
+          "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+          2,
+      },
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i ++) {
+    Object *evaluated = test_eval(tests[i].input);
+    test_integer_object(evaluated, tests[i].expected);
+  }
+}
+
+void test_out_of_bounds_array_indexing(void) {
+  char *tests[] = {
+      "[1, 2, 3][3]",
+      "[1, 2, 3][-1]",
+  };
+  for (size_t i = 0; i < 2; i++) {
+    Object *evaluated = test_eval(tests[i]);
+    printf("AFTER\n");
+    TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
   }
 }
 
@@ -370,5 +444,8 @@ int main() {
   RUN_TEST(test_string_literal);
   RUN_TEST(test_string_concatenation);
   RUN_TEST(test_builtin_len_function);
+  RUN_TEST(test_array_literals);
+  RUN_TEST(test_array_indexing);
+  RUN_TEST(test_out_of_bounds_array_indexing);
   return UNITY_END();
 }

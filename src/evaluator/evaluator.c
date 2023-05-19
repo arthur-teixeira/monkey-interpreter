@@ -1,11 +1,12 @@
 #include "./evaluator.h"
+#include "../str_utils/str_utils.h"
+#include "./builtins/builtins.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../str_utils/str_utils.h"
-#include "./builtins/builtins.h"
 
 void free_object(Object *obj) {
   if (obj->type != BOOLEAN_OBJ) {
@@ -42,10 +43,8 @@ Object *eval_block_statement(LinkedList *statements, Environment *env) {
   while (cur_node != NULL) {
     result = eval(cur_node->value, env);
 
-    if (result != NULL 
-        && (result->type == RETURN_OBJ
-        || result->type == ERROR_OBJ)
-    ) {
+    if (result != NULL &&
+        (result->type == RETURN_OBJ || result->type == ERROR_OBJ)) {
       return result;
     }
     cur_node = cur_node->next;
@@ -109,6 +108,13 @@ static Object obj_true = {
 static Object obj_false = {
     BOOLEAN_OBJ,
     &bool_false,
+};
+
+static Null null_value = {};
+
+static Object obj_null = {
+    NULL_OBJ,
+    &null_value,
 };
 
 Object *new_boolean(BooleanLiteral *bol) {
@@ -252,7 +258,8 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   return obj;
 }
 
-Object *eval_string_infix_expression(Object *left, char *operator, Object*right) {
+Object *eval_string_infix_expression(Object *left, char *operator,
+                                     Object * right) {
   assert(left->type == STRING_OBJ && "left object should be string");
   assert(right->type == STRING_OBJ && "right object should be string");
 
@@ -397,7 +404,7 @@ Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
 
   Function *fn = malloc(sizeof(Function));
   fn->env = env;
-  
+
   fn->body = lit->body;
   fn->parameters = lit->parameters;
 
@@ -410,7 +417,7 @@ LinkedList *eval_expressions(LinkedList *expressions, Environment *env) {
   LinkedList *evaluated = new_list();
 
   Node *cur_expression_node = expressions->tail;
-  while(cur_expression_node != NULL) {
+  while (cur_expression_node != NULL) {
     Expression *cur_expression = cur_expression_node->value;
     Object *evaluated_expression = eval_expression(cur_expression, env);
 
@@ -434,10 +441,10 @@ Environment *extend_function_env(Function *fn, LinkedList *args) {
   assert(args->size == fn->parameters->size);
 
   Environment *env = new_enclosed_environment(fn->env);
-  Node *cur_argument_node = args->tail; // Object *
-  Node *cur_parameter_node = fn->parameters->tail; //Identifier *
+  Node *cur_argument_node = args->tail;            // Object *
+  Node *cur_parameter_node = fn->parameters->tail; // Identifier *
 
-  while (cur_parameter_node != NULL  && cur_parameter_node != NULL) {
+  while (cur_parameter_node != NULL && cur_parameter_node != NULL) {
     Identifier *parameter_ident = cur_parameter_node->value;
 
     env_set(env, parameter_ident->value, cur_argument_node->value);
@@ -462,7 +469,7 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   if (fn_obj->type == BUILTIN_OBJ) {
     Builtin *builtin = fn_obj->object;
     Object *result = builtin->fn(args);
-    
+
     return result;
   }
 
@@ -475,7 +482,8 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
 
   if (fn->parameters->size != args->size) {
     char err_msg[255];
-    sprintf(err_msg, "Wrong parameter count: Expected %ld got %ld", fn->parameters->size, args->size);
+    sprintf(err_msg, "Wrong parameter count: Expected %ld got %ld",
+            fn->parameters->size, args->size);
     return new_error(err_msg);
   }
 
@@ -504,6 +512,61 @@ Object *eval_function_call(CallExpression *call, Environment *env) {
   return apply_function(fn, args);
 }
 
+Object *eval_array_literal(ArrayLiteral *literal, Environment *env) {
+  Object *array_obj = malloc(sizeof(Object));
+  assert(array_obj != NULL && "Error allocating memory for array object");
+
+  Array *array = malloc(sizeof(Array));
+  assert(array != NULL && "Error allocating memory for array");
+  array_init(&array->elements, literal->elements->len);
+
+  for (size_t i = 0; i < literal->elements->len; i++) {
+    Object *evaluated = eval_expression(literal->elements->arr[i], env);
+    if (is_error(evaluated)) {
+      array_free(&array->elements);
+      return evaluated;
+    }
+
+    array_append(&array->elements, evaluated);
+  }
+
+  array_obj->type = ARRAY_OBJ;
+  array_obj->object = array;
+
+  return array_obj;
+}
+
+Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
+  Object *evaluated = eval_expression(idx->left, env);
+
+  if (evaluated->type != ARRAY_OBJ) {
+    char error_msg[255];
+    sprintf(error_msg, "ERROR: attempting to index %s",
+            ObjectTypeString[evaluated->type]);
+    return new_error(error_msg);
+  }
+
+  Object *evaluated_index = eval_expression(idx->index, env);
+
+  if (evaluated_index->type != INTEGER_OBJ) {
+    char error_msg[255];
+    sprintf(error_msg,
+            "ERROR: attempting to index array with non-integer index: got %s",
+            ObjectTypeString[evaluated_index->type]);
+
+    return new_error(error_msg);
+  }
+
+  Array *evaluated_array = evaluated->object;
+  Integer *index = evaluated_index->object;
+
+  if (index->value > evaluated_array->elements.len - 1 || index->value < 0) {
+    return &obj_null;
+  }
+
+  return evaluated_array->elements.arr[index->value];
+}
+
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
@@ -518,12 +581,16 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_infix_expression(expr->value, env);
   case IF_EXPR:
     return eval_if_expression(expr->value, env);
-  case IDENT_EXPR: 
+  case IDENT_EXPR:
     return eval_identifier(expr->value, env);
   case FN_EXPR:
     return eval_function_literal(expr->value, env);
   case CALL_EXPR:
     return eval_function_call(expr->value, env);
+  case ARRAY_EXPR:
+    return eval_array_literal(expr->value, env);
+  case INDEX_EXPR:
+    return eval_array_indexing(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

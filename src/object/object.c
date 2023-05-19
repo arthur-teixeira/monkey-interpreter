@@ -11,18 +11,18 @@ const char *ObjectTypeString[] = {
   "FUNCTION_OBJ",
   "STRING_OBJ",
   "BUILTIN_OBJ",
-
+  "ARRAY_OBJ",
 };
 
 void inspect_integer_object(char *buf, Integer *obj) {
-  sprintf(buf, "%ld\n", obj->value);
+  sprintf(buf, "%ld", obj->value);
 }
 
 void inspect_boolean_object(char *buf, Boolean *obj) {
   if (obj->value) {
-    sprintf(buf, "%s\n", "true");
+    sprintf(buf, "%s", "true");
   } else {
-    sprintf(buf, "%s\n", "false");
+    sprintf(buf, "%s", "false");
   }
 }
 
@@ -68,6 +68,22 @@ void inspect_builtin(char *buf) {
   sprintf(buf, "builtin function");
 }
 
+void inspect_array_object(char *buf, Array *arr) {
+  buf += sprintf(buf, "[");
+
+  for (size_t i = 0; i < arr->elements.len; i++) {
+    char temp_buf[255];
+    inspect_object(temp_buf, arr->elements.arr[i]);
+    buf += sprintf(buf, "%s", temp_buf);
+
+    if (i < arr->elements.len - 1) {
+      buf += sprintf(buf, ", ");
+    }
+  }
+
+  buf += sprintf(buf, "]");
+}
+
 void inspect_object(char *buf, Object *obj) {
   switch (obj->type) {
   case INTEGER_OBJ:
@@ -86,5 +102,7 @@ void inspect_object(char *buf, Object *obj) {
     return inspect_string_object(buf, obj->object);
   case BUILTIN_OBJ:
     return inspect_builtin(buf);
+  case ARRAY_OBJ:
+    return inspect_array_object(buf, obj->object);
   }
 }

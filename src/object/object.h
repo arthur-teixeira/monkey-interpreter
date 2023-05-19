@@ -14,6 +14,7 @@ typedef enum {
   FUNCTION_OBJ,
   STRING_OBJ,
   BUILTIN_OBJ,
+  ARRAY_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -57,6 +58,10 @@ typedef Object *(*BuiltinFunction)(LinkedList *args); //Takes Object*[]
 typedef struct {
   BuiltinFunction fn;
 } Builtin;
+
+typedef struct {
+  DynamicArray elements;
+} Array;
 
 typedef struct {
 } Null;
