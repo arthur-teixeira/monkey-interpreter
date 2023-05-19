@@ -340,6 +340,8 @@ void test_builtin_len_function(void) {
       {"len(3)", "argument to 'len' not supported, got INTEGER_OBJ", -1},
       {"len(\"one\", \"two\")", "wrong number of arguments: Expected 1 got 2",
        -1},
+      {"len([1,2,3])", NULL, 3},
+      {"len([])", NULL, 0},
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
@@ -408,23 +410,23 @@ void test_array_indexing(void) {
           "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
           2,
       },
+      {
+          "[1, 2, 3][3]",
+          -1,
+      },
+      {
+          "[1, 2, 3][-1]",
+          -1,
+      },
   };
 
-  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i ++) {
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
-    test_integer_object(evaluated, tests[i].expected);
-  }
-}
-
-void test_out_of_bounds_array_indexing(void) {
-  char *tests[] = {
-      "[1, 2, 3][3]",
-      "[1, 2, 3][-1]",
-  };
-  for (size_t i = 0; i < 2; i++) {
-    Object *evaluated = test_eval(tests[i]);
-    printf("AFTER\n");
-    TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+    if (tests[i].expected < 0) {
+      TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+    } else {
+      test_integer_object(evaluated, tests[i].expected);
+    }
   }
 }
 
@@ -446,6 +448,5 @@ int main() {
   RUN_TEST(test_builtin_len_function);
   RUN_TEST(test_array_literals);
   RUN_TEST(test_array_indexing);
-  RUN_TEST(test_out_of_bounds_array_indexing);
   return UNITY_END();
 }
