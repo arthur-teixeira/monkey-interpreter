@@ -430,6 +430,31 @@ void test_array_indexing(void) {
   }
 }
 
+void test_builtin_array_functions(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+      {"let a = [1, 2, 3]; first(a);", 1},
+      {"first([4 + 4, 2, 3]);", 8},
+      {"first([])", -1},
+      {"let a = [1, 2, 3]; last(a);", 3},
+      {"last([4 + 4, 2, 3 * 3]);", 9},
+      {"last([])", -1},
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+    if (tests[i].expected < 0) {
+      TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+    } else {
+      test_integer_object(evaluated, tests[i].expected);
+    }
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -448,5 +473,6 @@ int main() {
   RUN_TEST(test_builtin_len_function);
   RUN_TEST(test_array_literals);
   RUN_TEST(test_array_indexing);
+  RUN_TEST(test_builtin_array_functions);
   return UNITY_END();
 }

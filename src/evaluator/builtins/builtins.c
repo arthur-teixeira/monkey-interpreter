@@ -1,7 +1,42 @@
 #include "./builtins.h"
+#include "../../dyn_array/dyn_array.h"
 #include "../../object/object.h"
 #include "../evaluator.h"
 #include <assert.h>
+#include <stdint.h>
+#include <string.h>
+
+static Null null_value = {};
+
+static Object obj_null = {
+    NULL_OBJ,
+    &null_value,
+};
+
+Object *check_args_len(LinkedList *args, size_t expected) {
+  if (args->size != expected) {
+
+    char err_msg[255];
+    sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
+            args->size);
+
+    return new_error(err_msg);
+  }
+
+  return NULL;
+}
+
+Object *unsupported_arg_error(Object *obj, ObjectType type, char *fn_name) {
+  if (type < 0 || obj->type != type) {
+    char err_msg[255];
+    sprintf(err_msg, "argument to '%s' not supported, got %s", fn_name,
+            ObjectTypeString[obj->type]);
+
+    return new_error(err_msg);
+  }
+
+  return NULL;
+}
 
 Object *make_result(long value) {
   Object *result = malloc(sizeof(Object));
@@ -19,15 +54,10 @@ Object *make_result(long value) {
 }
 
 Object *len(LinkedList *args) {
-  if (args->size != 1) {
-
-    char err_msg[255];
-    sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
-            args->size);
-
-    return new_error(err_msg);
+  Object *err = check_args_len(args, 1);
+  if (err != NULL) {
+    return err;
   }
-  assert(args->size == 1 && "implement arg count error");
 
   Object *obj = args->tail->value;
 
@@ -40,33 +70,159 @@ Object *len(LinkedList *args) {
     break;
   }
 
-  char err_msg[255];
-  sprintf(err_msg, "argument to 'len' not supported, got %s",
-          ObjectTypeString[obj->type]);
+  return unsupported_arg_error(obj, -1, "len");
+}
 
-  return new_error(err_msg);
+Object *first(LinkedList *args) {
+  Object *err = check_args_len(args, 1);
+  if (err != NULL) {
+    return err;
+  }
+
+  Object *arg = args->tail->value;
+
+  err = unsupported_arg_error(arg, ARRAY_OBJ, "first");
+  if (err != NULL) {
+    return err;
+  }
+
+  Array *arr = arg->object;
+
+  if (arr->elements.len < 1) {
+    return &obj_null;
+  }
+
+  return arr->elements.arr[0];
+}
+
+Object *last(LinkedList *args) {
+  Object *err = check_args_len(args, 1);
+  if (err != NULL) {
+    return err;
+  }
+
+  Object *arg = args->tail->value;
+
+  err = unsupported_arg_error(arg, ARRAY_OBJ, "last");
+  if (err != NULL) {
+    return err;
+  }
+
+  Array *arr = arg->object;
+  if (arr->elements.len < 1) {
+    return &obj_null;
+  }
+
+  return arr->elements.arr[arr->elements.len - 1];
+}
+
+Object *rest(LinkedList *args) {
+  Object *err = check_args_len(args, 1);
+  if (err != NULL) {
+    return err;
+  }
+
+  Object *arg = args->tail->value;
+
+  err = unsupported_arg_error(arg, ARRAY_OBJ, "rest");
+  if (err != NULL) {
+    return err;
+  }
+
+  Object *new_arr_obj = malloc(sizeof(Object));
+  assert(new_arr_obj != NULL && "Error allocating memory for new array");
+
+  new_arr_obj->type = ARRAY_OBJ;
+
+  Array *new_arr = malloc(sizeof(Array));
+  assert(new_arr != NULL && "Error allocating memory for new array");
+
+  Array *old_arr = arg->object;
+
+  array_init(&new_arr->elements, old_arr->elements.len - 1);
+
+  for (size_t i = 1; i < old_arr->elements.len; i++) {
+    array_append(&new_arr->elements, old_arr->elements.arr[i]);
+  }
+
+  new_arr_obj->object = new_arr;
+
+  return new_arr_obj;
+}
+
+Object *push(LinkedList *args) {
+  Object *err = check_args_len(args, 2);
+  if (err != NULL) {
+    return err;
+  }
+
+  Object *old_arr_obj = args->tail->value;
+  Object *new_element = malloc(sizeof(Object));
+  memcpy(new_element, args->tail->next->value, sizeof(Object));
+
+  err = unsupported_arg_error(old_arr_obj, ARRAY_OBJ, "push");
+  if (err != NULL) {
+    return err;
+  }
+
+  Array *old_arr = old_arr_obj->object;
+
+  Object *new_arr_obj = malloc(sizeof(Object));
+  assert(new_arr_obj != NULL && "Error allocating memory for new array");
+
+  new_arr_obj->type = ARRAY_OBJ;
+
+  Array *new_arr = malloc(sizeof(Array));
+  assert(new_arr != NULL && "Error allocating memory for new array");
+  array_init(&new_arr->elements, old_arr->elements.len + 1);
+
+  memcpy(&new_arr->elements, &old_arr->elements, sizeof(old_arr->elements));
+
+  array_append(&new_arr->elements, new_element);
+
+  new_arr_obj->object = new_arr;
+
+  return new_arr_obj;
+}
+
+void put_builtin(hashmap_t *builtins, char *fn_name, BuiltinFunction fn) {
+  Object *builtin_obj = malloc(sizeof(Object));
+  assert(builtin_obj != NULL);
+  builtin_obj->type = BUILTIN_OBJ;
+
+  Builtin *builtin = malloc(sizeof(Builtin));
+  assert(builtin != NULL);
+
+  builtin->fn = fn;
+  builtin_obj->object = builtin;
+
+  hashmap_put(builtins, fn_name, strlen(fn_name), builtin_obj);
 }
 
 void set_len_builtin(hashmap_t *builtins) {
-  Object *len_builtin = malloc(sizeof(Object));
-  assert(len_builtin != NULL);
-  len_builtin->type = BUILTIN_OBJ;
-
-  Builtin *len_obj = malloc(sizeof(Builtin));
-  assert(len_obj != NULL);
-
-  len_obj->fn = &len;
-
-  len_builtin->object = len_obj;
-
-  hashmap_put(builtins, "len", strlen("len"), len_builtin);
+  put_builtin(builtins, "len", &len);
 }
 
-hashmap_t *get_builtins() {
-  hashmap_t *builtins = malloc(sizeof(hashmap_t));
-  hashmap_create(10, builtins);
+void set_first_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "first", &first);
+}
 
+void set_last_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "last", &last);
+}
+
+void set_rest_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "rest", &rest);
+}
+
+void set_push_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "push", &push);
+}
+
+void get_builtins(hashmap_t *builtins) {
   set_len_builtin(builtins);
-
-  return builtins;
+  set_first_builtin(builtins);
+  set_last_builtin(builtins);
+  set_rest_builtin(builtins);
+  set_push_builtin(builtins);
 }

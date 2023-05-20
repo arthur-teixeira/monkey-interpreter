@@ -381,9 +381,12 @@ Object *eval_if_expression(IfExpression *expr, Environment *env) {
 }
 
 Object *eval_identifier(Identifier *ident, Environment *env) {
-  hashmap_t *builtins = get_builtins();
-  Object *builtin = hashmap_get(builtins, ident->value, strlen(ident->value));
-  hashmap_destroy(builtins);
+  hashmap_t builtins; 
+  hashmap_create(10, &builtins);
+  get_builtins(&builtins);
+  Object *builtin = hashmap_get(&builtins, ident->value, strlen(ident->value));
+
+  hashmap_destroy(&builtins);
   if (builtin != NULL) {
     return builtin;
   }

@@ -2,7 +2,7 @@
 #define BUILTINS_H
 #include "../../hashmap/hashmap.h"
 
-hashmap_t *get_builtins();
+void get_builtins(hashmap_t *builtins);
 
 #endif
 
