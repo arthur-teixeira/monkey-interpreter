@@ -10,7 +10,7 @@ const char *TOKEN_STRING[] = {
 };
 
 //TODO: Implement with hash_map
-enum TokenType lookup_ident(char *ident) {
+TokenType lookup_ident(char *ident) {
   if (strcmp(ident, "fn") == 0) {
     return FUNCTION;
   }

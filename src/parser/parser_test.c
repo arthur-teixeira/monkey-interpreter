@@ -478,6 +478,49 @@ void test_parsing_index_expressions(void) {
   test_infix_expression(expr->index, "+", 1, 1);
 }
 
+int iterate_over_string_int_hashmap(void *expected, hashmap_element_t *pair) {
+  hashmap_t *expected_map = expected;
+
+  Expression *key_expr = (void *)pair->key;
+  TEST_ASSERT_EQUAL(STRING_EXPR, key_expr->type);
+
+  StringLiteral *key = key_expr->value;
+  int *expected_value = hashmap_get(expected_map, key->value, strlen(key->value));
+  TEST_ASSERT_NOT_NULL(expected_value);
+
+  Expression *value = pair->data;
+  test_integer_literal(value, *expected_value);
+
+  return 0;
+}
+
+void test_parsing_hash_literals_string_keys(void) {
+  char *input = "{\"one\": 1, \"two\": 2, \"three\": 3}";
+
+  Program *p = parse_and_check_errors(input);
+  HashLiteral *hash = test_single_expression(p, HASH_EXPR);
+
+  hashmap_t expected_map;
+  hashmap_create(3, &expected_map);
+  int one = 1;
+  int two = 2;
+  int three = 3;
+  hashmap_put(&expected_map, "one", strlen("one"), &one);
+  hashmap_put(&expected_map, "two", strlen("two"), &two);
+  hashmap_put(&expected_map, "three", strlen("three"), &three);
+
+  hashmap_iterate_pairs(&hash->pairs, &iterate_over_string_int_hashmap, &expected_map);
+}
+
+void test_parsing_empty_hash_literal(void) {
+  char *input = "{}";
+
+  Program *p = parse_and_check_errors(input);
+  HashLiteral *hash = test_single_expression(p, HASH_EXPR);
+
+  TEST_ASSERT_EQUAL(0, hash->len);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -496,5 +539,7 @@ int main() {
   RUN_TEST(test_string_literal_expression);
   RUN_TEST(test_parsing_array_literals);
   RUN_TEST(test_parsing_index_expressions);
+  RUN_TEST(test_parsing_hash_literals_string_keys);
+  RUN_TEST(test_parsing_empty_hash_literal);
   return UNITY_END();
 }

@@ -1,10 +1,11 @@
+#include "../dyn_array/dyn_array.h"
+#include "../hashmap/hashmap.h"
 #include "../lexer/lexer.h"
 #include "../linked_list/linked_list.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
-#include "../dyn_array/dyn_array.h"
 
 typedef struct {
   Token token;
@@ -35,6 +36,7 @@ typedef enum {
   STRING_EXPR,
   ARRAY_EXPR,
   INDEX_EXPR,
+  HASH_EXPR,
 } ExprType;
 
 typedef struct {
@@ -102,7 +104,7 @@ void string_literal_to_string(char *, StringLiteral *);
 typedef struct {
   Token token;
   Expression *function;
-  LinkedList *arguments; //TODO: Expression*[];
+  LinkedList *arguments; // TODO: Expression*[];
 } CallExpression;
 
 void call_to_string(char *, CallExpression *);
@@ -123,6 +125,14 @@ typedef struct {
 void index_expression_to_string(char *, IndexExpression *);
 
 typedef struct {
+  Token token;
+  hashmap_t pairs;
+  size_t len;
+} HashLiteral;
+
+void hash_literal_to_string(char *, HashLiteral *);
+
+typedef struct {
   StatementType type;
   Token token;
   Identifier *name;
@@ -132,7 +142,7 @@ typedef struct {
 void stmt_to_string(char *, Statement *);
 
 typedef struct {
-  LinkedList *statements; //Statement*[];
+  LinkedList *statements; // Statement*[];
 } Program;
 
 void program_token_literal(char *, Program *);

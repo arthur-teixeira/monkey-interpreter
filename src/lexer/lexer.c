@@ -64,7 +64,7 @@ void read_number(Lexer *l, char *result) {
   slice(l->input, result, position, l->position);
 }
 
-Token new_token(enum TokenType type, char literal) {
+Token new_token(TokenType type, char literal) {
   Token tok;
   tok.Type = type;
   char buf[2];
@@ -137,6 +137,9 @@ Token next_token(Lexer *l) {
     break;
   case ']':
     tok = new_token(RBRACKET, l->ch);
+    break;
+  case ':':
+    tok = new_token(COLON, l->ch);
     break;
   case '"':
     tok.Type = STRING;

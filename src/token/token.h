@@ -31,21 +31,22 @@
   TYPE(STRING) \
   TYPE(LBRACKET) \
   TYPE(RBRACKET) \
+  TYPE(COLON) \
   TYPE(TOKEN_COUNT) \
 
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
-enum TokenType {
+typedef enum {
     FOREACH_TOKEN_TYPE(GENERATE_ENUM)
-};
+} TokenType;
 
 extern const char *TOKEN_STRING[];
 
 typedef struct {
-  enum TokenType Type;
+  TokenType Type;
   char literal[MAX_LEN];
 } Token;
 
-enum TokenType lookup_ident(char *ident);
+TokenType lookup_ident(char *ident);

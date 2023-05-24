@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "../dyn_array/dyn_array.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
 #include <errno.h>
@@ -8,18 +9,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "../dyn_array/dyn_array.h"
 
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
   p->peek_token = next_token(p->l);
 }
 
-void register_infix_fn(Parser *p, infix_parse_fn fn, enum TokenType token) {
+void register_infix_fn(Parser *p, infix_parse_fn fn, TokenType token) {
   p->infix_parse_fns[token] = fn;
 }
 
-void register_prefix_fn(Parser *p, prefix_parse_fn fn, enum TokenType token) {
+void register_prefix_fn(Parser *p, prefix_parse_fn fn, TokenType token) {
   p->prefix_parse_fns[token] = fn;
 }
 
@@ -42,15 +42,11 @@ uint32_t peek_precedence(Parser *p) {
 
 uint32_t cur_precedence(Parser *p) { return p->precedences[p->cur_token.Type]; }
 
-bool cur_token_is(Parser *p, enum TokenType t) {
-  return p->cur_token.Type == t;
-}
+bool cur_token_is(Parser *p, TokenType t) { return p->cur_token.Type == t; }
 
-bool peek_token_is(Parser *p, enum TokenType t) {
-  return p->peek_token.Type == t;
-}
+bool peek_token_is(Parser *p, TokenType t) { return p->peek_token.Type == t; }
 
-void peek_error(Parser *p, enum TokenType t) {
+void peek_error(Parser *p, TokenType t) {
   char *err_msg = malloc(50);
   sprintf(err_msg, "Expected next token to be %s, got %s.\n", TOKEN_STRING[t],
           TOKEN_STRING[p->peek_token.Type]);
@@ -58,7 +54,7 @@ void peek_error(Parser *p, enum TokenType t) {
   append(p->errors, err_msg);
 }
 
-bool expect_peek(Parser *p, enum TokenType t) {
+bool expect_peek(Parser *p, TokenType t) {
   if (peek_token_is(p, t)) {
     parser_next_token(p);
     return true;
@@ -126,7 +122,7 @@ Statement *parse_return_statement(Parser *p) {
   return stmt;
 }
 
-void no_prefix_parse_fn_error(Parser *p, enum TokenType type) {
+void no_prefix_parse_fn_error(Parser *p, TokenType type) {
   char *msg = malloc(255);
   sprintf(msg, "No prefix parse function for %s found", TOKEN_STRING[type]);
   append(p->errors, msg);
@@ -195,7 +191,8 @@ Expression *parse_identifier(Parser *p) {
 
 void int_conversion_error(Parser *p) {
   char *err_msg = malloc(MAX_LEN + 50);
-  snprintf(err_msg, MAX_LEN + 50, "Could not parse %s to an integer", p->cur_token.literal);
+  snprintf(err_msg, MAX_LEN + 50, "Could not parse %s to an integer",
+           p->cur_token.literal);
 
   append(p->errors, err_msg);
 }
@@ -535,6 +532,56 @@ Expression *parse_array_literal(Parser *p) {
   return expr;
 }
 
+HashLiteral *new_hash_literal(Parser *p) {
+  HashLiteral *hash = malloc(sizeof(HashLiteral));
+  assert(hash != NULL && "Error allocating memory for hash");
+
+  hash->len = 0;
+  hash->token = p->cur_token;
+  hashmap_create(5, &hash->pairs);
+
+  while (!peek_token_is(p, RBRACE)) {
+    parser_next_token(p);
+    Expression *key = parse_expression(p, LOWEST);
+    if (!expect_peek(p, COLON)) {
+      hashmap_destroy(&hash->pairs);
+      free(hash);
+      return NULL;
+    }
+
+    parser_next_token(p);
+    Expression *value = parse_expression(p, LOWEST);
+
+    hashmap_put(&hash->pairs, key, sizeof(Expression), value);
+    hash->len += 1;
+
+    if (!peek_token_is(p, RBRACE) && !expect_peek(p, COMMA)) {
+      hashmap_destroy(&hash->pairs);
+      free(hash);
+      return NULL;
+    }
+  }
+
+  if (!expect_peek(p, RBRACE)) {
+    hashmap_destroy(&hash->pairs);
+    free(hash);
+    return NULL;
+  }
+
+  return hash;
+}
+
+Expression *parse_hash_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "Error allocating memory for hash expression");
+
+  expr->type = HASH_EXPR;
+  HashLiteral *hash = new_hash_literal(p);
+
+  expr->value = hash;
+  return expr;
+}
+
 InfixExpression *new_infix_expression(Parser *p) {
   InfixExpression *infix = malloc(sizeof(InfixExpression));
   if (infix == NULL) {
@@ -622,7 +669,6 @@ Expression *parse_call_expression(Parser *p, Expression *function) {
   return expr;
 }
 
-
 Expression *parse_index_expression(Parser *p, Expression *left) {
   Expression *exp = malloc(sizeof(Expression));
   assert(exp != NULL && "Error allocating memory for index expression");
@@ -671,6 +717,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_function_literal, FUNCTION);
   register_prefix_fn(p, &parse_string_literal, STRING);
   register_prefix_fn(p, &parse_array_literal, LBRACKET);
+  register_prefix_fn(p, &parse_hash_literal, LBRACE);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);

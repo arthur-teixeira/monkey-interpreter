@@ -24,41 +24,44 @@ void test_next_token(void) {
                 "10 != 9;"
                 "\"foobar\""
                 "\"foo bar\""
-                "[1, 2]";
+                "[1, 2]"
+                "{\"foo\": \"bar\"}";
 
   typedef struct {
-    enum TokenType expected_type;
+    TokenType expected_type;
     char expected_literal[100];
   } TestCase;
 
   TestCase tests[] = {
-      {LET, "let"},      {IDENT, "five"},    {ASSIGN, "="},
-      {INT, "5"},        {SEMICOLON, ";"},   {LET, "let"},
-      {IDENT, "ten"},    {ASSIGN, "="},      {INT, "10"},
-      {SEMICOLON, ";"},  {LET, "let"},       {IDENT, "add"},
-      {ASSIGN, "="},     {FUNCTION, "fn"},   {LPAREN, "("},
-      {IDENT, "x"},      {COMMA, ","},       {IDENT, "y"},
-      {RPAREN, ")"},     {LBRACE, "{"},      {IDENT, "x"},
-      {PLUS, "+"},       {IDENT, "y"},       {SEMICOLON, ";"},
-      {RBRACE, "}"},     {SEMICOLON, ";"},   {LET, "let"},
-      {IDENT, "result"}, {ASSIGN, "="},      {IDENT, "add"},
-      {LPAREN, "("},     {IDENT, "five"},    {COMMA, ","},
-      {IDENT, "ten"},    {RPAREN, ")"},      {SEMICOLON, ";"},
-      {BANG, "!"},       {MINUS, "-"},       {SLASH, "/"},
-      {ASTERISK, "*"},   {INT, "5"},         {SEMICOLON, ";"},
-      {INT, "5"},        {LT, "<"},          {INT, "10"},
-      {GT, ">"},         {INT, "5"},         {SEMICOLON, ";"},
-      {IF, "if"},        {LPAREN, "("},      {INT, "5"},
-      {LT, "<"},         {INT, "10"},        {RPAREN, ")"},
-      {LBRACE, "{"},     {RETURN, "return"}, {TRUE, "true"},
-      {SEMICOLON, ";"},  {RBRACE, "}"},      {ELSE, "else"},
-      {LBRACE, "{"},     {RETURN, "return"}, {FALSE, "false"},
-      {SEMICOLON, ";"},  {RBRACE, "}"},      {INT, "10"},
-      {EQ, "=="},        {INT, "10"},        {SEMICOLON, ";"},
-      {INT, "10"},       {NOT_EQ, "!="},     {INT, "9"},
-      {SEMICOLON, ";"},  {STRING, "foobar"}, {STRING, "foo bar"},
-      {LBRACKET, "["},   {INT, "1"},         {COMMA, ","},
-      {INT, "2"},        {RBRACKET, "]"},    {END_OF_FILE, "\0"},
+      {LET, "let"},      {IDENT, "five"},     {ASSIGN, "="},
+      {INT, "5"},        {SEMICOLON, ";"},    {LET, "let"},
+      {IDENT, "ten"},    {ASSIGN, "="},       {INT, "10"},
+      {SEMICOLON, ";"},  {LET, "let"},        {IDENT, "add"},
+      {ASSIGN, "="},     {FUNCTION, "fn"},    {LPAREN, "("},
+      {IDENT, "x"},      {COMMA, ","},        {IDENT, "y"},
+      {RPAREN, ")"},     {LBRACE, "{"},       {IDENT, "x"},
+      {PLUS, "+"},       {IDENT, "y"},        {SEMICOLON, ";"},
+      {RBRACE, "}"},     {SEMICOLON, ";"},    {LET, "let"},
+      {IDENT, "result"}, {ASSIGN, "="},       {IDENT, "add"},
+      {LPAREN, "("},     {IDENT, "five"},     {COMMA, ","},
+      {IDENT, "ten"},    {RPAREN, ")"},       {SEMICOLON, ";"},
+      {BANG, "!"},       {MINUS, "-"},        {SLASH, "/"},
+      {ASTERISK, "*"},   {INT, "5"},          {SEMICOLON, ";"},
+      {INT, "5"},        {LT, "<"},           {INT, "10"},
+      {GT, ">"},         {INT, "5"},          {SEMICOLON, ";"},
+      {IF, "if"},        {LPAREN, "("},       {INT, "5"},
+      {LT, "<"},         {INT, "10"},         {RPAREN, ")"},
+      {LBRACE, "{"},     {RETURN, "return"},  {TRUE, "true"},
+      {SEMICOLON, ";"},  {RBRACE, "}"},       {ELSE, "else"},
+      {LBRACE, "{"},     {RETURN, "return"},  {FALSE, "false"},
+      {SEMICOLON, ";"},  {RBRACE, "}"},       {INT, "10"},
+      {EQ, "=="},        {INT, "10"},         {SEMICOLON, ";"},
+      {INT, "10"},       {NOT_EQ, "!="},      {INT, "9"},
+      {SEMICOLON, ";"},  {STRING, "foobar"},  {STRING, "foo bar"},
+      {LBRACKET, "["},   {INT, "1"},          {COMMA, ","},
+      {INT, "2"},        {RBRACKET, "]"},     {LBRACE, "{"},
+      {STRING, "foo"},   {COLON, ":"},        {STRING, "bar"},
+      {RBRACE, "}"},     {END_OF_FILE, "\0"},
   };
 
   Lexer *lexer = new_lexer(input);

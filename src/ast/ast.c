@@ -137,6 +137,26 @@ void index_expression_to_string(char *buf, IndexExpression *expr) {
   append_to_buf(&buf, "])");
 }
 
+int hash_literal_iterator(void *buf, hashmap_element_t *pair) {
+  Expression *key = (void *)pair->key;
+  value_to_string(buf, key);
+
+  append_to_buf((char **)buf, ":");
+
+  Expression* value = pair->data;
+  value_to_string(buf, value);
+
+  append_to_buf((char **)buf, ", ");
+  
+  return 1;
+}
+
+void hash_literal_to_string(char *buf, HashLiteral *hash) {
+  append_to_buf(&buf, "{");
+  hashmap_iterate_pairs(&hash->pairs, &hash_literal_iterator, &buf);
+  append_to_buf(&buf, "}");
+}
+
 void value_to_string(char *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -161,6 +181,8 @@ void value_to_string(char *buf, Expression *expr) {
     return array_to_string(buf, expr->value);
   case INDEX_EXPR:
     return index_expression_to_string(buf, expr->value);
+  case HASH_EXPR:
+    return hash_literal_to_string(buf, expr->value);
   }
 }
 
