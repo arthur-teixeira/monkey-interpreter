@@ -381,7 +381,7 @@ Object *eval_if_expression(IfExpression *expr, Environment *env) {
 }
 
 Object *eval_identifier(Identifier *ident, Environment *env) {
-  hashmap_t builtins; 
+  hashmap_t builtins;
   hashmap_create(10, &builtins);
   get_builtins(&builtins);
   Object *builtin = hashmap_get(&builtins, ident->value, strlen(ident->value));
@@ -570,6 +570,82 @@ Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
   return evaluated_array->elements.arr[index->value];
 }
 
+typedef struct {
+  Object *error;
+  Environment *env;
+  hashmap_t *evaluated_hash;
+} hashEvaluationContext;
+
+int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
+  hashEvaluationContext *eval_context = context;
+
+  Expression *key_node = (Expression *)pair->key;
+  Expression *value_node = pair->data;
+
+  Object *key = eval_expression(key_node, eval_context->env);
+  if (is_error(key)) {
+    eval_context->error = key;
+    return 1;
+  }
+
+  HashKey hash_key = get_hash_key(key);
+  if (hash_key.type < 0) {
+    char err_msg[255];
+    sprintf(err_msg, "Unusable as hash key: %s", ObjectTypeString[key->type]);
+    eval_context->error = new_error(err_msg);
+    return 1;
+  }
+  HashKey *hash_key_in_heap = malloc(sizeof(HashKey));
+  assert(hash_key_in_heap != NULL);
+
+  memcpy(hash_key_in_heap, &hash_key, sizeof(HashKey));
+
+  Object *value = eval_expression(value_node, eval_context->env);
+  if (is_error(value)) {
+    eval_context->error = value;
+    return 1;
+  }
+
+  HashPair *hash_pair = malloc(sizeof(HashPair));
+  assert(pair != NULL);
+  hash_pair->key = *key;
+  hash_pair->value = *value;
+
+  hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(HashKey), hash_pair);
+
+  return 0;
+}
+
+Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
+  Object *hash_obj = malloc(sizeof(Object));
+  assert(hash_obj != NULL);
+  hash_obj->type = HASH_OBJ;
+
+  Hash *hash = malloc(sizeof(Hash));
+  assert(hash != NULL);
+
+  hashmap_create(10, &hash->pairs);
+
+  hashEvaluationContext context;
+  context.error = NULL;
+  context.env = env;
+  context.evaluated_hash = &hash->pairs;
+
+  hashmap_iterate_pairs(&lit->pairs, &iter_eval_hash_literal, &context);
+
+  if (context.error != NULL) {
+    free(hash_obj);
+    hashmap_destroy(&hash->pairs);
+    free(hash);
+
+    return context.error;
+  }
+
+  hash_obj->object = hash;
+
+  return hash_obj;
+}
+
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
@@ -594,6 +670,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_array_literal(expr->value, env);
   case INDEX_EXPR:
     return eval_array_indexing(expr->value, env);
+  case HASH_EXPR:
+    return eval_hash_literal(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

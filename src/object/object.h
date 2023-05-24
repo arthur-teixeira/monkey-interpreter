@@ -15,6 +15,7 @@ typedef enum {
   STRING_OBJ,
   BUILTIN_OBJ,
   ARRAY_OBJ,
+  HASH_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -65,4 +66,21 @@ typedef struct {
 
 typedef struct {
 } Null;
+
+typedef struct {
+  ObjectType type;
+  uint64_t value;
+} HashKey;
+
+HashKey get_hash_key(Object *);
+
+typedef struct {
+  Object key;
+  Object value;
+} HashPair;
+
+typedef struct {
+  hashmap_t pairs;
+} Hash;
+
 #endif

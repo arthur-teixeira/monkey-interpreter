@@ -455,6 +455,81 @@ void test_builtin_array_functions(void) {
   }
 }
 
+Object *wrap_object(void *str, ObjectType type) {
+  Object *obj = malloc(sizeof(Object));
+  obj->type = type;
+  obj->object = str;
+
+  return obj;
+}
+
+int iter_hash_literal_test(void *generated_map, hashmap_element_t *pair) {
+  hashmap_t *map = generated_map;
+
+  HashKey *key = (HashKey *)pair->key;
+
+  Object *value = hashmap_get(map, key, sizeof(HashKey));
+  TEST_ASSERT_NOT_NULL(value);
+
+  test_integer_object(value, *(long *)pair->data);
+
+  return 0;
+}
+
+void test_hash_literals(void) {
+  char *input = ""
+                "let two = \"two\";          "
+                "{                           "
+                "    \"one\": 10-9,          "
+                "    two: 1 + 1,             "
+                "    \"thr\" + \"ee\": 6 / 2 "
+                "    4: 4,                   "
+                "}                           ";
+
+  Object *evaluated = test_eval(input);
+  TEST_ASSERT_EQUAL(HASH_OBJ, evaluated->type);
+
+  Hash *hash = evaluated->object;
+
+  hashmap_t expected_map;
+  hashmap_create(4, &expected_map);
+
+  String one = {"one", strlen("one")};
+  Object *one_obj = wrap_object(&one, STRING_OBJ);
+  HashKey one_key = get_hash_key(one_obj);
+  long one_val = 1;
+
+  hashmap_put(&expected_map, &one_key, sizeof(HashKey), &one_val);
+
+  String two = {"two", strlen("two")};
+  Object *two_obj = wrap_object(&two, STRING_OBJ);
+  HashKey two_key = get_hash_key(two_obj);
+  long two_val = 2;
+
+  hashmap_put(&expected_map, &two_key, sizeof(HashKey), &two_val);
+
+  String three = {"three", strlen("three")};
+  Object *three_obj = wrap_object(&three, STRING_OBJ);
+  HashKey three_key = get_hash_key(three_obj);
+  long three_val = 3;
+
+  hashmap_put(&expected_map, &three_key, sizeof(HashKey), &three_val);
+
+  Integer four = { 4 };
+  Object *four_obj = wrap_object(&four, INTEGER_OBJ);
+  HashKey four_key = get_hash_key(four_obj);
+  long four_val = 4;
+
+  hashmap_put(&expected_map, &four_key, sizeof(HashKey), &four_val);
+
+  hashmap_iterate_pairs(&expected_map, &iter_hash_literal_test, &hash->pairs);
+
+  free(one_obj);
+  free(two_obj);
+  free(three_obj);
+  free(four_obj);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -474,5 +549,6 @@ int main() {
   RUN_TEST(test_array_literals);
   RUN_TEST(test_array_indexing);
   RUN_TEST(test_builtin_array_functions);
+  RUN_TEST(test_hash_literals);
   return UNITY_END();
 }
