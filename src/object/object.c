@@ -6,18 +6,21 @@
 
 const char *ObjectTypeString[] = {
     "INTEGER_OBJ",  "BOOLEAN_OBJ", "NULL_OBJ",    "RETURN_OBJ", "ERROR_OBJ",
-    "FUNCTION_OBJ", "STRING_OBJ",  "BUILTIN_OBJ", "ARRAY_OBJ",
+    "FUNCTION_OBJ", "STRING_OBJ",  "BUILTIN_OBJ", "ARRAY_OBJ",  "HASH_OBJ",
 };
 
 void inspect_integer_object(char *buf, Integer *obj) {
-  sprintf(buf, "%ld", obj->value);
+  char temp_buf[100];
+  sprintf(temp_buf, "%ld", obj->value);
+
+  append_to_buf(&buf, temp_buf);
 }
 
 void inspect_boolean_object(char *buf, Boolean *obj) {
   if (obj->value) {
-    sprintf(buf, "%s", "true");
+    append_to_buf(&buf, "true");
   } else {
-    sprintf(buf, "%s", "false");
+    append_to_buf(&buf, "false");
   }
 }
 
@@ -25,7 +28,7 @@ void inspect_return_object(char *buf, ReturnValue *obj) {
   return inspect_object(buf, obj->value);
 }
 
-void inspect_null_object(char *buf) { sprintf(buf, "null"); }
+void inspect_null_object(char *buf) { append_to_buf(&buf, "null"); }
 
 void inspect_error_object(char *buf, Error *obj) {
   // TODO: Add line and column
@@ -34,62 +37,63 @@ void inspect_error_object(char *buf, Error *obj) {
 }
 
 void inspect_function_object(char *buf, Function *obj) {
-  buf += sprintf(buf, "fn (");
+  append_to_buf(&buf, "fn (");
 
   Node *cur_node = obj->parameters->tail;
   int i = 0;
   while (cur_node != NULL) {
     Identifier *ident = cur_node->value;
 
-    buf += sprintf(buf, "%s", ident->value);
+    append_to_buf(&buf, ident->value);
 
     if (++i < obj->parameters->size) {
-      buf += sprintf(buf, ", ");
+      append_to_buf(&buf, ", ");
     }
 
     cur_node = cur_node->next;
   }
 
-  buf += sprintf(buf, ")");
+  append_to_buf(&buf, ")");
 }
 
 void inspect_string_object(char *buf, String *str) {
-  sprintf(buf, "%s", str->value);
+  append_to_buf(&buf, str->value);
 }
 
-void inspect_builtin(char *buf) { sprintf(buf, "builtin function"); }
+void inspect_builtin(char *buf) {
+  append_to_buf(&buf,  "builtin function");
+}
 
 void inspect_array_object(char *buf, Array *arr) {
-  buf += sprintf(buf, "[");
+  append_to_buf(&buf,  "[");
 
   for (size_t i = 0; i < arr->elements.len; i++) {
-    char temp_buf[255];
-    inspect_object(temp_buf, arr->elements.arr[i]);
-    buf += sprintf(buf, "%s", temp_buf);
+    inspect_object(buf, arr->elements.arr[i]);
 
     if (i < arr->elements.len - 1) {
-      buf += sprintf(buf, ", ");
+      append_to_buf(&buf, ", ");
     }
   }
-
-  buf += sprintf(buf, "]");
+  append_to_buf(&buf, "]");
 }
 
 int hash_inspect_iter(void *buf, hashmap_element_t *pair) {
   HashPair *value = pair->data;
 
-  inspect_object(buf, &value->key);
-  buf += sprintf(buf, ": ");
-  inspect_object(buf, &value->value);
-  buf += sprintf(buf, ", ");
+  char *char_buf = buf;
+
+  inspect_object(char_buf, &value->key);
+  append_to_buf(&char_buf, ": ");
+  inspect_object(char_buf, &value->value);
+  append_to_buf(&char_buf, ", ");
 
   return 0;
 }
 
 void inspect_hash_object(char *buf, Hash *hash) {
-  buf += sprintf(buf, "{");
+  append_to_buf(&buf, "{");
   hashmap_iterate_pairs(&hash->pairs, &hash_inspect_iter, buf);
-  buf += sprintf(buf, "}");
+  append_to_buf(&buf, "}");
 }
 
 void inspect_object(char *buf, Object *obj) {

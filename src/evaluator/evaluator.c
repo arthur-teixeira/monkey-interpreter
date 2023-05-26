@@ -544,7 +544,7 @@ Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
 
   if (evaluated->type != ARRAY_OBJ) {
     char error_msg[255];
-    sprintf(error_msg, "ERROR: attempting to index %s",
+    sprintf(error_msg, "attempting to index %s",
             ObjectTypeString[evaluated->type]);
     return new_error(error_msg);
   }
@@ -554,7 +554,7 @@ Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
   if (evaluated_index->type != INTEGER_OBJ) {
     char error_msg[255];
     sprintf(error_msg,
-            "ERROR: attempting to index array with non-integer index: got %s",
+            "attempting to index array with non-integer index: got %s",
             ObjectTypeString[evaluated_index->type]);
 
     return new_error(error_msg);
