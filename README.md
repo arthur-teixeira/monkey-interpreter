@@ -13,8 +13,13 @@ $ ./bin/program
 ```
 
 ## To-do list
-- [ ] Garbage collection
-- [ ] Interpret source files
+- [ ] Reassignment expression without let keyword
 - [ ] For/while loops
+- [ ] Interpret source files
 - [ ] Turing completeness proof (rule 110)
+- [ ] Floating point number support
+- [ ] Binary numbers
+- [ ] Hex numbers
+- [ ] Bitwise operators
+- [ ] Garbage collection
 - [ ] Concurrent GC
