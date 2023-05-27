@@ -215,6 +215,10 @@ void test_error_handling(void) {
           "\"Hello\" - \"world\"",
           "unknown operator: STRING_OBJ - STRING_OBJ",
       },
+      {
+        "{\"name\": \"Monkey\"}[fn(x) { x }];",
+        "unusable as hash key: FUNCTION_OBJ",
+      },
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
@@ -515,7 +519,7 @@ void test_hash_literals(void) {
 
   hashmap_put(&expected_map, &three_key, sizeof(HashKey), &three_val);
 
-  Integer four = { 4 };
+  Integer four = {4};
   Object *four_obj = wrap_object(&four, INTEGER_OBJ);
   HashKey four_key = get_hash_key(four_obj);
   long four_val = 4;
@@ -530,10 +534,52 @@ void test_hash_literals(void) {
   free(four_obj);
 }
 
+void test_hash_index_expressions(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {{
+                                 "{\"foo\": 5}[\"foo\"]",
+                                 5,
+                             },
+                             {
+                                 "{\"foo\": 5}[\"bar\"]",
+                                 -1,
+                             },
+                             {
+                                 "let key = \"foo\"; {\"foo\": 5}[key]",
+                                 5,
+                             },
+                             {
+                                 "{}[\"foo\"]",
+                                 -1,
+                             },
+                             {
+                                 "{5: 5}[5]",
+                                 5,
+                             },
+                             {
+                                 "{true: 5}[true]",
+                                 5,
+                             }};
+
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
+    Object *evaluated = test_eval(tests[i].input);
+    if (tests[i].expected >= 0) {
+      printf("HERE: testing input %s, expecting %ld\n", tests[i].input, tests[i].expected);
+      test_integer_object(evaluated, tests[i].expected);
+    } else {
+      TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+    }
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   /* ---TODO: why does this test break if it runs after other tests?--- */
-  /* | */           RUN_TEST(test_hash_literals);                  /* | */
+  /* | */ RUN_TEST(test_hash_literals); /*                            | */
   /* ------------------------------------------------------------------ */
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
@@ -552,5 +598,6 @@ int main() {
   RUN_TEST(test_array_literals);
   RUN_TEST(test_array_indexing);
   RUN_TEST(test_builtin_array_functions);
+  RUN_TEST(test_hash_index_expressions);
   return UNITY_END();
 }

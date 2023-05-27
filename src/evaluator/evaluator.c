@@ -539,16 +539,8 @@ Object *eval_array_literal(ArrayLiteral *literal, Environment *env) {
   return array_obj;
 }
 
-Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
-  Object *evaluated = eval_expression(idx->left, env);
-
-  if (evaluated->type != ARRAY_OBJ) {
-    char error_msg[255];
-    sprintf(error_msg, "attempting to index %s",
-            ObjectTypeString[evaluated->type]);
-    return new_error(error_msg);
-  }
-
+Object *eval_array_indexing(Object *left, IndexExpression *idx,
+                            Environment *env) {
   Object *evaluated_index = eval_expression(idx->index, env);
 
   if (evaluated_index->type != INTEGER_OBJ) {
@@ -560,7 +552,8 @@ Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
     return new_error(error_msg);
   }
 
-  Array *evaluated_array = evaluated->object;
+  assert(left->type == ARRAY_OBJ);
+  Array *evaluated_array = left->object;
   Integer *index = evaluated_index->object;
 
   if (index->value > evaluated_array->elements.len - 1 || index->value < 0) {
@@ -568,6 +561,47 @@ Object *eval_array_indexing(IndexExpression *idx, Environment *env) {
   }
 
   return evaluated_array->elements.arr[index->value];
+}
+
+Object *eval_hash_indexing(Object *left, IndexExpression *idx,
+                           Environment *env) {
+  Object *evaluated_index = eval_expression(idx->index, env);
+
+  assert(left->type == HASH_OBJ);
+  Hash *hash_object = left->object;
+
+  HashKey key = get_hash_key(evaluated_index);
+  if (key.value < 0) {
+    char error_msg[255];
+    sprintf(error_msg, "unusable as hash key: %s",
+            ObjectTypeString[evaluated_index->type]);
+
+    return new_error(error_msg);
+  }
+
+  HashPair *pair = hashmap_get(&hash_object->pairs, &key, sizeof(HashKey));
+  if (pair == NULL) {
+    return &obj_null;
+  }
+
+  return &pair->value;
+}
+
+Object *eval_index_expression(IndexExpression *idx, Environment *env) {
+  Object *left = eval_expression(idx->left, env);
+
+  switch (left->type) {
+  case ARRAY_OBJ:
+    return eval_array_indexing(left, idx, env);
+  case HASH_OBJ:
+    return eval_hash_indexing(left, idx, env);
+  default:
+    break;
+  }
+
+  char error_msg[255];
+  sprintf(error_msg, "attempting to index %s", ObjectTypeString[left->type]);
+  return new_error(error_msg);
 }
 
 typedef struct {
@@ -611,7 +645,8 @@ int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
   hash_pair->key = *key;
   hash_pair->value = *value;
 
-  hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(HashKey), hash_pair);
+  hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(HashKey),
+              hash_pair);
 
   return 0;
 }
@@ -669,7 +704,7 @@ Object *eval_expression(Expression *expr, Environment *env) {
   case ARRAY_EXPR:
     return eval_array_literal(expr->value, env);
   case INDEX_EXPR:
-    return eval_array_indexing(expr->value, env);
+    return eval_index_expression(expr->value, env);
   case HASH_EXPR:
     return eval_hash_literal(expr->value, env);
   default:

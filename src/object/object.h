@@ -69,7 +69,7 @@ typedef struct {
 
 typedef struct {
   ObjectType type;
-  uint64_t value;
+  int64_t value;
 } HashKey;
 
 HashKey get_hash_key(Object *);
