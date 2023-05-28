@@ -4,6 +4,7 @@
 #include "../evaluator.h"
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 static Null null_value = {};
@@ -14,7 +15,7 @@ static Object obj_null = {
 };
 
 Object *check_args_len(LinkedList *args, size_t expected) {
-  if (args->size != expected) {
+  if (args->size < expected) {
 
     char err_msg[255];
     sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
@@ -185,6 +186,31 @@ Object *push(LinkedList *args) {
   return new_arr_obj;
 }
 
+Object *builtin_puts(LinkedList *args) {
+  Object *err = check_args_len(args, 1);
+  if (err != NULL) {
+    return err;
+  }
+
+  Node *cur_node = args->tail;
+  while (cur_node != NULL) {
+    Object *value = cur_node->value;
+    char *buf = malloc(255);
+
+    inspect_object(buf, value);
+    printf("%s\n", buf);
+
+    cur_node = cur_node->next;
+    free(buf);
+  }
+
+  Object *result = malloc(sizeof(Object));
+  result->type = NULL_OBJ;
+  result->object = NULL;
+  
+  return result;
+}
+
 void put_builtin(hashmap_t *builtins, char *fn_name, BuiltinFunction fn) {
   Object *builtin_obj = malloc(sizeof(Object));
   assert(builtin_obj != NULL);
@@ -219,10 +245,15 @@ void set_push_builtin(hashmap_t *builtins) {
   put_builtin(builtins, "push", &push);
 }
 
+void set_puts_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "puts", &builtin_puts);
+}
+
 void get_builtins(hashmap_t *builtins) {
   set_len_builtin(builtins);
   set_first_builtin(builtins);
   set_last_builtin(builtins);
   set_rest_builtin(builtins);
   set_push_builtin(builtins);
+  set_puts_builtin(builtins);
 }
