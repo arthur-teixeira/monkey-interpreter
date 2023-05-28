@@ -216,8 +216,8 @@ void test_error_handling(void) {
           "unknown operator: STRING_OBJ - STRING_OBJ",
       },
       {
-        "{\"name\": \"Monkey\"}[fn(x) { x }];",
-        "unusable as hash key: FUNCTION_OBJ",
+          "{\"name\": \"Monkey\"}[fn(x) { x }];",
+          "unusable as hash key: FUNCTION_OBJ",
       },
   };
 
@@ -470,9 +470,9 @@ Object *wrap_object(void *str, ObjectType type) {
 int iter_hash_literal_test(void *generated_map, hashmap_element_t *pair) {
   hashmap_t *map = generated_map;
 
-  HashKey *key = (HashKey *)pair->key;
+  const int32_t *key = pair->key;
 
-  HashPair *value = hashmap_get(map, key, sizeof(HashKey));
+  HashPair *value = hashmap_get(map, key, sizeof(int32_t));
   TEST_ASSERT_NOT_NULL(value);
 
   test_integer_object(&value->value, *(long *)pair->data);
@@ -500,31 +500,31 @@ void test_hash_literals(void) {
 
   String one = {"one", strlen("one")};
   Object *one_obj = wrap_object(&one, STRING_OBJ);
-  HashKey one_key = get_hash_key(one_obj);
+  int32_t one_key = get_hash_key(one_obj);
   long one_val = 1;
 
-  hashmap_put(&expected_map, &one_key, sizeof(HashKey), &one_val);
+  hashmap_put(&expected_map, &one_key, sizeof(int32_t), &one_val);
 
   String two = {"two", strlen("two")};
   Object *two_obj = wrap_object(&two, STRING_OBJ);
-  HashKey two_key = get_hash_key(two_obj);
+  int32_t two_key = get_hash_key(two_obj);
   long two_val = 2;
 
-  hashmap_put(&expected_map, &two_key, sizeof(HashKey), &two_val);
+  hashmap_put(&expected_map, &two_key, sizeof(int32_t), &two_val);
 
   String three = {"three", strlen("three")};
   Object *three_obj = wrap_object(&three, STRING_OBJ);
-  HashKey three_key = get_hash_key(three_obj);
+  int32_t three_key = get_hash_key(three_obj);
   long three_val = 3;
 
-  hashmap_put(&expected_map, &three_key, sizeof(HashKey), &three_val);
+  hashmap_put(&expected_map, &three_key, sizeof(int32_t), &three_val);
 
   Integer four = {4};
   Object *four_obj = wrap_object(&four, INTEGER_OBJ);
-  HashKey four_key = get_hash_key(four_obj);
+  int32_t four_key = get_hash_key(four_obj);
   long four_val = 4;
 
-  hashmap_put(&expected_map, &four_key, sizeof(HashKey), &four_val);
+  hashmap_put(&expected_map, &four_key, sizeof(int32_t), &four_val);
 
   hashmap_iterate_pairs(&expected_map, &iter_hash_literal_test, &hash->pairs);
 
@@ -540,35 +540,38 @@ void test_hash_index_expressions(void) {
     long expected;
   };
 
-  struct testCase tests[] = {{
-                                 "{\"foo\": 5}[\"foo\"]",
-                                 5,
-                             },
-                             {
-                                 "{\"foo\": 5}[\"bar\"]",
-                                 -1,
-                             },
-                             {
-                                 "let key = \"foo\"; {\"foo\": 5}[key]",
-                                 5,
-                             },
-                             {
-                                 "{}[\"foo\"]",
-                                 -1,
-                             },
-                             {
-                                 "{5: 5}[5]",
-                                 5,
-                             },
-                             {
-                                 "{true: 5}[true]",
-                                 5,
-                             }};
+  struct testCase tests[] = {
+      {
+          "{\"foo\": 5}[\"foo\"]",
+          5,
+      },
+      {
+          "{\"foo\": 5}[\"bar\"]",
+          -1,
+      },
+      {
+          "let key = \"foo\"; {\"foo\": 5}[key]",
+          5,
+      },
+      {
+          "{}[\"foo\"]",
+          -1,
+      },
+      {
+          "{5: 5}[5]",
+          5,
+      },
+      {
+          "{true: 5}[true]",
+          5,
+      },
+  };
 
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
     if (tests[i].expected >= 0) {
-      printf("HERE: testing input %s, expecting %ld\n", tests[i].input, tests[i].expected);
+      printf("HERE: testing input %s, expecting %ld\n", tests[i].input,
+             tests[i].expected);
       test_integer_object(evaluated, tests[i].expected);
     } else {
       TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);

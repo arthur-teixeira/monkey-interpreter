@@ -570,8 +570,8 @@ Object *eval_hash_indexing(Object *left, IndexExpression *idx,
   assert(left->type == HASH_OBJ);
   Hash *hash_object = left->object;
 
-  HashKey key = get_hash_key(evaluated_index);
-  if (key.value < 0) {
+  int32_t key = get_hash_key(evaluated_index);
+  if (key == -1) {
     char error_msg[255];
     sprintf(error_msg, "unusable as hash key: %s",
             ObjectTypeString[evaluated_index->type]);
@@ -579,7 +579,7 @@ Object *eval_hash_indexing(Object *left, IndexExpression *idx,
     return new_error(error_msg);
   }
 
-  HashPair *pair = hashmap_get(&hash_object->pairs, &key, sizeof(HashKey));
+  HashPair *pair = hashmap_get(&hash_object->pairs, &key, sizeof(int32_t));
   if (pair == NULL) {
     return &obj_null;
   }
@@ -622,17 +622,17 @@ int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
     return 1;
   }
 
-  HashKey hash_key = get_hash_key(key);
-  if (hash_key.type < 0) {
+  int32_t hash_key = get_hash_key(key);
+  if (hash_key == -1) {
     char err_msg[255];
     sprintf(err_msg, "Unusable as hash key: %s", ObjectTypeString[key->type]);
     eval_context->error = new_error(err_msg);
     return 1;
   }
-  HashKey *hash_key_in_heap = malloc(sizeof(HashKey));
+  int32_t *hash_key_in_heap = malloc(sizeof(int32_t));
   assert(hash_key_in_heap != NULL);
 
-  memcpy(hash_key_in_heap, &hash_key, sizeof(HashKey));
+  memcpy(hash_key_in_heap, &hash_key, sizeof(int32_t));
 
   Object *value = eval_expression(value_node, eval_context->env);
   if (is_error(value)) {
@@ -645,7 +645,7 @@ int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
   hash_pair->key = *key;
   hash_pair->value = *value;
 
-  hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(HashKey),
+  hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(int32_t),
               hash_pair);
 
   return 0;

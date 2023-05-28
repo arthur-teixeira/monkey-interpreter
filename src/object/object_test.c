@@ -12,11 +12,10 @@ Object *wrap_string(String *str) {
 }
 
 void assert_and_free(Object *a, Object *b) {
-  HashKey hash_a = get_hash_key(a);
-  HashKey hash_b = get_hash_key(b);
+  int32_t hash_a = get_hash_key(a);
+  int32_t hash_b = get_hash_key(b);
 
-  TEST_ASSERT_EQUAL(hash_a.type, hash_b.type);
-  TEST_ASSERT_EQUAL(hash_a.value, hash_b.value);
+  TEST_ASSERT_EQUAL(hash_a, hash_b);
 
   free(a);
   free(b);

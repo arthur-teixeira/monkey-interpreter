@@ -121,40 +121,24 @@ void inspect_object(char *buf, Object *obj) {
   }
 }
 
-HashKey get_string_hash_key(String *str) {
-  HashKey result;
-  result.type = STRING_OBJ;
+int32_t get_string_hash_key(String *str) {
   // TODO: implement own crc32 function or simply inline libiberty impl
-  result.value = xcrc32((unsigned char *)str->value, strlen(str->value), 10);
-
-  return result;
+  return xcrc32((unsigned char *)str->value, strlen(str->value), 10);
 }
 
-HashKey get_bool_hash_key(Boolean *boolean) {
-  HashKey result;
-  result.type = BOOLEAN_OBJ;
-  result.value = boolean->value;
-
-  return result;
+int32_t get_bool_hash_key(Boolean *boolean) {
+  return boolean->value << BOOLEAN_OBJ;
 }
 
-HashKey get_int_hash_key(Integer *integer) {
-  HashKey result;
-  result.type = INTEGER_OBJ;
-  result.value = integer->value;
-
-  return result;
+int32_t get_int_hash_key(Integer *integer) {
+  return integer->value << INTEGER_OBJ;
 }
 
-HashKey invalid_key() {
-  HashKey result;
-  result.type = -1;
-  result.value = -1;
-
-  return result;
+int32_t invalid_key() {
+  return -1;
 }
 
-HashKey get_hash_key(Object *obj) {
+int32_t get_hash_key(Object *obj) {
   switch (obj->type) {
   case STRING_OBJ:
     return get_string_hash_key(obj->object);

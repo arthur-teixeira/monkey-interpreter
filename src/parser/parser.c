@@ -544,6 +544,7 @@ HashLiteral *new_hash_literal(Parser *p) {
     parser_next_token(p);
     Expression *key = parse_expression(p, LOWEST);
     if (!expect_peek(p, COLON)) {
+      printf("???????????????\n");
       hashmap_destroy(&hash->pairs);
       free(hash);
       return NULL;
