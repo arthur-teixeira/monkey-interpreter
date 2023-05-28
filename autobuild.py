@@ -5,6 +5,7 @@ import signal
 import sys
 
 SRC_FOLDER_NAME = './src'
+CLEAN_CMD = 'make clean'
 COMPILE_CMD = 'make all'
 TEST_CMD = 'make run'
 
@@ -36,6 +37,7 @@ def recompile():
     if (TESTING):
         cmd = TEST_CMD.split()
     else:
+        subprocess.call(CLEAN_CMD.split())
         cmd = COMPILE_CMD.split()
     subprocess.call(cmd)
 
