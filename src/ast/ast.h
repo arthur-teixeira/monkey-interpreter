@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "../str_utils/str_utils.h"
 
 typedef struct {
   Token token;
@@ -20,7 +21,7 @@ typedef struct {
   int64_t value;
 } IntegerLiteral;
 
-void int_to_string(char *, IntegerLiteral *);
+void int_to_string(ResizableBuffer *, IntegerLiteral *);
 
 typedef enum { LET_STATEMENT, RETURN_STATEMENT, EXPR_STATEMENT } StatementType;
 
@@ -43,7 +44,7 @@ typedef struct {
   ExprType type;
   void *value;
 } Expression;
-void value_to_string(char *, Expression *);
+void value_to_string(ResizableBuffer *, Expression *);
 
 typedef struct {
   Token token;
@@ -51,7 +52,7 @@ typedef struct {
   Expression *right;
 } PrefixExpression;
 
-void prefix_to_string(char *, PrefixExpression *);
+void prefix_to_string(ResizableBuffer *, PrefixExpression *);
 
 typedef struct {
   Token token;
@@ -60,21 +61,21 @@ typedef struct {
   Expression *right;
 } InfixExpression;
 
-void infix_to_string(char *, InfixExpression *);
+void infix_to_string(ResizableBuffer *, InfixExpression *);
 
 typedef struct {
   Token token;
   bool value;
 } BooleanLiteral;
 
-void bool_to_string(char *, BooleanLiteral *);
+void bool_to_string(ResizableBuffer *, BooleanLiteral *);
 
 typedef struct {
   Token token;
   LinkedList *statements;
 } BlockStatement;
 
-void block_to_string(char *, BlockStatement *);
+void block_to_string(ResizableBuffer *, BlockStatement *);
 
 typedef struct {
   Token token;
@@ -83,7 +84,7 @@ typedef struct {
   BlockStatement *alternative;
 } IfExpression;
 
-void if_to_string(char *, IfExpression *);
+void if_to_string(ResizableBuffer *, IfExpression *);
 
 typedef struct {
   Token token;
@@ -91,7 +92,7 @@ typedef struct {
   BlockStatement *body;
 } FunctionLiteral;
 
-void fn_to_string(char *, FunctionLiteral *);
+void fn_to_string(ResizableBuffer *, FunctionLiteral *);
 
 typedef struct {
   Token token;
@@ -99,7 +100,7 @@ typedef struct {
   uint32_t len;
 } StringLiteral;
 
-void string_literal_to_string(char *, StringLiteral *);
+void string_literal_to_string(ResizableBuffer *, StringLiteral *);
 
 typedef struct {
   Token token;
@@ -107,14 +108,14 @@ typedef struct {
   LinkedList *arguments; // TODO: Expression*[];
 } CallExpression;
 
-void call_to_string(char *, CallExpression *);
+void call_to_string(ResizableBuffer *, CallExpression *);
 
 typedef struct {
   Token token;
   DynamicArray *elements;
 } ArrayLiteral;
 
-void array_to_string(char *, ArrayLiteral *);
+void array_to_string(ResizableBuffer *, ArrayLiteral *);
 
 typedef struct {
   Token token;
@@ -122,7 +123,7 @@ typedef struct {
   Expression *index;
 } IndexExpression;
 
-void index_expression_to_string(char *, IndexExpression *);
+void index_expression_to_string(ResizableBuffer *, IndexExpression *);
 
 typedef struct {
   Token token;
@@ -130,7 +131,7 @@ typedef struct {
   size_t len;
 } HashLiteral;
 
-void hash_literal_to_string(char *, HashLiteral *);
+void hash_literal_to_string(ResizableBuffer *, HashLiteral *);
 
 typedef struct {
   StatementType type;
@@ -139,18 +140,16 @@ typedef struct {
   Expression *expression;
 } Statement;
 
-void stmt_to_string(char *, Statement *);
+void stmt_to_string(ResizableBuffer *, Statement *);
 
 typedef struct {
   LinkedList *statements; // Statement*[];
 } Program;
 
-void program_token_literal(char *, Program *);
-
 Program *new_program(void);
 
 void free_program(Program *p);
 
-void program_string(char *, Program *);
-void ident_expr_to_string(char *buf, Identifier *expr);
-void block_to_string(char *buf, BlockStatement *block);
+void program_string(ResizableBuffer *, Program *);
+void ident_expr_to_string(ResizableBuffer *buf, Identifier *expr);
+void block_to_string(ResizableBuffer *buf, BlockStatement *block);

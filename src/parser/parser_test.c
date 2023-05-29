@@ -329,12 +329,12 @@ void test_operator_precedence_parsing(void) {
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Program *p = parse_and_check_errors(tests[i].input);
 
-    char *actual = malloc(1000);
-    *actual = '\0';
-    program_string(actual, p);
+    ResizableBuffer actual;
+    init_resizable_buffer(&actual, 100);
+    program_string(&actual, p);
 
-    TEST_ASSERT_EQUAL_STRING(tests[i].expected, actual);
-    free(actual);
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected, actual.buf);
+    free(actual.buf);
   }
 }
 

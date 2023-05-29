@@ -35,10 +35,11 @@ void test_ast_as_string(void) {
     statements
   };
 
-  char *result = malloc(MAX_LEN);
-  program_string(result, &p);
-  TEST_ASSERT_EQUAL_STRING("let myVar = anotherVar;\n", result);
-  free(result);
+  ResizableBuffer result;
+  init_resizable_buffer(&result, MAX_LEN);
+  program_string(&result, &p);
+  TEST_ASSERT_EQUAL_STRING("let myVar = anotherVar;\n", result.buf);
+  free(result.buf);
 }
 
 int main(void) {

@@ -25,7 +25,7 @@ typedef struct {
  void *object;
 } Object;
 
-void inspect_object(char *, Object *);
+void inspect_object(ResizableBuffer *, Object *);
 
 typedef struct {
   long value;  

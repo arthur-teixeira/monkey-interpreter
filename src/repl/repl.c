@@ -67,15 +67,15 @@ void start() {
       return;
     }
 
-    char *buf = malloc(255);
-    *buf = '\0';
+    ResizableBuffer buf;
+    init_resizable_buffer(&buf, 100);
 
     Lexer *l = new_lexer(input_buf->buffer);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
     if (p->errors->size > 0) {
       print_parser_errors(p);
-      free(buf);
+      free(buf.buf);
       free_parser(p);
       free_program(program);
       continue;
@@ -83,11 +83,11 @@ void start() {
 
     Object *evaluated = eval_program(program, env);
     if (evaluated != NULL) {
-      inspect_object(buf, evaluated);
-      printf("%s\n", buf);
+      inspect_object(&buf, evaluated);
+      printf("%s\n", buf.buf);
     }
 
-    free(buf);
+    free(buf.buf);
     free_parser(p);
     free_program(program);
   }

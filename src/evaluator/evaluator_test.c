@@ -261,18 +261,19 @@ void test_function_object(void) {
   TEST_ASSERT_EQUAL(1, fn->parameters->size);
 
   Identifier *param = fn->parameters->tail->value;
-  char *buf = malloc(1000);
-  memset(buf, 0, 1000);
-  ident_expr_to_string(buf, param);
+  ResizableBuffer buf;
+  init_resizable_buffer(&buf, 1000);
 
-  TEST_ASSERT_EQUAL_STRING("x", buf);
+  ident_expr_to_string(&buf, param);
 
-  memset(buf, 0, 100);
+  TEST_ASSERT_EQUAL_STRING("x", buf.buf);
 
-  block_to_string(buf, fn->body);
-  TEST_ASSERT_EQUAL_STRING("(x + 2)", buf);
+  memset(buf.buf, 0, 1000);
 
-  free(buf);
+  block_to_string(&buf, fn->body);
+  TEST_ASSERT_EQUAL_STRING("(x + 2)", buf.buf);
+
+  free(buf.buf);
 }
 
 void test_function_application(void) {
@@ -581,9 +582,6 @@ void test_hash_index_expressions(void) {
 
 int main() {
   UNITY_BEGIN();
-  /* ---TODO: why does this test break if it runs after other tests?--- */
-  /* | */ RUN_TEST(test_hash_literals); /*                            | */
-  /* ------------------------------------------------------------------ */
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
   RUN_TEST(test_bang_operator);
@@ -602,5 +600,6 @@ int main() {
   RUN_TEST(test_array_indexing);
   RUN_TEST(test_builtin_array_functions);
   RUN_TEST(test_hash_index_expressions);
+  RUN_TEST(test_hash_literals);
   return UNITY_END();
 }

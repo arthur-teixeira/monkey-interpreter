@@ -2,13 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define max(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a > _b ? _a : _b;                                                         \
-  })
+#include "str_utils.h"
 
 // Stolen from
 // https://android.googlesource.com/platform/system/core.git/+/master/libcutils/strlcpy.c
@@ -36,17 +30,32 @@ size_t strlcpy(char *dst, const char *src, size_t siz) {
   return (s - src - 1); /* count does not include NUL */
 }
 
-void append_to_buf(char **buf, char *src) {
-  if (strlen(*buf) + strlen(src) + 1 >= sizeof(*buf)) {
-    size_t new_size = max(sizeof(*buf) + sizeof(src), sizeof(*buf) *2);
-    char *new_buf = realloc(*buf, new_size);
-    if (new_buf == NULL) {
-      printf("ERROR: Failed to reallocate string buffer: %s\n",
-             strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-    *buf = new_buf;
+size_t max(size_t a, size_t b) {
+  if (a > b) {
+    return a;
   }
 
-  strcat(*buf, src);
+  return b;
+}
+
+void init_resizable_buffer(ResizableBuffer *buf, size_t initial_size) {
+  buf->size = initial_size;
+  buf->buf = malloc(initial_size * sizeof(char));
+  buf->buf[0] = '\0';
+}
+
+void append_to_buf(ResizableBuffer *buf, char *src) {
+  size_t buf_len_after_append = strlen(buf->buf) + strlen(src) + 1;
+
+  if (buf_len_after_append > buf->size) {
+    buf->size = max(buf->size * 2, buf_len_after_append);
+    char *new_buf = realloc(buf->buf, buf->size);
+    if (new_buf == NULL) {
+      printf("ERROR: Failed to reallocate string buffer: %s\n", strerror(errno));
+      exit(EXIT_FAILURE);
+    }
+    buf->buf = new_buf;
+
+  }
+  strcat(buf->buf, src);
 }
