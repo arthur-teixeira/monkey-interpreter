@@ -15,7 +15,7 @@ static Object obj_null = {
 };
 
 Object *check_args_len(LinkedList *args, size_t expected) {
-  if (args->size < expected) {
+  if (args->size != expected) {
 
     char err_msg[255];
     sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
@@ -187,21 +187,26 @@ Object *push(LinkedList *args) {
 }
 
 Object *builtin_puts(LinkedList *args) {
-  Object *err = check_args_len(args, 1);
-  if (err != NULL) {
-    return err;
+  if (args->size == 0) {
+
+    char err_msg[255];
+    sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
+            args->size);
+
+    return new_error(err_msg);
   }
 
   Node *cur_node = args->tail;
   while (cur_node != NULL) {
     Object *value = cur_node->value;
-    char *buf = malloc(255);
+    ResizableBuffer buf;
+    init_resizable_buffer(&buf, 100);
 
-    inspect_object(buf, value);
-    printf("%s\n", buf);
+    inspect_object(&buf, value);
+    printf("%s\n", buf.buf);
 
     cur_node = cur_node->next;
-    free(buf);
+    free(buf.buf);
   }
 
   Object *result = malloc(sizeof(Object));
