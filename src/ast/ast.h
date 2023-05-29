@@ -38,6 +38,7 @@ typedef enum {
   ARRAY_EXPR,
   INDEX_EXPR,
   HASH_EXPR,
+  WHILE_EXPR,
 } ExprType;
 
 typedef struct {
@@ -132,6 +133,14 @@ typedef struct {
 } HashLiteral;
 
 void hash_literal_to_string(ResizableBuffer *, HashLiteral *);
+
+typedef struct {
+  Token token;
+  Expression *condition;
+  BlockStatement *body;
+} WhileLoop;
+
+void while_to_string(ResizableBuffer *, WhileLoop *);
 
 typedef struct {
   StatementType type;
