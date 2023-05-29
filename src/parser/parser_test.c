@@ -521,6 +521,18 @@ void test_parsing_empty_hash_literal(void) {
   TEST_ASSERT_EQUAL(0, hash->len);
 }
 
+void test_parsing_while_loops(void) {
+  char *input = "while (b > 5) {"
+                " let b = b + 1;"
+                "}";
+
+  Program *p = parse_and_check_errors(input);
+  WhileLoop *loop = test_single_expression(p, WHILE_EXPR);
+
+  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(INFIX_EXPR, loop->condition->type);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -541,5 +553,6 @@ int main() {
   RUN_TEST(test_parsing_index_expressions);
   RUN_TEST(test_parsing_hash_literals_string_keys);
   RUN_TEST(test_parsing_empty_hash_literal);
+  RUN_TEST(test_parsing_while_loops);
   return UNITY_END();
 }

@@ -146,6 +146,14 @@ void hash_literal_to_string(ResizableBuffer *buf, HashLiteral *hash) {
   append_to_buf(buf, "}");
 }
 
+void while_to_string(ResizableBuffer *buf, WhileLoop *loop) {
+  append_to_buf(buf, "while (");
+  value_to_string(buf, loop->condition);
+  append_to_buf(buf, ") {");
+  block_to_string(buf, loop->body);
+  append_to_buf(buf, "}");
+}
+
 void value_to_string(ResizableBuffer *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -172,6 +180,8 @@ void value_to_string(ResizableBuffer *buf, Expression *expr) {
     return index_expression_to_string(buf, expr->value);
   case HASH_EXPR:
     return hash_literal_to_string(buf, expr->value);
+  case WHILE_EXPR:
+    return while_to_string(buf, expr->value);
   }
 }
 

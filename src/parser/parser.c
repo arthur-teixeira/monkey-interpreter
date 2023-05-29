@@ -544,7 +544,6 @@ HashLiteral *new_hash_literal(Parser *p) {
     parser_next_token(p);
     Expression *key = parse_expression(p, LOWEST);
     if (!expect_peek(p, COLON)) {
-      printf("???????????????\n");
       hashmap_destroy(&hash->pairs);
       free(hash);
       return NULL;
@@ -580,6 +579,47 @@ Expression *parse_hash_literal(Parser *p) {
   HashLiteral *hash = new_hash_literal(p);
 
   expr->value = hash;
+  return expr;
+}
+
+WhileLoop *new_while_loop(Parser *p) {
+  WhileLoop *loop = malloc(sizeof(WhileLoop));
+  assert(loop != NULL && "Error allocating memory for while loop");
+
+  loop->token = p->cur_token;
+
+  //TODO: improve error messages
+  if (!expect_peek(p, LPAREN)) {
+    free(loop);
+    return NULL;
+  }
+  
+  parser_next_token(p);
+  loop->condition = parse_expression(p, LOWEST);
+
+  if (!expect_peek(p, RPAREN)) {
+    free(loop->condition);
+    free(loop);
+
+    return NULL;
+  }
+
+  parser_next_token(p);
+
+  loop->body = parse_block_statement(p);
+
+  return loop;
+}
+
+Expression *parse_while_loop(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "Error allocating memory for while expression");
+  expr->type = WHILE_EXPR;
+
+  WhileLoop *loop = new_while_loop(p);
+
+  expr->value = loop;
+
   return expr;
 }
 
@@ -719,6 +759,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_string_literal, STRING);
   register_prefix_fn(p, &parse_array_literal, LBRACKET);
   register_prefix_fn(p, &parse_hash_literal, LBRACE);
+  register_prefix_fn(p, &parse_while_loop, WHILE);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);
