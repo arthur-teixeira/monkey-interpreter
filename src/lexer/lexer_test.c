@@ -25,7 +25,11 @@ void test_next_token(void) {
                 "\"foobar\""
                 "\"foo bar\""
                 "[1, 2]"
-                "{\"foo\": \"bar\"}";
+                "{\"foo\": \"bar\"}"
+                "while (true) {"
+                "break;"
+                "continue;"
+                "}";
 
   typedef struct {
     TokenType expected_type;
@@ -61,7 +65,10 @@ void test_next_token(void) {
       {LBRACKET, "["},   {INT, "1"},          {COMMA, ","},
       {INT, "2"},        {RBRACKET, "]"},     {LBRACE, "{"},
       {STRING, "foo"},   {COLON, ":"},        {STRING, "bar"},
-      {RBRACE, "}"},     {END_OF_FILE, "\0"},
+      {RBRACE, "}"},     {WHILE, "while"},    {LPAREN, "("},
+      {TRUE, "true"},    {RPAREN, ")"},       {LBRACE, "{"},
+      {BREAK, "break"},  {SEMICOLON, ";"},    {CONTINUE, "continue"},
+      {SEMICOLON, ";"},  {RBRACE, "}"},       {END_OF_FILE, "\0"},
   };
 
   Lexer *lexer = new_lexer(input);
