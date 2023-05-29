@@ -44,7 +44,8 @@ Object *eval_block_statement(LinkedList *statements, Environment *env) {
     result = eval(cur_node->value, env);
 
     if (result != NULL &&
-        (result->type == RETURN_OBJ || result->type == ERROR_OBJ)) {
+        (result->type == RETURN_OBJ || result->type == ERROR_OBJ ||
+         result->type == CONTINUE_OBJ)) {
       return result;
     }
     cur_node = cur_node->next;
@@ -698,7 +699,21 @@ Object *eval_while_loop(WhileLoop *loop, Environment *env) {
 
     result = eval_block_statement(loop->body->statements, env);
 
-    free(result); //maybe not?
+    if (result->type == RETURN_OBJ) {
+      return result;
+    }
+
+    if (result->type == CONTINUE_OBJ) {
+      free(result);
+      continue;
+    }
+
+    if (result->type == BREAK_OBJ) {
+      free(result);
+      break;
+    }
+
+    free(result);
   }
 
   return result;
@@ -768,6 +783,16 @@ Object *eval_let_statement(Statement *stmt, Environment *env) {
   return NULL;
 }
 
+Object *eval_continue_statement(Statement *stmt, Environment *env) {
+  Object *obj = malloc(sizeof(Object));
+  assert(obj != NULL);
+
+  obj->type = BREAK_OBJ;
+  obj->object = NULL;
+
+  return obj;
+}
+
 Object *eval(Statement *stmt, Environment *env) {
   switch (stmt->type) {
   case EXPR_STATEMENT:
@@ -776,6 +801,8 @@ Object *eval(Statement *stmt, Environment *env) {
     return eval_return_statement(stmt->expression, env);
   case LET_STATEMENT:
     return eval_let_statement(stmt, env);
+  case CONTINUE_STATEMENT:
+    return eval_continue_statement(stmt, env);
   default:
     assert(0 && "unreachable");
     return NULL;

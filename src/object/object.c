@@ -1,7 +1,7 @@
 #include "./object.h"
+#include "../crc/crc.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
-#include "../crc/crc.h"
 #include <stdio.h>
 
 const char *ObjectTypeString[] = {
@@ -61,11 +61,11 @@ void inspect_string_object(ResizableBuffer *buf, String *str) {
 }
 
 void inspect_builtin(ResizableBuffer *buf) {
-  append_to_buf(buf,  "builtin function");
+  append_to_buf(buf, "builtin function");
 }
 
 void inspect_array_object(ResizableBuffer *buf, Array *arr) {
-  append_to_buf(buf,  "[");
+  append_to_buf(buf, "[");
 
   for (size_t i = 0; i < arr->elements.len; i++) {
     inspect_object(buf, arr->elements.arr[i]);
@@ -118,6 +118,8 @@ void inspect_object(ResizableBuffer *buf, Object *obj) {
     return inspect_array_object(buf, obj->object);
   case HASH_OBJ:
     return inspect_hash_object(buf, obj->object);
+  default:
+    return; // break and continue object are sentinel values
   }
 }
 
@@ -133,9 +135,7 @@ int32_t get_int_hash_key(Integer *integer) {
   return integer->value << INTEGER_OBJ;
 }
 
-int32_t invalid_key() {
-  return -1;
-}
+int32_t invalid_key() { return -1; }
 
 int32_t get_hash_key(Object *obj) {
   switch (obj->type) {

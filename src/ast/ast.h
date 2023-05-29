@@ -2,11 +2,11 @@
 #include "../hashmap/hashmap.h"
 #include "../lexer/lexer.h"
 #include "../linked_list/linked_list.h"
+#include "../str_utils/str_utils.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "../str_utils/str_utils.h"
 
 typedef struct {
   Token token;
@@ -23,7 +23,13 @@ typedef struct {
 
 void int_to_string(ResizableBuffer *, IntegerLiteral *);
 
-typedef enum { LET_STATEMENT, RETURN_STATEMENT, EXPR_STATEMENT } StatementType;
+typedef enum {
+  LET_STATEMENT,
+  RETURN_STATEMENT,
+  EXPR_STATEMENT,
+  BREAK_STATEMENT,
+  CONTINUE_STATEMENT
+} StatementType;
 
 typedef enum {
   IDENT_EXPR,

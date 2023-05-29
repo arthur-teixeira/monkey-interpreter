@@ -244,6 +244,14 @@ void bool_to_string(ResizableBuffer *buf, BooleanLiteral *expr) {
   append_to_buf(buf, expr->token.literal);
 }
 
+void continue_to_string(ResizableBuffer *buf) {
+  append_to_buf(buf, "continue;");
+}
+
+void break_to_string(ResizableBuffer *buf) {
+  append_to_buf(buf, "break;");
+}
+
 void stmt_to_string(ResizableBuffer *buf, Statement *stmt) {
   switch (stmt->type) {
   case LET_STATEMENT:
@@ -252,6 +260,10 @@ void stmt_to_string(ResizableBuffer *buf, Statement *stmt) {
     return return_to_string(buf, stmt);
   case EXPR_STATEMENT:
     return expr_to_string(buf, stmt);
+  case BREAK_STATEMENT:
+    return break_to_string(buf);
+  case CONTINUE_STATEMENT:
+    return continue_to_string(buf);
   }
 }
 

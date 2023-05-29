@@ -16,6 +16,8 @@ typedef enum {
   BUILTIN_OBJ,
   ARRAY_OBJ,
   HASH_OBJ,
+  CONTINUE_OBJ,
+  BREAK_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];

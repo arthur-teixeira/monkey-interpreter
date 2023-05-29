@@ -169,12 +169,41 @@ Statement *parse_expression_statement(Parser *p) {
   return stmt;
 }
 
+Statement *parse_continue_statement(Parser *p) {
+  Statement *stmt = malloc(sizeof(Statement));
+  assert(stmt != NULL);
+
+  stmt->type = CONTINUE_STATEMENT;
+  stmt->token = p->cur_token;
+  stmt->expression = NULL;
+  stmt->name = NULL;
+
+  return stmt;
+}
+
+Statement *parse_break_statement(Parser *p) {
+  Statement *stmt = malloc(sizeof(Statement));
+  assert(stmt != NULL);
+
+  stmt->type = BREAK_STATEMENT;
+  stmt->token = p->cur_token;
+  stmt->expression = NULL;
+  stmt->name = NULL;
+
+  return stmt;
+}
+
 Statement *parse_statement(Parser *p) {
   switch (p->cur_token.Type) {
   case LET:
     return parse_let_statement(p);
   case RETURN:
     return parse_return_statement(p);
+  case BREAK:
+    return parse_break_statement(p); // TODO: parser error for illegal break
+  case CONTINUE:
+    return parse_continue_statement(
+        p); // TODO: parser error for illegal continue
   default:
     return parse_expression_statement(p);
   }
@@ -588,12 +617,12 @@ WhileLoop *new_while_loop(Parser *p) {
 
   loop->token = p->cur_token;
 
-  //TODO: improve error messages
+  // TODO: improve error messages
   if (!expect_peek(p, LPAREN)) {
     free(loop);
     return NULL;
   }
-  
+
   parser_next_token(p);
   loop->condition = parse_expression(p, LOWEST);
 
