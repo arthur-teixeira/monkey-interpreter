@@ -681,6 +681,29 @@ Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
   return hash_obj;
 }
 
+Object *eval_while_loop(WhileLoop *loop, Environment *env) {
+  Object *result;
+
+  while (true) {
+    Object *condition = eval_expression(loop->condition, env);
+    if (condition->type != BOOLEAN_OBJ) {
+      char error_message[255];
+      sprintf(error_message, "While condition should be a boolean value");
+      return new_error(error_message);
+    }
+
+    if (condition != &obj_true) {
+      break;
+    }
+
+    result = eval_block_statement(loop->body->statements, env);
+
+    free(result); //maybe not?
+  }
+
+  return result;
+}
+
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
@@ -707,6 +730,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_index_expression(expr->value, env);
   case HASH_EXPR:
     return eval_hash_literal(expr->value, env);
+  case WHILE_EXPR:
+    return eval_while_loop(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

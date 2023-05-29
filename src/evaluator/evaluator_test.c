@@ -580,6 +580,17 @@ void test_hash_index_expressions(void) {
   }
 }
 
+void test_while_loops(void) {
+  char *input = "let b = 0;     "
+                "while (b < 5) {"
+                " let b = b + 1;"
+                "}"
+                "b;";
+
+  Object *evaluated = test_eval(input);
+  test_integer_object(evaluated, 5);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -601,5 +612,6 @@ int main() {
   RUN_TEST(test_builtin_array_functions);
   RUN_TEST(test_hash_index_expressions);
   RUN_TEST(test_hash_literals);
+  RUN_TEST(test_while_loops);
   return UNITY_END();
 }
