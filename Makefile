@@ -1,6 +1,5 @@
 CC = gcc
 CFLAGS = -Wall -Werror -g 
-CLIBS = -liberty
 SRCDIR = ./src
 BINDIR = ./bin
 SRCEXT = c
@@ -19,7 +18,7 @@ $(BINDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	$(CC) $(CFLAGS) -c $< -o $@ 
 
 $(BINDIR)/$(BINNAME): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@ $(CLIBS)
+	$(CC) $(CFLAGS) $^ -o $@ 
 
 clean:
 	rm -rf $(BINDIR)/*
@@ -37,7 +36,7 @@ test:
 	@for testfile in $(TESTFILES); do \
 		testname=$$(basename $$testfile .c); \
 		echo "Building $$testname..."; \
-		$(CC) $(CFLAGS) $(filter-out ./bin/main.o, $(OBJS)) $$testfile -o $(BINDIR)/$$testname $(CLIBS); \
+		$(CC) $(CFLAGS) $(filter-out ./bin/main.o, $(OBJS)) $$testfile -o $(BINDIR)/$$testname; \
 		echo "Running $$testname..."; \
 		if ! $(BINDIR)/$$testname; then \
 			failed="$$failed\n$$testname"; \
