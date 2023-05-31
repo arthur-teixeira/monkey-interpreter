@@ -669,13 +669,90 @@ WhileLoop *new_while_loop(Parser *p) {
 }
 
 Expression *parse_while_loop(Parser *p) {
+  bool should_alter_loop_state = !INSIDE_LOOP;
   Expression *expr = malloc(sizeof(Expression));
   assert(expr != NULL && "Error allocating memory for while expression");
   expr->type = WHILE_EXPR;
 
-  INSIDE_LOOP = true;
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = true;
+  }
   WhileLoop *loop = new_while_loop(p);
-  INSIDE_LOOP = false;
+
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = false;
+  }
+
+  expr->value = loop;
+
+  return expr;
+}
+
+Statement *parse_if_exists(Parser *p) {
+  if (peek_token_is(p, SEMICOLON)) {
+    parser_next_token(p);
+    return NULL;
+  }
+
+  parser_next_token(p);
+  return parse_statement(p);
+}
+
+ForLoop *new_for_loop(Parser *p) {
+  ForLoop *loop = malloc(sizeof(ForLoop));
+  assert(loop != NULL);
+
+  if (!expect_peek(p, LPAREN)) {
+    free(loop);
+    return NULL;
+  }
+
+  loop->initialization = parse_if_exists(p);
+
+  Statement *condition = parse_if_exists(p);
+  if (condition != NULL) {
+    loop->condition = condition->expression;
+    free(condition);
+  } else {
+    loop->condition = NULL;
+  }
+
+  if (peek_token_is(p, RPAREN)) {
+    parser_next_token(p);
+    loop->update = NULL;
+  } else {
+    parser_next_token(p);
+    loop->update = parse_statement(p);
+  }
+
+  if (!expect_peek(p, LBRACE)) {
+    free(loop->update);
+    free(loop->condition);
+    free(loop->initialization);
+    free(loop);
+    return NULL;
+  }
+
+  loop->body = parse_block_statement(p);
+
+  return loop;
+}
+
+Expression *parse_for_loop(Parser *p) {
+  bool should_alter_loop_state = !INSIDE_LOOP;
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL && "Error allocating memory for for expression");
+  expr->type = FOR_EXPR;
+
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = true;
+  }
+
+  ForLoop *loop = new_for_loop(p);
+
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = false;
+  }
 
   expr->value = loop;
 
@@ -819,6 +896,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_array_literal, LBRACKET);
   register_prefix_fn(p, &parse_hash_literal, LBRACE);
   register_prefix_fn(p, &parse_while_loop, WHILE);
+  register_prefix_fn(p, &parse_for_loop, FOR);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);

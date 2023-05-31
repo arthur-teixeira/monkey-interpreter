@@ -154,6 +154,27 @@ void while_to_string(ResizableBuffer *buf, WhileLoop *loop) {
   append_to_buf(buf, "}");
 }
 
+void for_to_string(ResizableBuffer *buf, ForLoop *loop) {
+  append_to_buf(buf, "for (");
+
+  if (loop->initialization != NULL) {
+    stmt_to_string(buf, loop->initialization);
+  }
+  append_to_buf(buf, ";");
+
+  if (loop->condition != NULL) {
+    value_to_string(buf, loop->condition);
+  }
+  append_to_buf(buf, ";");
+
+  if (loop->update != NULL) {
+    stmt_to_string(buf, loop->update);
+  }
+  append_to_buf(buf, ") { ");
+  block_to_string(buf, loop->body);
+  append_to_buf(buf, "}");
+}
+
 void value_to_string(ResizableBuffer *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -182,6 +203,8 @@ void value_to_string(ResizableBuffer *buf, Expression *expr) {
     return hash_literal_to_string(buf, expr->value);
   case WHILE_EXPR:
     return while_to_string(buf, expr->value);
+  case FOR_EXPR:
+    return for_to_string(buf, expr->value);
   }
 }
 

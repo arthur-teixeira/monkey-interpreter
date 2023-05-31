@@ -45,6 +45,7 @@ typedef enum {
   INDEX_EXPR,
   HASH_EXPR,
   WHILE_EXPR,
+  FOR_EXPR,
 } ExprType;
 
 typedef struct {
@@ -156,6 +157,16 @@ typedef struct {
 } Statement;
 
 void stmt_to_string(ResizableBuffer *, Statement *);
+
+typedef struct {
+  Token token;
+  Statement *initialization;
+  Expression *condition;
+  Statement *update;
+  BlockStatement *body;
+} ForLoop;
+
+void for_to_string(ResizableBuffer *, ForLoop *);
 
 typedef struct {
   LinkedList *statements; // Statement*[];

@@ -35,6 +35,7 @@
   TYPE(WHILE) \
   TYPE(BREAK) \
   TYPE(CONTINUE) \
+  TYPE(FOR) \
   TYPE(TOKEN_COUNT) \
 
 

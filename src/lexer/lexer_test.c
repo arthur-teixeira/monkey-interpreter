@@ -29,7 +29,8 @@ void test_next_token(void) {
                 "while (true) {"
                 "break;"
                 "continue;"
-                "}";
+                "}"
+                "for";
 
   typedef struct {
     TokenType expected_type;
@@ -68,7 +69,8 @@ void test_next_token(void) {
       {RBRACE, "}"},     {WHILE, "while"},    {LPAREN, "("},
       {TRUE, "true"},    {RPAREN, ")"},       {LBRACE, "{"},
       {BREAK, "break"},  {SEMICOLON, ";"},    {CONTINUE, "continue"},
-      {SEMICOLON, ";"},  {RBRACE, "}"},       {END_OF_FILE, "\0"},
+      {SEMICOLON, ";"},  {RBRACE, "}"},       {FOR, "for"},
+      {END_OF_FILE, "\0"},
   };
 
   Lexer *lexer = new_lexer(input);

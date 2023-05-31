@@ -35,14 +35,18 @@ Program *parse_and_check_errors(char *input) {
   return program;
 }
 
-void *test_single_expression(Program *p, ExprType type) {
-  TEST_ASSERT_EQUAL(1, p->statements->size);
-
-  Statement *stmt = p->statements->tail->value;
+void *test_statement(Statement *stmt, ExprType type) {
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
   TEST_ASSERT_EQUAL(type, stmt->expression->type);
 
   return stmt->expression->value;
+}
+
+void *test_single_expression_in_program(Program *p, ExprType type) {
+  TEST_ASSERT_EQUAL(1, p->statements->size);
+
+  Statement *stmt = p->statements->tail->value;
+  return test_statement(stmt, type);
 }
 
 void test_int_value(IntegerLiteral *integer, long value) {
@@ -136,7 +140,7 @@ void test_identifier_expression(void) {
   char *input = "foobar;";
 
   Program *program = parse_and_check_errors(input);
-  Identifier *ident = test_single_expression(program, IDENT_EXPR);
+  Identifier *ident = test_single_expression_in_program(program, IDENT_EXPR);
 
   TEST_ASSERT_EQUAL_STRING("foobar", ident->token.literal);
   TEST_ASSERT_EQUAL_STRING("foobar", ident->value);
@@ -155,7 +159,7 @@ void test_boolean_expressions(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
-    BooleanLiteral *boolean = test_single_expression(program, BOOL_EXPR);
+    BooleanLiteral *boolean = test_single_expression_in_program(program, BOOL_EXPR);
 
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, boolean->token.literal);
     TEST_ASSERT_EQUAL(tests[i].expected_value, boolean->value);
@@ -165,7 +169,7 @@ void test_boolean_expressions(void) {
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal = test_single_expression(program, INT_EXPR);
+  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
   TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
@@ -194,7 +198,7 @@ void test_parsing_prefix_expressions(void) {
   for (uint32_t i = 0;
        i < sizeof(prefix_tests) / sizeof(struct prefix_test_case); i++) {
     Program *p = parse_and_check_errors(prefix_tests[i].input);
-    PrefixExpression *exp = test_single_expression(p, PREFIX_EXPR);
+    PrefixExpression *exp = test_single_expression_in_program(p, PREFIX_EXPR);
 
     TEST_ASSERT_EQUAL_STRING(prefix_tests[i].operator, exp->operator);
 
@@ -221,7 +225,7 @@ void test_parsing_infix_expressions(void) {
   for (uint32_t i = 0; i < sizeof(infix_tests) / sizeof(struct infix_test_case);
        i++) {
     Program *p = parse_and_check_errors(infix_tests[i].input);
-    InfixExpression *expr = test_single_expression(p, INFIX_EXPR);
+    InfixExpression *expr = test_single_expression_in_program(p, INFIX_EXPR);
 
     test_integer_literal(expr->left, infix_tests[i].left_value);
     TEST_ASSERT_EQUAL_STRING(infix_tests[i].operator, expr->operator);
@@ -342,7 +346,7 @@ void test_if_expression(void) {
   char *input = "if (x < y) { x } else { y }";
 
   Program *program = parse_and_check_errors(input);
-  IfExpression *expr = test_single_expression(program, IF_EXPR);
+  IfExpression *expr = test_single_expression_in_program(program, IF_EXPR);
 
   TEST_ASSERT_EQUAL(1, expr->consequence->statements->size);
   TEST_ASSERT_NOT_NULL(expr->alternative);
@@ -352,7 +356,7 @@ void test_nested_if_expression(void) {
   char *input = "if (10 > 1) { if (10 > 1) { return 10; } return 1; }";
 
   Program *program = parse_and_check_errors(input);
-  IfExpression *parent = test_single_expression(program, IF_EXPR);
+  IfExpression *parent = test_single_expression_in_program(program, IF_EXPR);
 
   Statement *nested_stmt = parent->consequence->statements->tail->value;
 
@@ -369,7 +373,7 @@ void test_function_literal(void) {
   char *input = "fn (x, y) { x + y; };";
 
   Program *program = parse_and_check_errors(input);
-  FunctionLiteral *fn = test_single_expression(program, FN_EXPR);
+  FunctionLiteral *fn = test_single_expression_in_program(program, FN_EXPR);
 
   TEST_ASSERT_EQUAL(2, fn->parameters->size);
   TEST_ASSERT_NOT_NULL(fn->body);
@@ -390,7 +394,7 @@ void test_function_parameter_parsing(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
     Program *p = parse_and_check_errors(tests[i].input);
-    FunctionLiteral *fn = test_single_expression(p, FN_EXPR);
+    FunctionLiteral *fn = test_single_expression_in_program(p, FN_EXPR);
 
     TEST_ASSERT_EQUAL(i, fn->parameters->size);
 
@@ -432,7 +436,7 @@ void test_call_expression_parsing(void) {
   char *input = "add(1, 2 * 3, 4 + 5);";
 
   Program *program = parse_and_check_errors(input);
-  CallExpression *expr = test_single_expression(program, CALL_EXPR);
+  CallExpression *expr = test_single_expression_in_program(program, CALL_EXPR);
 
   test_identifier(expr->function, "add");
 
@@ -450,7 +454,7 @@ void test_string_literal_expression(void) {
   char *input = "\"hello world\"";
 
   Program *p = parse_and_check_errors(input);
-  StringLiteral *str = test_single_expression(p, STRING_EXPR);
+  StringLiteral *str = test_single_expression_in_program(p, STRING_EXPR);
 
   TEST_ASSERT_EQUAL_STRING("hello world", str->value);
 }
@@ -459,7 +463,7 @@ void test_parsing_array_literals(void) {
   char *input = "[1, 2 * 2, 3 + 3]";
 
   Program *p = parse_and_check_errors(input);
-  ArrayLiteral *arr = test_single_expression(p, ARRAY_EXPR);
+  ArrayLiteral *arr = test_single_expression_in_program(p, ARRAY_EXPR);
 
   TEST_ASSERT_EQUAL(3, arr->elements->len);
 
@@ -472,7 +476,7 @@ void test_parsing_index_expressions(void) {
   char *input = "myArray[1 + 1]";
 
   Program *p = parse_and_check_errors(input);
-  IndexExpression *expr = test_single_expression(p, INDEX_EXPR);
+  IndexExpression *expr = test_single_expression_in_program(p, INDEX_EXPR);
 
   test_identifier(expr->left, "myArray");
   test_infix_expression(expr->index, "+", 1, 1);
@@ -498,7 +502,7 @@ void test_parsing_hash_literals_string_keys(void) {
   char *input = "{\"one\": 1, \"two\": 2, \"three\": 3}";
 
   Program *p = parse_and_check_errors(input);
-  HashLiteral *hash = test_single_expression(p, HASH_EXPR);
+  HashLiteral *hash = test_single_expression_in_program(p, HASH_EXPR);
 
   hashmap_t expected_map;
   hashmap_create(3, &expected_map);
@@ -516,7 +520,7 @@ void test_parsing_empty_hash_literal(void) {
   char *input = "{}";
 
   Program *p = parse_and_check_errors(input);
-  HashLiteral *hash = test_single_expression(p, HASH_EXPR);
+  HashLiteral *hash = test_single_expression_in_program(p, HASH_EXPR);
 
   TEST_ASSERT_EQUAL(0, hash->len);
 }
@@ -527,10 +531,42 @@ void test_parsing_while_loops(void) {
                 "}";
 
   Program *p = parse_and_check_errors(input);
-  WhileLoop *loop = test_single_expression(p, WHILE_EXPR);
+  WhileLoop *loop = test_single_expression_in_program(p, WHILE_EXPR);
 
   TEST_ASSERT_EQUAL(1, loop->body->statements->size);
   TEST_ASSERT_EQUAL(INFIX_EXPR, loop->condition->type);
+}
+
+void test_parsing_full_for_loop(void) {
+  char *input = "for (let i = 0; i < 10; let i = i + 1) {"
+                "  puts(i);                             "
+                "}";
+
+  Program *p = parse_and_check_errors(input);
+  ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
+
+  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+
+  TEST_ASSERT_NOT_NULL(loop->initialization);
+  TEST_ASSERT_EQUAL(LET_STATEMENT, loop->initialization->type);
+
+  TEST_ASSERT_NOT_NULL(loop->condition);
+  TEST_ASSERT_EQUAL(INFIX_EXPR, loop->condition->type);
+
+  TEST_ASSERT_NOT_NULL(loop->update);
+  TEST_ASSERT_EQUAL(LET_STATEMENT, loop->update->type);
+}
+
+void test_infinite_for_loop(void) {
+  char *input = "for (;;) { }";
+
+  Program *p = parse_and_check_errors(input);
+  ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
+  TEST_ASSERT_EQUAL(0, loop->body->statements->size);
+
+  TEST_ASSERT_NULL(loop->initialization);
+  TEST_ASSERT_NULL(loop->condition);
+  TEST_ASSERT_NULL(loop->update);
 }
 
 int main() {
@@ -554,5 +590,7 @@ int main() {
   RUN_TEST(test_parsing_hash_literals_string_keys);
   RUN_TEST(test_parsing_empty_hash_literal);
   RUN_TEST(test_parsing_while_loops);
+  RUN_TEST(test_parsing_full_for_loop);
+  RUN_TEST(test_infinite_for_loop);
   return UNITY_END();
 }

@@ -51,5 +51,9 @@ TokenType lookup_ident(char *ident) {
     return BREAK;
   }
 
+  if (strcmp(ident, "for") == 0) {
+    return FOR;
+  }
+
   return IDENT;
 }
