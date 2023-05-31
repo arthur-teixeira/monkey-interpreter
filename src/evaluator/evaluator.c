@@ -681,19 +681,36 @@ Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
   return hash_obj;
 }
 
-Object *eval_while_loop(WhileLoop *loop, Environment *env) {
-  Object *result;
-  Object *condition = eval_expression(loop->condition, env);
-
+Object *check_non_boolean_condition(Object *condition) {
   if (condition->type != BOOLEAN_OBJ) {
     free(condition);
     char error_message[255];
-    sprintf(error_message, "While condition should produce a boolean value");
+    sprintf(error_message, "Loop condition should produce a boolean value");
     return new_error(error_message);
   }
 
-  while ((condition = eval_expression(loop->condition, env)) == &obj_true) {
-    result = eval_block_statement(loop->body->statements, env);
+  return NULL;
+}
+
+Object *eval_loop_condition(Expression *condition_expr, Environment *env) {
+  if (condition_expr == NULL) {
+    return &obj_true;
+  }
+
+  return eval_expression(condition_expr, env);
+}
+
+Object *eval_loop(Expression *condition_expr, BlockStatement *body,
+                  Statement *update, Environment *env) {
+  Object *condition = eval_loop_condition(condition_expr, env);
+  Object *error = check_non_boolean_condition(condition);
+  if (error != NULL) {
+    return error;
+  }
+
+  Object *result;
+  while ((condition = eval_loop_condition(condition_expr, env)) == &obj_true) {
+    result = eval_block_statement(body->statements, env);
     if (result == NULL) {
       continue;
     }
@@ -710,9 +727,33 @@ Object *eval_while_loop(WhileLoop *loop, Environment *env) {
     if (result->type == BREAK_OBJ) {
       break;
     }
+
+    if (update != NULL) {
+      eval(update, env);
+    }
   }
 
   return result;
+}
+
+Object *eval_while_loop(WhileLoop *loop, Environment *env) {
+  return eval_loop(loop->condition, loop->body, NULL, env);
+}
+
+Object *eval_for_loop(ForLoop *loop, Environment *env) {
+  if (loop->initialization != NULL) {
+    // might turn into runtime error
+    assert(loop->initialization->type == LET_STATEMENT);
+    eval(loop->initialization, env);
+  }
+
+  // TODO: add test cases:
+  // full loop (init, condition, update)
+  // inifinite loop (;;)
+  // without init
+  // without condition
+  // without update
+  return eval_loop(loop->condition, loop->body, loop->update, env);
 }
 
 Object *eval_expression(Expression *expr, Environment *env) {
@@ -743,6 +784,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_hash_literal(expr->value, env);
   case WHILE_EXPR:
     return eval_while_loop(expr->value, env);
+  case FOR_EXPR:
+    return eval_for_loop(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

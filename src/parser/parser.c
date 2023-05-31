@@ -723,6 +723,13 @@ ForLoop *new_for_loop(Parser *p) {
   } else {
     parser_next_token(p);
     loop->update = parse_statement(p);
+    if (!expect_peek(p, RPAREN)) {
+      free(loop->update);
+      free(loop->condition);
+      free(loop->initialization);
+      free(loop);
+      return NULL;
+    }
   }
 
   if (!expect_peek(p, LBRACE)) {
