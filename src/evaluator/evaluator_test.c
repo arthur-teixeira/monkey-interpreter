@@ -571,8 +571,6 @@ void test_hash_index_expressions(void) {
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
     if (tests[i].expected >= 0) {
-      printf("HERE: testing input %s, expecting %ld\n", tests[i].input,
-             tests[i].expected);
       test_integer_object(evaluated, tests[i].expected);
     } else {
       TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
@@ -589,6 +587,18 @@ void test_while_loops(void) {
 
   Object *evaluated = test_eval(input);
   test_integer_object(evaluated, 5);
+}
+
+void test_loop_break(void) {
+  char *input = "let b = 0;     "
+                "while (b < 5) {"
+                " let b = 3;    "
+                " break;        "
+                "}"
+                "b;";
+
+  Object *evaluated = test_eval(input);
+  test_integer_object(evaluated, 3);
 }
 
 int main() {
@@ -613,5 +623,6 @@ int main() {
   RUN_TEST(test_hash_index_expressions);
   RUN_TEST(test_hash_literals);
   RUN_TEST(test_while_loops);
+  RUN_TEST(test_loop_break);
   return UNITY_END();
 }

@@ -45,7 +45,7 @@ Object *eval_block_statement(LinkedList *statements, Environment *env) {
 
     if (result != NULL &&
         (result->type == RETURN_OBJ || result->type == ERROR_OBJ ||
-         result->type == CONTINUE_OBJ)) {
+         result->type == CONTINUE_OBJ || result->type == BREAK_OBJ)) {
       return result;
     }
     cur_node = cur_node->next;
@@ -205,7 +205,6 @@ Object *eval_minus_operator_expression(Object *right) {
 
 Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
                                        Object * right_obj) {
-
   Integer *left = left_obj->object;
   Integer *right = right_obj->object;
 
@@ -684,36 +683,33 @@ Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
 
 Object *eval_while_loop(WhileLoop *loop, Environment *env) {
   Object *result;
+  Object *condition = eval_expression(loop->condition, env);
 
-  while (true) {
-    Object *condition = eval_expression(loop->condition, env);
-    if (condition->type != BOOLEAN_OBJ) {
-      char error_message[255];
-      sprintf(error_message, "While condition should be a boolean value");
-      return new_error(error_message);
-    }
+  if (condition->type != BOOLEAN_OBJ) {
+    free(condition);
+    char error_message[255];
+    sprintf(error_message, "While condition should produce a boolean value");
+    return new_error(error_message);
+  }
 
-    if (condition != &obj_true) {
-      break;
-    }
-
+  while ((condition = eval_expression(loop->condition, env)) == &obj_true) {
     result = eval_block_statement(loop->body->statements, env);
-
-    if (result->type == RETURN_OBJ) {
-      return result;
-    }
-
-    if (result->type == CONTINUE_OBJ) {
-      free(result);
+    if (result == NULL) {
       continue;
     }
 
-    if (result->type == BREAK_OBJ) {
-      free(result);
+    switch (result->type) {
+    case RETURN_OBJ:
+      return result;
+    case CONTINUE_OBJ:
+      continue;
+    default:
       break;
     }
 
-    free(result);
+    if (result->type == BREAK_OBJ) {
+      break;
+    }
   }
 
   return result;
@@ -783,7 +779,17 @@ Object *eval_let_statement(Statement *stmt, Environment *env) {
   return NULL;
 }
 
-Object *eval_continue_statement(Statement *stmt, Environment *env) {
+Object *eval_continue_statement(Statement *stmt) {
+  Object *obj = malloc(sizeof(Object));
+  assert(obj != NULL);
+
+  obj->type = CONTINUE_OBJ;
+  obj->object = NULL;
+
+  return obj;
+}
+
+Object *eval_break_statement(Statement *stmt) {
   Object *obj = malloc(sizeof(Object));
   assert(obj != NULL);
 
@@ -802,7 +808,9 @@ Object *eval(Statement *stmt, Environment *env) {
   case LET_STATEMENT:
     return eval_let_statement(stmt, env);
   case CONTINUE_STATEMENT:
-    return eval_continue_statement(stmt, env);
+    return eval_continue_statement(stmt);
+  case BREAK_STATEMENT:
+    return eval_break_statement(stmt);
   default:
     assert(0 && "unreachable");
     return NULL;

@@ -56,9 +56,6 @@ void free_list(LinkedList *list) {
   while (cur_node != NULL) {
     Node *tmp = cur_node->next;
     cur_node->next = NULL;
-    // This probably leaks memory, if cur_node->value itself has pointers,
-    // they would not be freed
-    // TODO: receive free_value function pointer and execute for each node value
     free(cur_node->value);
     free(cur_node);
 

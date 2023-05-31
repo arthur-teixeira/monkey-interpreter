@@ -146,7 +146,6 @@ Token next_token(Lexer *l) {
     read_string(tok.literal, l);
     break;
   case '!':
-    // TODO: refactor as an FSM
     if (peek_char(l) == '=') {
       tok.Type = NOT_EQ;
       strlcpy(tok.literal, "!=", 3);

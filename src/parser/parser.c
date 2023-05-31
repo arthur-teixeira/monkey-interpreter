@@ -169,7 +169,21 @@ Statement *parse_expression_statement(Parser *p) {
   return stmt;
 }
 
+void illegal_statement_error(Parser *p, char *stmt_type) {
+  char *err_msg = malloc(MAX_LEN);
+  snprintf(err_msg, MAX_LEN, "Illegal %s statement", stmt_type);
+
+  append(p->errors, err_msg);
+}
+
+static bool INSIDE_LOOP = false;
+
 Statement *parse_continue_statement(Parser *p) {
+  if (!INSIDE_LOOP) {
+    illegal_statement_error(p, "continue");
+    return NULL;
+  }
+
   Statement *stmt = malloc(sizeof(Statement));
   assert(stmt != NULL);
 
@@ -178,10 +192,20 @@ Statement *parse_continue_statement(Parser *p) {
   stmt->expression = NULL;
   stmt->name = NULL;
 
+  parser_next_token(p);
+  if (peek_token_is(p, SEMICOLON)) {
+    parser_next_token(p);
+  }
+
   return stmt;
 }
 
 Statement *parse_break_statement(Parser *p) {
+  if (!INSIDE_LOOP) {
+    illegal_statement_error(p, "break");
+    return NULL;
+  }
+
   Statement *stmt = malloc(sizeof(Statement));
   assert(stmt != NULL);
 
@@ -189,6 +213,11 @@ Statement *parse_break_statement(Parser *p) {
   stmt->token = p->cur_token;
   stmt->expression = NULL;
   stmt->name = NULL;
+
+  parser_next_token(p);
+  if (peek_token_is(p, SEMICOLON)) {
+    parser_next_token(p);
+  }
 
   return stmt;
 }
@@ -200,10 +229,9 @@ Statement *parse_statement(Parser *p) {
   case RETURN:
     return parse_return_statement(p);
   case BREAK:
-    return parse_break_statement(p); // TODO: parser error for illegal break
+    return parse_break_statement(p);
   case CONTINUE:
-    return parse_continue_statement(
-        p); // TODO: parser error for illegal continue
+    return parse_continue_statement(p);
   default:
     return parse_expression_statement(p);
   }
@@ -645,7 +673,9 @@ Expression *parse_while_loop(Parser *p) {
   assert(expr != NULL && "Error allocating memory for while expression");
   expr->type = WHILE_EXPR;
 
+  INSIDE_LOOP = true;
   WhileLoop *loop = new_while_loop(p);
+  INSIDE_LOOP = false;
 
   expr->value = loop;
 
