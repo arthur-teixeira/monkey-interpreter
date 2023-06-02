@@ -569,6 +569,19 @@ void test_infinite_for_loop(void) {
   TEST_ASSERT_NULL(loop->update);
 }
 
+void test_incomplete_for_loop(void) {
+  char *input = "for (let c = 0; ;) { }";
+
+  Program *p = parse_and_check_errors(input);
+  ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
+
+  TEST_ASSERT_EQUAL(0, loop->body->statements->size);
+
+  TEST_ASSERT_NOT_NULL(loop->initialization);
+  TEST_ASSERT_NULL(loop->condition);
+  TEST_ASSERT_NULL(loop->update);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -592,5 +605,6 @@ int main() {
   RUN_TEST(test_parsing_while_loops);
   RUN_TEST(test_parsing_full_for_loop);
   RUN_TEST(test_infinite_for_loop);
+  RUN_TEST(test_incomplete_for_loop);
   return UNITY_END();
 }

@@ -688,9 +688,13 @@ Expression *parse_while_loop(Parser *p) {
   return expr;
 }
 
-Statement *parse_if_exists(Parser *p) {
+Statement *parse_if_exists(Parser *p, bool prev_exists) {
   if (peek_token_is(p, SEMICOLON)) {
     parser_next_token(p);
+    return NULL;
+  }
+
+  if (cur_token_is(p, SEMICOLON) && peek_token_is(p, RPAREN)) {
     return NULL;
   }
 
@@ -707,9 +711,9 @@ ForLoop *new_for_loop(Parser *p) {
     return NULL;
   }
 
-  loop->initialization = parse_if_exists(p);
+  loop->initialization = parse_if_exists(p, false);
 
-  Statement *condition = parse_if_exists(p);
+  Statement *condition = parse_if_exists(p, loop->initialization != NULL);
   if (condition != NULL) {
     loop->condition = condition->expression;
     free(condition);
