@@ -14,7 +14,7 @@ $ ./bin/program
 
 ## To-do list
 - [X] For/while loops
-- [ ] Reassignment expression without let keyword
+- [X] Reassignment expression without let keyword
 - [ ] Interpret source files
 - [ ] Turing completeness proof (rule 110)
 - [ ] Floating point number support
