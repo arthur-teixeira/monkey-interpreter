@@ -46,6 +46,7 @@ typedef enum {
   HASH_EXPR,
   WHILE_EXPR,
   FOR_EXPR,
+  REASSIGN_EXPR,
 } ExprType;
 
 typedef struct {
@@ -140,6 +141,14 @@ typedef struct {
 } HashLiteral;
 
 void hash_literal_to_string(ResizableBuffer *, HashLiteral *);
+
+typedef struct {
+  Token token;
+  Identifier *name;
+  Expression *value;
+} Reassignment;
+
+void reassign_to_string(ResizableBuffer *, Reassignment *);
 
 typedef struct {
   Token token;

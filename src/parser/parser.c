@@ -34,6 +34,7 @@ void build_precedence_table(Parser *p) {
   p->precedences[ASTERISK] = PRODUCT;
   p->precedences[LPAREN] = CALL;
   p->precedences[LBRACKET] = INDEX;
+  p->precedences[ASSIGN] = REASSIGN;
 }
 
 uint32_t peek_precedence(Parser *p) {
@@ -79,10 +80,7 @@ Statement *parse_let_statement(Parser *p) {
     return NULL;
   }
 
-  Token copied_token;
-
-  memcpy(&copied_token, &p->cur_token, sizeof(Token));
-  stmt->name = new_identifier(copied_token, copied_token.literal);
+  stmt->name = new_identifier(p->cur_token, p->cur_token.literal);
 
   if (!expect_peek(p, ASSIGN)) {
     return NULL;
@@ -876,6 +874,26 @@ Expression *parse_index_expression(Parser *p, Expression *left) {
   return exp;
 }
 
+Expression *parse_reassignment_expression(Parser *p, Expression *left) {
+  assert(left->type == IDENT_EXPR);
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL);
+  expr->type = REASSIGN_EXPR;
+
+  Reassignment *reassignment = malloc(sizeof(Reassignment));
+  assert(reassignment != NULL);
+  reassignment->name = left->value;
+  reassignment->token = p->cur_token;
+
+  parser_next_token(p);
+
+  reassignment->value = parse_expression(p, LOWEST);
+
+  expr->value = reassignment;
+
+  return expr;
+}
+
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
@@ -913,6 +931,7 @@ Parser *new_parser(Lexer *l) {
   register_infix_fn(p, &parse_infix_expression, GT);
   register_infix_fn(p, &parse_call_expression, LPAREN);
   register_infix_fn(p, &parse_index_expression, LBRACKET);
+  register_infix_fn(p, &parse_reassignment_expression, ASSIGN);
 
   build_precedence_table(p);
 

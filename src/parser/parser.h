@@ -30,7 +30,8 @@ typedef enum {
   PRODUCT,
   PREFIX,
   CALL,
-  INDEX
+  INDEX,
+  REASSIGN,
 } OperatorPrecedenceOrder;
 
 Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence);

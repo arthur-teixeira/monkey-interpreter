@@ -493,7 +493,6 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   Environment *extended_env = extend_function_env(fn, args);
   Object *evaluated = eval_block_statement(fn->body->statements, extended_env);
 
-  free_environment(extended_env);
   return unwrap_return_value(evaluated);
 }
 
@@ -739,10 +738,7 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
 
 Object *eval_while_loop(WhileLoop *loop, Environment *env) {
   Environment *extended_env = new_enclosed_environment(env);
-  Object *result =  eval_loop(loop->condition, loop->body, NULL, extended_env);
-
-  free_environment(extended_env);
-  return result;
+  return eval_loop(loop->condition, loop->body, NULL, extended_env);
 }
 
 Object *eval_for_loop(ForLoop *loop, Environment *env) {
@@ -754,10 +750,43 @@ Object *eval_for_loop(ForLoop *loop, Environment *env) {
     eval(loop->initialization, extended_env);
   }
 
-  Object *result = eval_loop(loop->condition, loop->body, loop->update, extended_env);
-  free_environment(extended_env);
+  return eval_loop(loop->condition, loop->body, loop->update, extended_env);
+}
 
-  return result;
+Object *inner_env_get(Environment *env, char *key) {
+  return hashmap_get(env->store, key, strlen(key));
+}
+
+Object *eval_reassignment(Reassignment *stmt, Environment *env) {
+  Object *cur_value = inner_env_get(env, stmt->name->value);
+  bool val_in_outer_env = !cur_value;
+
+  if (val_in_outer_env) {
+    cur_value = env_get(env, stmt->name->value);
+    val_in_outer_env = cur_value;
+  }
+
+  if (cur_value == NULL) {
+    char error_message[255];
+    sprintf(error_message, "%s is not defined",
+            stmt->name->value);
+
+    return new_error(error_message);
+  }
+
+  Object *val = eval_expression(stmt->value, env);
+  if (is_error(val)) {
+    return val;
+  }
+  
+  if (val_in_outer_env) {
+    assert(env->outer != NULL);
+    env_set(env->outer, stmt->name->value, val);
+  } else {
+    env_set(env, stmt->name->value, val);
+  }
+
+  return NULL;
 }
 
 Object *eval_expression(Expression *expr, Environment *env) {
@@ -790,6 +819,8 @@ Object *eval_expression(Expression *expr, Environment *env) {
     return eval_while_loop(expr->value, env);
   case FOR_EXPR:
     return eval_for_loop(expr->value, env);
+  case REASSIGN_EXPR:
+    return eval_reassignment(expr->value, env);
   default:
     assert(0 && "not implemented");
   }

@@ -175,6 +175,12 @@ void for_to_string(ResizableBuffer *buf, ForLoop *loop) {
   append_to_buf(buf, "}");
 }
 
+void reassign_to_string(ResizableBuffer *buf, Reassignment *expr) {
+  append_to_buf(buf, expr->name->value);
+  append_to_buf(buf, " = ");
+  value_to_string(buf, expr->value);
+}
+
 void value_to_string(ResizableBuffer *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
@@ -205,6 +211,8 @@ void value_to_string(ResizableBuffer *buf, Expression *expr) {
     return while_to_string(buf, expr->value);
   case FOR_EXPR:
     return for_to_string(buf, expr->value);
+  case REASSIGN_EXPR:
+    assert(0);
   }
 }
 

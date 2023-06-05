@@ -219,6 +219,10 @@ void test_error_handling(void) {
           "{\"name\": \"Monkey\"}[fn(x) { x }];",
           "unusable as hash key: FUNCTION_OBJ",
       },
+      {
+          "a = 34",
+          "a is not defined",
+      },
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
@@ -581,7 +585,7 @@ void test_hash_index_expressions(void) {
 void test_while_loops(void) {
   char *input = "let b = 0;     "
                 "while (b < 5) {"
-                " let b = b + 1;"
+                " b = b + 1;    "
                 "}"
                 "b;";
 
@@ -592,13 +596,22 @@ void test_while_loops(void) {
 void test_loop_break(void) {
   char *input = "let b = 0;     "
                 "while (b < 5) {"
-                " let b = 3;    "
+                " b = 3;        "
                 " break;        "
                 "}"
                 "b;";
 
   Object *evaluated = test_eval(input);
   test_integer_object(evaluated, 3);
+}
+
+void test_reassignment(void) {
+  char *input = "let b = 0; "
+                "b = 5;     "
+                "b;";
+
+  Object *evaluated = test_eval(input);
+  test_integer_object(evaluated, 5);
 }
 
 int main() {
@@ -624,5 +637,6 @@ int main() {
   RUN_TEST(test_hash_literals);
   RUN_TEST(test_while_loops);
   RUN_TEST(test_loop_break);
+  RUN_TEST(test_reassignment);
   return UNITY_END();
 }

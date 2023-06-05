@@ -582,6 +582,25 @@ void test_incomplete_for_loop(void) {
   TEST_ASSERT_NULL(loop->update);
 }
 
+void test_parsing_reassignment(void) {
+  char *input = "let b = 0; b = 1";
+
+  Program *p = parse_and_check_errors(input);
+  TEST_ASSERT_EQUAL(2, p->statements->size);
+
+  Statement *stmt = p->statements->tail->next->value;
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
+  TEST_ASSERT_EQUAL(REASSIGN_EXPR, stmt->expression->type);
+
+  Reassignment *reassign = stmt->expression->value;
+
+  TEST_ASSERT_EQUAL_STRING("b", reassign->name->value);
+  TEST_ASSERT_EQUAL(INT_EXPR, reassign->value->type);
+  
+  IntegerLiteral *intt = reassign->value->value;
+  TEST_ASSERT_EQUAL(1, intt->value);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -606,5 +625,6 @@ int main() {
   RUN_TEST(test_parsing_full_for_loop);
   RUN_TEST(test_infinite_for_loop);
   RUN_TEST(test_incomplete_for_loop);
+  RUN_TEST(test_parsing_reassignment);
   return UNITY_END();
 }
