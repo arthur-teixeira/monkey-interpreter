@@ -493,6 +493,7 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   Environment *extended_env = extend_function_env(fn, args);
   Object *evaluated = eval_block_statement(fn->body->statements, extended_env);
 
+  free_environment(extended_env);
   return unwrap_return_value(evaluated);
 }
 
@@ -737,23 +738,26 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
 }
 
 Object *eval_while_loop(WhileLoop *loop, Environment *env) {
-  return eval_loop(loop->condition, loop->body, NULL, env);
+  Environment *extended_env = new_enclosed_environment(env);
+  Object *result =  eval_loop(loop->condition, loop->body, NULL, extended_env);
+
+  free_environment(extended_env);
+  return result;
 }
 
 Object *eval_for_loop(ForLoop *loop, Environment *env) {
+  Environment *extended_env = new_enclosed_environment(env);
+
   if (loop->initialization != NULL) {
     // might turn into runtime error
     assert(loop->initialization->type == LET_STATEMENT);
-    eval(loop->initialization, env);
+    eval(loop->initialization, extended_env);
   }
 
-  // TODO: add test cases:
-  // full loop (init, condition, update)
-  // inifinite loop (;;)
-  // without init
-  // without condition
-  // without update
-  return eval_loop(loop->condition, loop->body, loop->update, env);
+  Object *result = eval_loop(loop->condition, loop->body, loop->update, extended_env);
+  free_environment(extended_env);
+
+  return result;
 }
 
 Object *eval_expression(Expression *expr, Environment *env) {
