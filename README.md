@@ -15,11 +15,11 @@ $ ./bin/program
 ## To-do list
 - [X] For/while loops
 - [X] Reassignment expression without let keyword
+- [X] Binary numbers
+- [ ] Hex numbers
+- [ ] Floating point number support
+- [ ] Bitwise operators
 - [ ] Interpret source files
 - [ ] Turing completeness proof (rule 110)
-- [ ] Floating point number support
-- [ ] Binary numbers
-- [ ] Hex numbers
-- [ ] Bitwise operators
 - [ ] Garbage collection
 - [ ] Concurrent GC

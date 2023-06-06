@@ -175,6 +175,16 @@ Token next_token(Lexer *l) {
       tok.Type = lookup_ident(tok.literal);
       return tok;
     } else if (isdigit(l->ch)) {
+
+      if (peek_char(l) == 'b') {
+        tok.Type = BINARY;
+        read_char(l);
+        read_char(l);
+
+        read_number(l, tok.literal);
+        return tok;
+      }
+
       tok.Type = INT;
       read_number(l, tok.literal);
       return tok;

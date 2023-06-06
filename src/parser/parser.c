@@ -275,10 +275,35 @@ IntegerLiteral *new_int_literal(Parser *p) {
 
 Expression *parse_integer_literal(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
-  expr->type = INT_EXPR;
 
-  IntegerLiteral *lit = new_int_literal(p);
-  expr->value = lit;
+  expr->type = INT_EXPR;
+  expr->value = new_int_literal(p);
+
+  return expr;
+}
+
+IntegerLiteral *int_from_binary(Parser *p) {
+  IntegerLiteral *lit = malloc(sizeof(IntegerLiteral));
+  assert(lit != NULL);
+
+  int result = 0;
+  int multiplier = 0;
+
+  for (int i = strlen(p->cur_token.literal) - 1; i >= 0; i--) {
+    int cur_val = p->cur_token.literal[i] == '1' ? 1 : 0;
+    result += (cur_val * (1 << multiplier++));
+  }
+
+  lit->value = result;
+  lit->token = p->cur_token;
+
+  return lit;
+}
+
+Expression *parse_binary_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  expr->type = INT_EXPR;
+  expr->value = int_from_binary(p);
 
   return expr;
 }
@@ -920,6 +945,7 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, &parse_hash_literal, LBRACE);
   register_prefix_fn(p, &parse_while_loop, WHILE);
   register_prefix_fn(p, &parse_for_loop, FOR);
+  register_prefix_fn(p, &parse_binary_literal, BINARY);
 
   register_infix_fn(p, &parse_infix_expression, PLUS);
   register_infix_fn(p, &parse_infix_expression, MINUS);

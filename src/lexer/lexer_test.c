@@ -30,7 +30,8 @@ void test_next_token(void) {
                 "break;"
                 "continue;"
                 "}"
-                "for";
+                "for;"
+                "0b1010;";
 
   typedef struct {
     TokenType expected_type;
@@ -70,6 +71,7 @@ void test_next_token(void) {
       {TRUE, "true"},    {RPAREN, ")"},       {LBRACE, "{"},
       {BREAK, "break"},  {SEMICOLON, ";"},    {CONTINUE, "continue"},
       {SEMICOLON, ";"},  {RBRACE, "}"},       {FOR, "for"},
+      {SEMICOLON, ";"},  {BINARY, "1010"},    {SEMICOLON, ";"},
       {END_OF_FILE, "\0"},
   };
 

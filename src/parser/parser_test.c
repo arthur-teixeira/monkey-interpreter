@@ -601,6 +601,15 @@ void test_parsing_reassignment(void) {
   TEST_ASSERT_EQUAL(1, intt->value);
 }
 
+void test_parsing_binary_literal(void) {
+  char *input = "0b1010;";
+  Program *program = parse_and_check_errors(input);
+  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
+
+  TEST_ASSERT_EQUAL_INT64(10, literal->value);
+  TEST_ASSERT_EQUAL_STRING("1010", literal->token.literal);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -626,5 +635,6 @@ int main() {
   RUN_TEST(test_infinite_for_loop);
   RUN_TEST(test_incomplete_for_loop);
   RUN_TEST(test_parsing_reassignment);
+  RUN_TEST(test_parsing_binary_literal);
   return UNITY_END();
 }
