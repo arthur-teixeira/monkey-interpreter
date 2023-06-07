@@ -1,10 +1,12 @@
 #include "lexer.h"
+#include "../str_utils/str_utils.h"
+#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../str_utils/str_utils.h"
 
 void read_char(Lexer *);
 
@@ -16,9 +18,7 @@ Lexer *new_lexer(char *input) {
   return l;
 }
 
-void free_lexer(Lexer *l) {
-  free(l);
-}
+void free_lexer(Lexer *l) { free(l); }
 
 void slice(const char *str, char *result, size_t start, size_t end) {
   strlcpy(result, str + start, end - start + 1);
@@ -64,6 +64,15 @@ void read_number(Lexer *l, char *result) {
   slice(l->input, result, position, l->position);
 }
 
+void read_hex(Lexer *l, char *result) {
+  uint32_t position = l->position;
+  while (isalnum(l->ch)) {
+    read_char(l);
+  }
+
+  slice(l->input, result, position, l->position);
+}
+
 Token new_token(TokenType type, char literal) {
   Token tok;
   tok.Type = type;
@@ -94,6 +103,29 @@ void read_string(char *result, Lexer *l) {
   int end = l->position;
 
   slice(l->input, result, start, end);
+}
+
+Token read_special_number(Lexer *l) {
+  Token tok;
+
+  char peek = peek_char(l);
+  read_char(l);
+  read_char(l);
+
+  switch(peek) {
+    case 'x':
+      tok.Type = HEX;
+      read_hex(l, tok.literal);
+      break;
+    case 'b':
+      tok.Type = BINARY;
+      read_number(l, tok.literal);
+      break;
+    default:
+      assert(0 && "unreachable");
+  }
+
+  return tok;
 }
 
 Token next_token(Lexer *l) {
@@ -175,14 +207,8 @@ Token next_token(Lexer *l) {
       tok.Type = lookup_ident(tok.literal);
       return tok;
     } else if (isdigit(l->ch)) {
-
-      if (peek_char(l) == 'b') {
-        tok.Type = BINARY;
-        read_char(l);
-        read_char(l);
-
-        read_number(l, tok.literal);
-        return tok;
+      if (l->ch == '0' && is_letter(peek_char(l))) {
+        return read_special_number(l);
       }
 
       tok.Type = INT;

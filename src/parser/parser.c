@@ -2,6 +2,7 @@
 #include "../dyn_array/dyn_array.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -302,8 +303,51 @@ IntegerLiteral *int_from_binary(Parser *p) {
 
 Expression *parse_binary_literal(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL);
+
   expr->type = INT_EXPR;
   expr->value = int_from_binary(p);
+
+  return expr;
+}
+
+int htoi(char s[]) {
+  int i = 0;
+  int res = 0;
+
+  if (s[0] == '0' && (s[1] == 'X' || s[1] == 'x'))
+    i = 2;
+
+  for(; i < strlen(s); ++i) {
+    res = res * 16;
+
+    if(isdigit(s[i]))
+      res = res + s[i] - '0';
+    else if (s[i] >= 'a' && s[i] <= 'f') 
+      res = res + s[i] - 'a' + 10;
+    else if (s[i] >= 'A' && s[i] <= 'F')
+      res = res + s[i] - 'A' + 10;
+  }
+  return res;
+}
+
+
+IntegerLiteral *int_from_hex(Parser *p) {
+  IntegerLiteral *intt = malloc(sizeof(IntegerLiteral));
+  assert(intt != NULL);
+
+  intt->token = p->cur_token;
+  intt->value = htoi(p->cur_token.literal);
+
+  return intt;
+}
+
+Expression *parse_hex_literal(Parser *p) {
+  Expression *expr = malloc(sizeof(Expression));
+  assert(expr != NULL);
+
+  expr->type = INT_EXPR;
+  expr->value = int_from_hex(p);
 
   return expr;
 }
@@ -931,33 +975,34 @@ Parser *new_parser(Lexer *l) {
     p->infix_parse_fns[i] = NULL;
   }
 
-  register_prefix_fn(p, &parse_identifier, IDENT);
-  register_prefix_fn(p, &parse_integer_literal, INT);
-  register_prefix_fn(p, &parse_prefix_expression, BANG);
-  register_prefix_fn(p, &parse_prefix_expression, MINUS);
-  register_prefix_fn(p, &parse_boolean, TRUE);
-  register_prefix_fn(p, &parse_boolean, FALSE);
-  register_prefix_fn(p, &parse_grouped_expression, LPAREN);
-  register_prefix_fn(p, &parse_if_expression, IF);
-  register_prefix_fn(p, &parse_function_literal, FUNCTION);
-  register_prefix_fn(p, &parse_string_literal, STRING);
-  register_prefix_fn(p, &parse_array_literal, LBRACKET);
-  register_prefix_fn(p, &parse_hash_literal, LBRACE);
-  register_prefix_fn(p, &parse_while_loop, WHILE);
-  register_prefix_fn(p, &parse_for_loop, FOR);
-  register_prefix_fn(p, &parse_binary_literal, BINARY);
+  register_prefix_fn(p, parse_identifier, IDENT);
+  register_prefix_fn(p, parse_integer_literal, INT);
+  register_prefix_fn(p, parse_prefix_expression, BANG);
+  register_prefix_fn(p, parse_prefix_expression, MINUS);
+  register_prefix_fn(p, parse_boolean, TRUE);
+  register_prefix_fn(p, parse_boolean, FALSE);
+  register_prefix_fn(p, parse_grouped_expression, LPAREN);
+  register_prefix_fn(p, parse_if_expression, IF);
+  register_prefix_fn(p, parse_function_literal, FUNCTION);
+  register_prefix_fn(p, parse_string_literal, STRING);
+  register_prefix_fn(p, parse_array_literal, LBRACKET);
+  register_prefix_fn(p, parse_hash_literal, LBRACE);
+  register_prefix_fn(p, parse_while_loop, WHILE);
+  register_prefix_fn(p, parse_for_loop, FOR);
+  register_prefix_fn(p, parse_binary_literal, BINARY);
+  register_prefix_fn(p, parse_hex_literal, HEX);
 
-  register_infix_fn(p, &parse_infix_expression, PLUS);
-  register_infix_fn(p, &parse_infix_expression, MINUS);
-  register_infix_fn(p, &parse_infix_expression, SLASH);
-  register_infix_fn(p, &parse_infix_expression, ASTERISK);
-  register_infix_fn(p, &parse_infix_expression, EQ);
-  register_infix_fn(p, &parse_infix_expression, NOT_EQ);
-  register_infix_fn(p, &parse_infix_expression, LT);
-  register_infix_fn(p, &parse_infix_expression, GT);
-  register_infix_fn(p, &parse_call_expression, LPAREN);
-  register_infix_fn(p, &parse_index_expression, LBRACKET);
-  register_infix_fn(p, &parse_reassignment_expression, ASSIGN);
+  register_infix_fn(p, parse_infix_expression, PLUS);
+  register_infix_fn(p, parse_infix_expression, MINUS);
+  register_infix_fn(p, parse_infix_expression, SLASH);
+  register_infix_fn(p, parse_infix_expression, ASTERISK);
+  register_infix_fn(p, parse_infix_expression, EQ);
+  register_infix_fn(p, parse_infix_expression, NOT_EQ);
+  register_infix_fn(p, parse_infix_expression, LT);
+  register_infix_fn(p, parse_infix_expression, GT);
+  register_infix_fn(p, parse_call_expression, LPAREN);
+  register_infix_fn(p, parse_index_expression, LBRACKET);
+  register_infix_fn(p, parse_reassignment_expression, ASSIGN);
 
   build_precedence_table(p);
 

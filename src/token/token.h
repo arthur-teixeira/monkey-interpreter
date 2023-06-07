@@ -37,6 +37,7 @@
   TYPE(CONTINUE) \
   TYPE(FOR) \
   TYPE(BINARY) \
+  TYPE(HEX) \
   TYPE(TOKEN_COUNT) \
 
 

@@ -610,6 +610,15 @@ void test_parsing_binary_literal(void) {
   TEST_ASSERT_EQUAL_STRING("1010", literal->token.literal);
 }
 
+void test_parsing_hex_literal(void) {
+  char *input = "0xCAFE";
+  Program *program = parse_and_check_errors(input);
+  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
+
+  TEST_ASSERT_EQUAL_INT64(51966, literal->value);
+  TEST_ASSERT_EQUAL_STRING("CAFE", literal->token.literal);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -636,5 +645,6 @@ int main() {
   RUN_TEST(test_incomplete_for_loop);
   RUN_TEST(test_parsing_reassignment);
   RUN_TEST(test_parsing_binary_literal);
+  RUN_TEST(test_parsing_hex_literal);
   return UNITY_END();
 }
