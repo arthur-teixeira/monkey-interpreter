@@ -32,7 +32,13 @@ void test_next_token(void) {
                 "}"
                 "for;"
                 "0b1010;"
-                "0xCAFE12;";
+                "0xCAFE12;"
+                "1 << 2;"
+                "1 >> 2;"
+                "1 ^ 2;"
+                "1 & 2;"
+                "1 | 2;"
+                "1 % 2;";
 
   typedef struct {
     TokenType expected_type;
@@ -73,7 +79,15 @@ void test_next_token(void) {
       {BREAK, "break"},  {SEMICOLON, ";"},   {CONTINUE, "continue"},
       {SEMICOLON, ";"},  {RBRACE, "}"},      {FOR, "for"},
       {SEMICOLON, ";"},  {BINARY, "1010"},   {SEMICOLON, ";"},
-      {HEX, "CAFE12"},     {SEMICOLON, ";"},   {END_OF_FILE, "\0"},
+      {HEX, "CAFE12"},   {SEMICOLON, ";"},   {INT, "1"},
+      {LSHIFT, "<<"},    {INT, "2"},         {SEMICOLON, ";"},
+      {INT, "1"},        {RSHIFT, ">>"},     {INT, "2"},
+      {SEMICOLON, ";"},  {INT, "1"},         {BXOR, "^"},
+      {INT, "2"},        {SEMICOLON, ";"},   {INT, "1"},
+      {BAND, "&"},       {INT, "2"},         {SEMICOLON, ";"},
+      {INT, "1"},        {BOR, "|"},         {INT, "2"},
+      {SEMICOLON, ";"},  {INT, "1"},         {MOD, "%"},
+      {INT, "2"},        {SEMICOLON, ";"},   {END_OF_FILE, "\0"},
   };
 
   Lexer *lexer = new_lexer(input);
@@ -81,6 +95,9 @@ void test_next_token(void) {
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(TestCase); i++) {
     Token tok = next_token(lexer);
 
+    const char *expected_type = TOKEN_STRING[tests[i].expected_type];
+    const char *actual_type = TOKEN_STRING[tok.Type];
+    TEST_ASSERT_EQUAL_STRING(expected_type, actual_type);
     TEST_ASSERT_EQUAL(tests[i].expected_type, tok.Type);
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, tok.literal);
   }

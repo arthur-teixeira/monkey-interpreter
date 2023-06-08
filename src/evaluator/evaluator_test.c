@@ -614,6 +614,36 @@ void test_reassignment(void) {
   test_integer_object(evaluated, 5);
 }
 
+void test_bit_shift(void) {
+  char *inputs[] = {
+    "2 << 1;",
+    "8 >> 1;",
+  };
+
+  for (int i = 0; i < 2; ++i) {
+    Object *evaluated = test_eval(inputs[i]);
+    test_integer_object(evaluated, 4);
+  }
+}
+
+void test_bitwise(void) {
+  struct testCase {
+    char *input;
+    long expected;
+  };
+
+  struct testCase tests[] = {
+    {"57 | 34", 59},
+    {"55 & 123", 51},
+    {"120 ^ 392", 496},
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); ++i) {
+    Object *evaluated = test_eval(tests[i].input);
+    test_integer_object(evaluated, tests[i].expected);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -638,5 +668,7 @@ int main() {
   RUN_TEST(test_while_loops);
   RUN_TEST(test_loop_break);
   RUN_TEST(test_reassignment);
+  RUN_TEST(test_bit_shift);
+  RUN_TEST(test_bitwise);
   return UNITY_END();
 }

@@ -38,6 +38,12 @@
   TYPE(FOR) \
   TYPE(BINARY) \
   TYPE(HEX) \
+  TYPE(RSHIFT) \
+  TYPE(LSHIFT) \
+  TYPE(BAND) \
+  TYPE(BOR) \
+  TYPE(BXOR) \
+  TYPE(MOD) \
   TYPE(TOKEN_COUNT) \
 
 

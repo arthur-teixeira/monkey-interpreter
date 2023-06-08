@@ -54,7 +54,6 @@ void read_identifier(Lexer *l, char *result) {
   slice(l->input, result, position, l->position);
 }
 
-// TODO: add support to hex, binary, octal and float numbers
 void read_number(Lexer *l, char *result) {
   uint32_t position = l->position;
   while (isdigit(l->ch)) {
@@ -128,6 +127,30 @@ Token read_special_number(Lexer *l) {
   return tok;
 }
 
+Token read_lshift(Lexer *l) {
+  read_char(l);
+  read_char(l);
+
+  Token tok = {
+    .Type = LSHIFT,
+    .literal = "<<",
+  };
+
+  return tok;
+}
+
+Token read_rshift(Lexer *l) {
+  read_char(l);
+  read_char(l);
+
+  Token tok = {
+    .Type = RSHIFT,
+    .literal = ">>",
+  };
+
+  return tok;
+}
+
 Token next_token(Lexer *l) {
   Token tok;
 
@@ -187,9 +210,15 @@ Token next_token(Lexer *l) {
     }
     break;
   case '<':
+    if (peek_char(l) == '<') {
+      return read_lshift(l);
+    }
     tok = new_token(LT, l->ch);
     break;
   case '>':
+    if (peek_char(l) == '>') {
+      return read_rshift(l);
+    }
     tok = new_token(GT, l->ch);
     break;
   case '-':
@@ -200,6 +229,18 @@ Token next_token(Lexer *l) {
     break;
   case '*':
     tok = new_token(ASTERISK, l->ch);
+    break;
+  case '^':
+    tok = new_token(BXOR, l->ch);
+    break;
+  case '&':
+    tok = new_token(BAND, l->ch);
+    break;
+  case '|':
+    tok = new_token(BOR, l->ch);
+    break;
+  case '%':
+    tok = new_token(MOD, l->ch);
     break;
   default:
     if (is_letter(l->ch)) {

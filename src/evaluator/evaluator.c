@@ -247,7 +247,19 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   } else if (strcmp(operator, "*") == 0) {
     evaluated->value = left->value * right->value;
   } else if (strcmp(operator, "/") == 0) {
-    evaluated->value = left->value / right->value; // TODO: floating point
+    evaluated->value = left->value / right->value;
+  } else if (strcmp(operator, "<<") == 0) {
+    evaluated->value = left->value << right->value;
+  } else if (strcmp(operator, ">>") == 0) {
+    evaluated->value = left->value >> right->value;
+  } else if (strcmp(operator, "|") == 0) {
+    evaluated->value = left->value | right->value;
+  } else if (strcmp(operator, "&") == 0) {
+    evaluated->value = left->value & right->value;
+  } else if (strcmp(operator, "^") == 0) {
+    evaluated->value = left->value ^ right->value;
+  } else if (strcmp(operator, "%") == 0) {
+    evaluated->value = left->value % right->value;
   } else {
     free(obj);
     free(evaluated);
@@ -768,8 +780,7 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
 
   if (cur_value == NULL) {
     char error_message[255];
-    sprintf(error_message, "%s is not defined",
-            stmt->name->value);
+    sprintf(error_message, "%s is not defined", stmt->name->value);
 
     return new_error(error_message);
   }
@@ -778,7 +789,7 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
   if (is_error(val)) {
     return val;
   }
-  
+
   if (val_in_outer_env) {
     assert(env->outer != NULL);
     env_set(env->outer, stmt->name->value, val);

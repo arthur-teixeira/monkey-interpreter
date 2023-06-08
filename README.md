@@ -16,9 +16,10 @@ $ ./bin/program
 - [X] For/while loops
 - [X] Reassignment expression without let keyword
 - [X] Binary numbers
-- [ ] Hex numbers
+- [X] Hex numbers
+- [X] Bitwise operators
+- [ ] && and || operators
 - [ ] Floating point number support
-- [ ] Bitwise operators
 - [ ] Interpret source files
 - [ ] Turing completeness proof (rule 110)
 - [ ] Garbage collection

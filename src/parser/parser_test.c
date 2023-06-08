@@ -159,7 +159,8 @@ void test_boolean_expressions(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct test_case); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
-    BooleanLiteral *boolean = test_single_expression_in_program(program, BOOL_EXPR);
+    BooleanLiteral *boolean =
+        test_single_expression_in_program(program, BOOL_EXPR);
 
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_literal, boolean->token.literal);
     TEST_ASSERT_EQUAL(tests[i].expected_value, boolean->value);
@@ -169,7 +170,8 @@ void test_boolean_expressions(void) {
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
+  IntegerLiteral *literal =
+      test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
   TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
@@ -219,7 +221,9 @@ void test_parsing_infix_expressions(void) {
   struct infix_test_case infix_tests[] = {
       {"5 + 5;", 5, "+", 5},   {"5 - 5;", 5, "-", 5},   {"5 * 1;", 5, "*", 1},
       {"5 / 5;", 5, "/", 5},   {"5 > 5;", 5, ">", 5},   {"5 < 5;", 5, "<", 5},
-      {"5 == 5;", 5, "==", 5}, {"5 != 5;", 5, "!=", 5},
+      {"5 == 5;", 5, "==", 5}, {"5 != 5;", 5, "!=", 5}, {"5 << 5;", 5, "<<", 5},
+      {"5 >> 5;", 5, ">>", 5}, {"5 ^ 5;", 5, "^", 5},   {"5 | 5;", 5, "|", 5},
+      {"5 % 5;", 5, "%", 5},
   };
 
   for (uint32_t i = 0; i < sizeof(infix_tests) / sizeof(struct infix_test_case);
@@ -327,6 +331,18 @@ void test_operator_precedence_parsing(void) {
       {
           "add(a * b[2], b[1], 2 * [1, 2][1])",
           "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])));\n",
+      },
+      {
+        "1 << 2 + 5 >> 3 / 10",
+        "((1 << (2 + 5)) >> (3 / 10));\n",
+      },
+      {
+        "2 / 1 | 3",
+        "((2 / 1) | 3);\n",
+      },
+      {
+          "5 + 5 % 2",
+          "(5 + (5 % 2));\n",
       },
   };
 
@@ -489,7 +505,8 @@ int iterate_over_string_int_hashmap(void *expected, hashmap_element_t *pair) {
   TEST_ASSERT_EQUAL(STRING_EXPR, key_expr->type);
 
   StringLiteral *key = key_expr->value;
-  int *expected_value = hashmap_get(expected_map, key->value, strlen(key->value));
+  int *expected_value =
+      hashmap_get(expected_map, key->value, strlen(key->value));
   TEST_ASSERT_NOT_NULL(expected_value);
 
   Expression *value = pair->data;
@@ -513,7 +530,8 @@ void test_parsing_hash_literals_string_keys(void) {
   hashmap_put(&expected_map, "two", strlen("two"), &two);
   hashmap_put(&expected_map, "three", strlen("three"), &three);
 
-  hashmap_iterate_pairs(&hash->pairs, &iterate_over_string_int_hashmap, &expected_map);
+  hashmap_iterate_pairs(&hash->pairs, &iterate_over_string_int_hashmap,
+                        &expected_map);
 }
 
 void test_parsing_empty_hash_literal(void) {
@@ -596,7 +614,7 @@ void test_parsing_reassignment(void) {
 
   TEST_ASSERT_EQUAL_STRING("b", reassign->name->value);
   TEST_ASSERT_EQUAL(INT_EXPR, reassign->value->type);
-  
+
   IntegerLiteral *intt = reassign->value->value;
   TEST_ASSERT_EQUAL(1, intt->value);
 }
@@ -604,7 +622,8 @@ void test_parsing_reassignment(void) {
 void test_parsing_binary_literal(void) {
   char *input = "0b1010;";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
+  IntegerLiteral *literal =
+      test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(10, literal->value);
   TEST_ASSERT_EQUAL_STRING("1010", literal->token.literal);
@@ -613,7 +632,8 @@ void test_parsing_binary_literal(void) {
 void test_parsing_hex_literal(void) {
   char *input = "0xCAFE";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
+  IntegerLiteral *literal =
+      test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(51966, literal->value);
   TEST_ASSERT_EQUAL_STRING("CAFE", literal->token.literal);

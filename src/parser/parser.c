@@ -36,6 +36,12 @@ void build_precedence_table(Parser *p) {
   p->precedences[LPAREN] = CALL;
   p->precedences[LBRACKET] = INDEX;
   p->precedences[ASSIGN] = REASSIGN;
+  p->precedences[BAND] = BIT_AND;
+  p->precedences[BOR] = BIT_OR;
+  p->precedences[BXOR] = BIT_XOR;
+  p->precedences[LSHIFT] = BITSHIFT;
+  p->precedences[RSHIFT] = BITSHIFT;
+  p->precedences[MOD] = PRODUCT;
 }
 
 uint32_t peek_precedence(Parser *p) {
@@ -318,19 +324,18 @@ int htoi(char s[]) {
   if (s[0] == '0' && (s[1] == 'X' || s[1] == 'x'))
     i = 2;
 
-  for(; i < strlen(s); ++i) {
+  for (; i < strlen(s); ++i) {
     res = res * 16;
 
-    if(isdigit(s[i]))
+    if (isdigit(s[i]))
       res = res + s[i] - '0';
-    else if (s[i] >= 'a' && s[i] <= 'f') 
+    else if (s[i] >= 'a' && s[i] <= 'f')
       res = res + s[i] - 'a' + 10;
     else if (s[i] >= 'A' && s[i] <= 'F')
       res = res + s[i] - 'A' + 10;
   }
   return res;
 }
-
 
 IntegerLiteral *int_from_hex(Parser *p) {
   IntegerLiteral *intt = malloc(sizeof(IntegerLiteral));
@@ -796,7 +801,6 @@ ForLoop *new_for_loop(Parser *p) {
     loop->update = parse_statement(p);
   }
 
-
   if (!expect_peek(p, LBRACE)) {
     free(loop->update);
     free(loop->condition);
@@ -992,14 +996,15 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, parse_binary_literal, BINARY);
   register_prefix_fn(p, parse_hex_literal, HEX);
 
-  register_infix_fn(p, parse_infix_expression, PLUS);
-  register_infix_fn(p, parse_infix_expression, MINUS);
-  register_infix_fn(p, parse_infix_expression, SLASH);
-  register_infix_fn(p, parse_infix_expression, ASTERISK);
-  register_infix_fn(p, parse_infix_expression, EQ);
-  register_infix_fn(p, parse_infix_expression, NOT_EQ);
-  register_infix_fn(p, parse_infix_expression, LT);
-  register_infix_fn(p, parse_infix_expression, GT);
+  TokenType infix_expressions[] = {
+      PLUS, MINUS,  SLASH,  ASTERISK, EQ,  NOT_EQ, LT,
+      GT,   LSHIFT, RSHIFT, MOD,      BOR, BAND,   BXOR,
+  };
+
+  for (int i = 0; i < 14; ++i) {
+    register_infix_fn(p, parse_infix_expression, infix_expressions[i]);
+  }
+
   register_infix_fn(p, parse_call_expression, LPAREN);
   register_infix_fn(p, parse_index_expression, LBRACKET);
   register_infix_fn(p, parse_reassignment_expression, ASSIGN);
