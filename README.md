@@ -18,9 +18,9 @@ $ ./bin/program
 - [X] Binary numbers
 - [X] Hex numbers
 - [X] Bitwise operators
-- [ ] && and || operators
-- [ ] Floating point number support
+- [X] && and || operators
 - [ ] Interpret source files
 - [ ] Turing completeness proof (rule 110)
+- [ ] Floating point number support
 - [ ] Garbage collection
 - [ ] Concurrent GC
