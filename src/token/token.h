@@ -44,6 +44,8 @@
   TYPE(BOR) \
   TYPE(BXOR) \
   TYPE(MOD) \
+  TYPE(AND) \
+  TYPE(OR) \
   TYPE(TOKEN_COUNT) \
 
 

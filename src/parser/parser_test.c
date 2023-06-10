@@ -333,12 +333,12 @@ void test_operator_precedence_parsing(void) {
           "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])));\n",
       },
       {
-        "1 << 2 + 5 >> 3 / 10",
-        "((1 << (2 + 5)) >> (3 / 10));\n",
+          "1 << 2 + 5 >> 3 / 10",
+          "((1 << (2 + 5)) >> (3 / 10));\n",
       },
       {
-        "2 / 1 | 3",
-        "((2 / 1) | 3);\n",
+          "2 / 1 | 3",
+          "((2 / 1) | 3);\n",
       },
       {
           "5 + 5 % 2",
@@ -639,6 +639,32 @@ void test_parsing_hex_literal(void) {
   TEST_ASSERT_EQUAL_STRING("CAFE", literal->token.literal);
 }
 
+void test_parsing_and(void) {
+  char *input = "true && true";
+  Program *program = parse_and_check_errors(input);
+  Statement *stmt = program->statements->tail->value;
+
+  TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
+  InfixExpression *expression = stmt->expression->value;
+  TEST_ASSERT_EQUAL_STRING("&&", expression->operator);
+
+  TEST_ASSERT_EQUAL(BOOL_EXPR, expression->right->type);
+  TEST_ASSERT_EQUAL(BOOL_EXPR, expression->left->type);
+}
+
+void test_parsing_or(void) {
+  char *input = "true || true";
+  Program *program = parse_and_check_errors(input);
+  Statement *stmt = program->statements->tail->value;
+
+  TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
+  InfixExpression *expression = stmt->expression->value;
+  TEST_ASSERT_EQUAL_STRING("||", expression->operator);
+
+  TEST_ASSERT_EQUAL(BOOL_EXPR, expression->right->type);
+  TEST_ASSERT_EQUAL(BOOL_EXPR, expression->left->type);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -666,5 +692,7 @@ int main() {
   RUN_TEST(test_parsing_reassignment);
   RUN_TEST(test_parsing_binary_literal);
   RUN_TEST(test_parsing_hex_literal);
+  RUN_TEST(test_parsing_and);
+  RUN_TEST(test_parsing_or);
   return UNITY_END();
 }

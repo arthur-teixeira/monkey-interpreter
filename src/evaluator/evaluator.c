@@ -351,6 +351,14 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
   } else if (strcmp(expr->operator, "!=") == 0) {
     assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
     return native_bool_to_boolean_object(right != left);
+  } else if (strcmp(expr->operator, "&&") == 0) {
+    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
+    return native_bool_to_boolean_object((right == &obj_true) &&
+                                         (left == &obj_true));
+  } else if (strcmp(expr->operator, "||") == 0) {
+    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
+    return native_bool_to_boolean_object((right == &obj_true) ||
+                                         (left == &obj_true));
   }
 
   char error_message[255];

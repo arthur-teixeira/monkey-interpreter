@@ -234,10 +234,22 @@ Token next_token(Lexer *l) {
     tok = new_token(BXOR, l->ch);
     break;
   case '&':
-    tok = new_token(BAND, l->ch);
+    if (peek_char(l) == '&') {
+      tok.Type = AND;
+      strlcpy(tok.literal, "&&", 3);
+      read_char(l);
+    } else {
+      tok = new_token(BAND, l->ch);
+    }
     break;
   case '|':
-    tok = new_token(BOR, l->ch);
+    if (peek_char(l) == '|') {
+      tok.Type = OR;
+      strlcpy(tok.literal, "||", 3);
+      read_char(l);
+    } else {
+      tok = new_token(BOR, l->ch);
+    }
     break;
   case '%':
     tok = new_token(MOD, l->ch);

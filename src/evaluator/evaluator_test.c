@@ -644,6 +644,29 @@ void test_bitwise(void) {
   }
 }
 
+void test_and_and_or(void) {
+  struct testCase {
+    char *input;
+    bool expected;
+  };
+
+  struct testCase tests[] = {
+    {"true && true", true},
+    {"true && false", false},
+    {"false && true", false},
+    {"false && false", false},
+    {"true || true", true},
+    {"true || false", true},
+    {"false || true", true},
+    {"false || false", false},
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); ++i) {
+    Object *evaluated = test_eval(tests[i].input);
+    test_boolean_object(evaluated, tests[i].expected);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -670,5 +693,6 @@ int main() {
   RUN_TEST(test_reassignment);
   RUN_TEST(test_bit_shift);
   RUN_TEST(test_bitwise);
+  RUN_TEST(test_and_and_or);
   return UNITY_END();
 }

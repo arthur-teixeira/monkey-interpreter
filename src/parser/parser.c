@@ -11,6 +11,8 @@
 #include <string.h>
 #include <strings.h>
 
+#define ARRAY_LEN(arr, type) sizeof(arr) / sizeof(type)
+
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
   p->peek_token = next_token(p->l);
@@ -42,6 +44,8 @@ void build_precedence_table(Parser *p) {
   p->precedences[LSHIFT] = BITSHIFT;
   p->precedences[RSHIFT] = BITSHIFT;
   p->precedences[MOD] = PRODUCT;
+  p->precedences[AND] = PREC_AND;
+  p->precedences[OR] = PREC_OR;
 }
 
 uint32_t peek_precedence(Parser *p) {
@@ -999,9 +1003,10 @@ Parser *new_parser(Lexer *l) {
   TokenType infix_expressions[] = {
       PLUS, MINUS,  SLASH,  ASTERISK, EQ,  NOT_EQ, LT,
       GT,   LSHIFT, RSHIFT, MOD,      BOR, BAND,   BXOR,
+      AND, OR,
   };
 
-  for (int i = 0; i < 14; ++i) {
+  for (int i = 0; i < ARRAY_LEN(infix_expressions, TokenType); ++i) {
     register_infix_fn(p, parse_infix_expression, infix_expressions[i]);
   }
 

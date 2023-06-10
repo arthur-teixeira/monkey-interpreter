@@ -25,6 +25,8 @@ typedef enum {
   _,
   LOWEST,
   EQUALS,
+  PREC_OR,
+  PREC_AND,
   BIT_OR,
   BIT_XOR,
   BIT_AND,
