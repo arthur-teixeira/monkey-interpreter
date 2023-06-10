@@ -9,9 +9,9 @@ const char *ObjectTypeString[] = {
     "FUNCTION_OBJ", "STRING_OBJ",  "BUILTIN_OBJ", "ARRAY_OBJ",  "HASH_OBJ",
 };
 
-void inspect_integer_object(ResizableBuffer *buf, Integer *obj) {
+void inspect_number_object(ResizableBuffer *buf, Number *obj) {
   char temp_buf[100];
-  sprintf(temp_buf, "%ld", obj->value);
+  sprintf(temp_buf, "%f", obj->value);
 
   append_to_buf(buf, temp_buf);
 }
@@ -98,8 +98,8 @@ void inspect_hash_object(ResizableBuffer *buf, Hash *hash) {
 
 void inspect_object(ResizableBuffer *buf, Object *obj) {
   switch (obj->type) {
-  case INTEGER_OBJ:
-    return inspect_integer_object(buf, obj->object);
+  case NUMBER_OBJ:
+    return inspect_number_object(buf, obj->object);
   case BOOLEAN_OBJ:
     return inspect_boolean_object(buf, obj->object);
   case RETURN_OBJ:
@@ -131,8 +131,8 @@ int32_t get_bool_hash_key(Boolean *boolean) {
   return boolean->value << BOOLEAN_OBJ;
 }
 
-int32_t get_int_hash_key(Integer *integer) {
-  return integer->value << INTEGER_OBJ;
+int32_t get_int_hash_key(Number *integer) {
+  return (long)integer->value << NUMBER_OBJ;
 }
 
 int32_t invalid_key() { return -1; }
@@ -143,7 +143,7 @@ int32_t get_hash_key(Object *obj) {
     return get_string_hash_key(obj->object);
   case BOOLEAN_OBJ:
     return get_bool_hash_key(obj->object);
-  case INTEGER_OBJ:
+  case NUMBER_OBJ:
     return get_int_hash_key(obj->object);
   default:
     return invalid_key();

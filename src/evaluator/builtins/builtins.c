@@ -39,13 +39,13 @@ Object *unsupported_arg_error(Object *obj, ObjectType type, char *fn_name) {
   return NULL;
 }
 
-Object *make_result(long value) {
+Object *make_result(double value) {
   Object *result = malloc(sizeof(Object));
   assert(result != NULL);
 
-  result->type = INTEGER_OBJ;
+  result->type = NUMBER_OBJ;
 
-  Integer *intt = malloc(sizeof(Integer));
+  Number *intt = malloc(sizeof(Number));
   assert(intt != NULL);
   intt->value = value;
 

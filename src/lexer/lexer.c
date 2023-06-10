@@ -56,7 +56,7 @@ void read_identifier(Lexer *l, char *result) {
 
 void read_number(Lexer *l, char *result) {
   uint32_t position = l->position;
-  while (isdigit(l->ch)) {
+  while (isdigit(l->ch) || l->ch == '.') {
     read_char(l);
   }
 
@@ -264,7 +264,7 @@ Token next_token(Lexer *l) {
         return read_special_number(l);
       }
 
-      tok.Type = INT;
+      tok.Type = NUMBER;
       read_number(l, tok.literal);
       return tok;
     } else if (strcmp("\n", &l->ch) || strcmp("\0", &l->ch)) {

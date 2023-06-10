@@ -243,9 +243,9 @@ void expr_to_string(ResizableBuffer *buf, Statement *stmt) {
   }
 }
 
-void int_to_string(ResizableBuffer *buf, IntegerLiteral *lit) {
-  char formatted[sizeof(long)];
-  sprintf(formatted, "%ld", lit->value);
+void int_to_string(ResizableBuffer *buf, NumberLiteral *lit) {
+  char formatted[10];
+  sprintf(formatted, "%.2f", lit->value);
 
   append_to_buf(buf, formatted);
 }

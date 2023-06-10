@@ -6,7 +6,7 @@
 #include "../parser/parser.h"
 
 typedef enum {
-  INTEGER_OBJ,
+  NUMBER_OBJ,
   BOOLEAN_OBJ,
   NULL_OBJ,
   RETURN_OBJ,
@@ -30,8 +30,8 @@ typedef struct {
 void inspect_object(ResizableBuffer *, Object *);
 
 typedef struct {
-  long value;  
-} Integer;
+  double value;  
+} Number;
 
 typedef struct {
   bool value;

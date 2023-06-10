@@ -18,10 +18,10 @@ void free_identifier(Identifier *);
 
 typedef struct {
   Token token;
-  int64_t value;
-} IntegerLiteral;
+  double value;
+} NumberLiteral;
 
-void int_to_string(ResizableBuffer *, IntegerLiteral *);
+void int_to_string(ResizableBuffer *, NumberLiteral *);
 
 typedef enum {
   LET_STATEMENT,

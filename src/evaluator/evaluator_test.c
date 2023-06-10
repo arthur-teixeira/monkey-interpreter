@@ -24,10 +24,10 @@ Object *test_eval(char *input) {
   return result;
 }
 
-void test_integer_object(Object *evaluated, long expected) {
-  TEST_ASSERT_EQUAL(INTEGER_OBJ, evaluated->type);
-  Integer *intt = evaluated->object;
-  TEST_ASSERT_EQUAL_INT64(expected, intt->value);
+void test_number_object(Object *evaluated, double expected) {
+  TEST_ASSERT_EQUAL(NUMBER_OBJ, evaluated->type);
+  Number *num = evaluated->object;
+  TEST_ASSERT_EQUAL_FLOAT(expected, num->value);
 }
 
 void test_boolean_object(Object *evaluated, bool expected) {
@@ -62,7 +62,7 @@ void test_eval_integer_expression(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
-    test_integer_object(evaluated, tests[i].expected);
+    test_number_object(evaluated, tests[i].expected);
 
     free(evaluated);
   }
@@ -135,7 +135,7 @@ void test_if_else_expressions(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
-    test_integer_object(evaluated, tests[i].expected);
+    test_number_object(evaluated, tests[i].expected);
   }
 }
 
@@ -168,7 +168,7 @@ void test_return_statements(void) {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
-    test_integer_object(evaluated, tests[i].expected);
+    test_number_object(evaluated, tests[i].expected);
   }
 }
 
@@ -250,7 +250,7 @@ void test_let_statements(void) {
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
-    test_integer_object(test_eval(tests[i].input), tests[i].expected);
+    test_number_object(test_eval(tests[i].input), tests[i].expected);
   }
 }
 
@@ -275,7 +275,7 @@ void test_function_object(void) {
   memset(buf.buf, 0, 1000);
 
   block_to_string(&buf, fn->body);
-  TEST_ASSERT_EQUAL_STRING("(x + 2)", buf.buf);
+  TEST_ASSERT_EQUAL_STRING("(x + 2.00)", buf.buf);
 
   free(buf.buf);
 }
@@ -296,7 +296,7 @@ void test_function_application(void) {
   };
 
   for (uint32_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
-    test_integer_object(test_eval(tests[i].input), tests[i].expected);
+    test_number_object(test_eval(tests[i].input), tests[i].expected);
   }
 }
 
@@ -308,7 +308,7 @@ void test_closures(void) {
                 "let addTwo = newAdder(2);"
                 "addTwo(2);               ";
 
-  test_integer_object(test_eval(input), 4);
+  test_number_object(test_eval(input), 4);
 }
 
 void test_string_literal(void) {
@@ -361,7 +361,7 @@ void test_builtin_len_function(void) {
       Error *err = evaluated->object;
       TEST_ASSERT_EQUAL_STRING(tests[i].expected_error, err->message);
     } else {
-      test_integer_object(evaluated, tests[i].expected_value);
+      test_number_object(evaluated, tests[i].expected_value);
     }
   }
 }
@@ -375,9 +375,9 @@ void test_array_literals(void) {
 
   Array *arr = evaluated->object;
 
-  test_integer_object(arr->elements.arr[0], 1);
-  test_integer_object(arr->elements.arr[1], 4);
-  test_integer_object(arr->elements.arr[2], 6);
+  test_number_object(arr->elements.arr[0], 1);
+  test_number_object(arr->elements.arr[1], 4);
+  test_number_object(arr->elements.arr[2], 6);
 }
 
 void test_array_indexing(void) {
@@ -434,7 +434,7 @@ void test_array_indexing(void) {
     if (tests[i].expected < 0) {
       TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
     } else {
-      test_integer_object(evaluated, tests[i].expected);
+      test_number_object(evaluated, tests[i].expected);
     }
   }
 }
@@ -459,7 +459,7 @@ void test_builtin_array_functions(void) {
     if (tests[i].expected < 0) {
       TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
     } else {
-      test_integer_object(evaluated, tests[i].expected);
+      test_number_object(evaluated, tests[i].expected);
     }
   }
 }
@@ -480,7 +480,7 @@ int iter_hash_literal_test(void *generated_map, hashmap_element_t *pair) {
   HashPair *value = hashmap_get(map, key, sizeof(int32_t));
   TEST_ASSERT_NOT_NULL(value);
 
-  test_integer_object(&value->value, *(long *)pair->data);
+  test_number_object(&value->value, *(long *)pair->data);
 
   return 0;
 }
@@ -524,8 +524,8 @@ void test_hash_literals(void) {
 
   hashmap_put(&expected_map, &three_key, sizeof(int32_t), &three_val);
 
-  Integer four = {4};
-  Object *four_obj = wrap_object(&four, INTEGER_OBJ);
+  Number four = {4};
+  Object *four_obj = wrap_object(&four, NUMBER_OBJ);
   int32_t four_key = get_hash_key(four_obj);
   long four_val = 4;
 
@@ -575,7 +575,7 @@ void test_hash_index_expressions(void) {
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); i++) {
     Object *evaluated = test_eval(tests[i].input);
     if (tests[i].expected >= 0) {
-      test_integer_object(evaluated, tests[i].expected);
+      test_number_object(evaluated, tests[i].expected);
     } else {
       TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
     }
@@ -590,7 +590,7 @@ void test_while_loops(void) {
                 "b;";
 
   Object *evaluated = test_eval(input);
-  test_integer_object(evaluated, 5);
+  test_number_object(evaluated, 5);
 }
 
 void test_loop_break(void) {
@@ -602,7 +602,7 @@ void test_loop_break(void) {
                 "b;";
 
   Object *evaluated = test_eval(input);
-  test_integer_object(evaluated, 3);
+  test_number_object(evaluated, 3);
 }
 
 void test_reassignment(void) {
@@ -611,7 +611,7 @@ void test_reassignment(void) {
                 "b;";
 
   Object *evaluated = test_eval(input);
-  test_integer_object(evaluated, 5);
+  test_number_object(evaluated, 5);
 }
 
 void test_bit_shift(void) {
@@ -622,7 +622,7 @@ void test_bit_shift(void) {
 
   for (int i = 0; i < 2; ++i) {
     Object *evaluated = test_eval(inputs[i]);
-    test_integer_object(evaluated, 4);
+    test_number_object(evaluated, 4);
   }
 }
 
@@ -640,7 +640,7 @@ void test_bitwise(void) {
 
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); ++i) {
     Object *evaluated = test_eval(tests[i].input);
-    test_integer_object(evaluated, tests[i].expected);
+    test_number_object(evaluated, tests[i].expected);
   }
 }
 
@@ -665,6 +665,13 @@ void test_and_and_or(void) {
     Object *evaluated = test_eval(tests[i].input);
     test_boolean_object(evaluated, tests[i].expected);
   }
+}
+
+void test_floats(void) {
+  char *input = "2.75 + 1.25";
+
+  Object *evaluated = test_eval(input);
+  test_number_object(evaluated, 4.00f);
 }
 
 int main() {
@@ -694,5 +701,6 @@ int main() {
   RUN_TEST(test_bit_shift);
   RUN_TEST(test_bitwise);
   RUN_TEST(test_and_and_or);
+  RUN_TEST(test_floats);
   return UNITY_END();
 }

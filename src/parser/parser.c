@@ -263,38 +263,27 @@ void int_conversion_error(Parser *p) {
   append(p->errors, err_msg);
 }
 
-IntegerLiteral *new_int_literal(Parser *p) {
-  IntegerLiteral *lit = malloc(sizeof(IntegerLiteral));
-  if (lit == NULL) {
-    printf("Error allocating identifier value: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+NumberLiteral *new_number_literal(Parser *p) {
+  NumberLiteral *lit = malloc(sizeof(NumberLiteral));
+  assert(lit != NULL);
 
-  char *err = "";
-  int64_t result = strtol(p->cur_token.literal, &err, 10);
-  if (strcmp(err, "") != 0) {
-    int_conversion_error(p);
-    free(lit);
-    return NULL;
-  }
-
-  lit->value = result;
+  lit->value = strtof(p->cur_token.literal, NULL);
   lit->token = p->cur_token;
 
   return lit;
 }
 
-Expression *parse_integer_literal(Parser *p) {
+Expression *parse_number_literal(Parser *p) {
   Expression *expr = malloc(sizeof(Expression));
 
   expr->type = INT_EXPR;
-  expr->value = new_int_literal(p);
+  expr->value = new_number_literal(p);
 
   return expr;
 }
 
-IntegerLiteral *int_from_binary(Parser *p) {
-  IntegerLiteral *lit = malloc(sizeof(IntegerLiteral));
+NumberLiteral *int_from_binary(Parser *p) {
+  NumberLiteral *lit = malloc(sizeof(NumberLiteral));
   assert(lit != NULL);
 
   int result = 0;
@@ -341,8 +330,8 @@ int htoi(char s[]) {
   return res;
 }
 
-IntegerLiteral *int_from_hex(Parser *p) {
-  IntegerLiteral *intt = malloc(sizeof(IntegerLiteral));
+NumberLiteral *int_from_hex(Parser *p) {
+  NumberLiteral *intt = malloc(sizeof(NumberLiteral));
   assert(intt != NULL);
 
   intt->token = p->cur_token;
@@ -984,7 +973,7 @@ Parser *new_parser(Lexer *l) {
   }
 
   register_prefix_fn(p, parse_identifier, IDENT);
-  register_prefix_fn(p, parse_integer_literal, INT);
+  register_prefix_fn(p, parse_number_literal, NUMBER);
   register_prefix_fn(p, parse_prefix_expression, BANG);
   register_prefix_fn(p, parse_prefix_expression, MINUS);
   register_prefix_fn(p, parse_boolean, TRUE);

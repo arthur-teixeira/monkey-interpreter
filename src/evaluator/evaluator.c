@@ -78,13 +78,13 @@ Object *eval_program(Program *program, Environment *env) {
   return result;
 }
 
-Object *new_integer(IntegerLiteral *lit) {
+Object *new_integer(NumberLiteral *lit) {
   Object *obj = malloc(sizeof(Object));
   assert(obj != NULL && "Error allocating memory for integer object");
 
-  obj->type = INTEGER_OBJ;
+  obj->type = NUMBER_OBJ;
 
-  Integer *int_obj = malloc(sizeof(Integer));
+  Number *int_obj = malloc(sizeof(Number));
   assert(int_obj != NULL && "Error allocating memory for integer");
 
   int_obj->value = lit->value;
@@ -158,7 +158,7 @@ Object *eval_string_expression(StringLiteral *expr) {
   return str_obj;
 }
 
-Object *cast_int_to_boolean(Integer *intt) {
+Object *cast_int_to_boolean(Number *intt) {
   if (intt->value) {
     return &obj_false;
   }
@@ -172,7 +172,7 @@ Object *eval_bang_operator_expression(Object *right) {
     return inverted_boolean(right->object);
   case NULL_OBJ:
     return &obj_true;
-  case INTEGER_OBJ:
+  case NUMBER_OBJ:
     return cast_int_to_boolean(right->object);
   default:
     return &obj_false;
@@ -180,7 +180,7 @@ Object *eval_bang_operator_expression(Object *right) {
 }
 
 Object *eval_minus_operator_expression(Object *right) {
-  if (right->type != INTEGER_OBJ) {
+  if (right->type != NUMBER_OBJ) {
     char error_message[255];
     sprintf(error_message, "unknown operator: -%s",
             ObjectTypeString[right->type]);
@@ -188,13 +188,13 @@ Object *eval_minus_operator_expression(Object *right) {
     return new_error(error_message);
   };
 
-  Integer *intt = right->object;
+  Number *intt = right->object;
 
   Object *new_int_obj = malloc(sizeof(Object));
   assert(new_int_obj != NULL && "error allocating memory for new integer obj");
-  new_int_obj->type = INTEGER_OBJ;
+  new_int_obj->type = NUMBER_OBJ;
 
-  Integer *new_int = malloc(sizeof(Integer));
+  Number *new_int = malloc(sizeof(Number));
   assert(new_int != NULL && "error allocating memory for new integer");
 
   new_int->value = -intt->value;
@@ -205,8 +205,8 @@ Object *eval_minus_operator_expression(Object *right) {
 
 Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
                                        Object * right_obj) {
-  Integer *left = left_obj->object;
-  Integer *right = right_obj->object;
+  Number *left = left_obj->object;
+  Number *right = right_obj->object;
 
   if (strcmp(operator, ">") == 0) {
     return native_bool_to_boolean_object(left->value > right->value);
@@ -231,13 +231,13 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
                                       Object * right_obj) {
   Object *obj = malloc(sizeof(Object));
   assert(obj != NULL && "error allocating memory for infix integer");
-  obj->type = INTEGER_OBJ;
+  obj->type = NUMBER_OBJ;
 
-  Integer *evaluated = malloc(sizeof(Integer));
+  Number *evaluated = malloc(sizeof(Number));
   assert(evaluated != NULL && "error allocating memory for evaluated integer");
 
-  Integer *left = left_obj->object;
-  Integer *right = right_obj->object;
+  Number *left = left_obj->object;
+  Number *right = right_obj->object;
 
   // TODO: add %, >=, <=
   if (strcmp(operator, "+") == 0) {
@@ -249,17 +249,17 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   } else if (strcmp(operator, "/") == 0) {
     evaluated->value = left->value / right->value;
   } else if (strcmp(operator, "<<") == 0) {
-    evaluated->value = left->value << right->value;
+    evaluated->value = (long)left->value << (long)right->value;
   } else if (strcmp(operator, ">>") == 0) {
-    evaluated->value = left->value >> right->value;
+    evaluated->value = (long)left->value >> (long)right->value;
   } else if (strcmp(operator, "|") == 0) {
-    evaluated->value = left->value | right->value;
+    evaluated->value = (long)left->value | (long)right->value;
   } else if (strcmp(operator, "&") == 0) {
-    evaluated->value = left->value & right->value;
+    evaluated->value = (long)left->value & (long)right->value;
   } else if (strcmp(operator, "^") == 0) {
-    evaluated->value = left->value ^ right->value;
+    evaluated->value = (long)left->value ^ (long)right->value;
   } else if (strcmp(operator, "%") == 0) {
-    evaluated->value = left->value % right->value;
+    evaluated->value = (long)left->value % (long)right->value;
   } else {
     free(obj);
     free(evaluated);
@@ -335,7 +335,7 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
     return right;
   }
 
-  if (right->type == INTEGER_OBJ && left->type == INTEGER_OBJ) {
+  if (right->type == NUMBER_OBJ && left->type == NUMBER_OBJ) {
     return eval_integer_infix_expression(left, expr->operator, right);
   }
 
@@ -563,7 +563,7 @@ Object *eval_array_indexing(Object *left, IndexExpression *idx,
                             Environment *env) {
   Object *evaluated_index = eval_expression(idx->index, env);
 
-  if (evaluated_index->type != INTEGER_OBJ) {
+  if (evaluated_index->type != NUMBER_OBJ) {
     char error_msg[255];
     sprintf(error_msg,
             "attempting to index array with non-integer index: got %s",
@@ -574,13 +574,13 @@ Object *eval_array_indexing(Object *left, IndexExpression *idx,
 
   assert(left->type == ARRAY_OBJ);
   Array *evaluated_array = left->object;
-  Integer *index = evaluated_index->object;
+  Number *index = evaluated_index->object;
 
   if (index->value > evaluated_array->elements.len - 1 || index->value < 0) {
     return &obj_null;
   }
 
-  return evaluated_array->elements.arr[index->value];
+  return evaluated_array->elements.arr[(long)index->value];
 }
 
 Object *eval_hash_indexing(Object *left, IndexExpression *idx,

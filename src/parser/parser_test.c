@@ -49,7 +49,7 @@ void *test_single_expression_in_program(Program *p, ExprType type) {
   return test_statement(stmt, type);
 }
 
-void test_int_value(IntegerLiteral *integer, long value) {
+void test_int_value(NumberLiteral *integer, long value) {
   TEST_ASSERT_EQUAL(value, integer->value);
 }
 
@@ -170,7 +170,7 @@ void test_boolean_expressions(void) {
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal =
+  NumberLiteral *literal =
       test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
@@ -179,7 +179,7 @@ void test_integer_literal_expression(void) {
 
 void test_integer_literal(Expression *expr, long value) {
   TEST_ASSERT_EQUAL(INT_EXPR, expr->type);
-  IntegerLiteral *lit = expr->value;
+  NumberLiteral *lit = expr->value;
 
   TEST_ASSERT_EQUAL_INT64(value, lit->value);
 
@@ -278,35 +278,35 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "3 + 4; -5 * 5",
-          "(3 + 4)((-5) * 5);\n",
+          "(3.00 + 4.00)((-5.00) * 5.00);\n",
       },
       {
           "5 > 4 == 3 < 4",
-          "((5 > 4) == (3 < 4));\n",
+          "((5.00 > 4.00) == (3.00 < 4.00));\n",
       },
       {
           "5 < 4 != 3 > 4",
-          "((5 < 4) != (3 > 4));\n",
+          "((5.00 < 4.00) != (3.00 > 4.00));\n",
       },
       {
           "3 + 4 * 5 == 3 * 1 + 4 * 5",
-          "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));\n",
+          "((3.00 + (4.00 * 5.00)) == ((3.00 * 1.00) + (4.00 * 5.00)));\n",
       },
       {
           "3 + 4 * 5 == 3 * 1 + 4 * 5",
-          "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));\n",
+          "((3.00 + (4.00 * 5.00)) == ((3.00 * 1.00) + (4.00 * 5.00)));\n",
       },
       {
           "(5 + 5) * 2",
-          "((5 + 5) * 2);\n",
+          "((5.00 + 5.00) * 2.00);\n",
       },
       {
           "2 / (5 + 5)",
-          "(2 / (5 + 5));\n",
+          "(2.00 / (5.00 + 5.00));\n",
       },
       {
           "-(5 + 5)",
-          "(-(5 + 5));\n",
+          "(-(5.00 + 5.00));\n",
       },
       {
           "!(true == true)",
@@ -318,7 +318,7 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-          "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)));\n",
+          "add(a, b, 1.00, (2.00 * 3.00), (4.00 + 5.00), add(6.00, (7.00 * 8.00)));\n",
       },
       {
           "add(a + b + c * d / f + g)",
@@ -326,23 +326,23 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "a * [1, 2, 3, 4][b * c] * d",
-          "((a * ([1, 2, 3, 4][(b * c)])) * d);\n",
+          "((a * ([1.00, 2.00, 3.00, 4.00][(b * c)])) * d);\n",
       },
       {
           "add(a * b[2], b[1], 2 * [1, 2][1])",
-          "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])));\n",
+          "add((a * (b[2.00])), (b[1.00]), (2.00 * ([1.00, 2.00][1.00])));\n",
       },
       {
           "1 << 2 + 5 >> 3 / 10",
-          "((1 << (2 + 5)) >> (3 / 10));\n",
+          "((1.00 << (2.00 + 5.00)) >> (3.00 / 10.00));\n",
       },
       {
           "2 / 1 | 3",
-          "((2 / 1) | 3);\n",
+          "((2.00 / 1.00) | 3.00);\n",
       },
       {
           "5 + 5 % 2",
-          "(5 + (5 % 2));\n",
+          "(5.00 + (5.00 % 2.00));\n",
       },
   };
 
@@ -615,14 +615,14 @@ void test_parsing_reassignment(void) {
   TEST_ASSERT_EQUAL_STRING("b", reassign->name->value);
   TEST_ASSERT_EQUAL(INT_EXPR, reassign->value->type);
 
-  IntegerLiteral *intt = reassign->value->value;
+  NumberLiteral *intt = reassign->value->value;
   TEST_ASSERT_EQUAL(1, intt->value);
 }
 
 void test_parsing_binary_literal(void) {
   char *input = "0b1010;";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal =
+  NumberLiteral *literal =
       test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(10, literal->value);
@@ -632,7 +632,7 @@ void test_parsing_binary_literal(void) {
 void test_parsing_hex_literal(void) {
   char *input = "0xCAFE";
   Program *program = parse_and_check_errors(input);
-  IntegerLiteral *literal =
+  NumberLiteral *literal =
       test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(51966, literal->value);
