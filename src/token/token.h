@@ -1,4 +1,4 @@
-#define MAX_LEN 1000
+#define MAX_LEN 100
 
 #define FOREACH_TOKEN_TYPE(TYPE) \
   TYPE(ILLEGAL) \

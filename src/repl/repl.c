@@ -45,17 +45,7 @@ void print_token(Token *tok) {
   printf("---------\n");
 }
 
-void print_parser_errors(Parser *p) {
-  Node *cur_error = p->errors->tail;
-  assert(cur_error != NULL);
-
-  while (cur_error != NULL) {
-    printf("%s\n", (char *)cur_error->value);
-    cur_error = cur_error->next;
-  }
-}
-
-void start() {
+void start_repl() {
   InputBuffer *input_buf = new_input_buffer();
   Environment *env = new_environment();
 

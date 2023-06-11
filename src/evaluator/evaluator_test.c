@@ -39,7 +39,7 @@ void test_boolean_object(Object *evaluated, bool expected) {
 void test_eval_integer_expression(void) {
   struct testCase {
     char *input;
-    long expected;
+    double expected;
   };
 
   struct testCase tests[] = {

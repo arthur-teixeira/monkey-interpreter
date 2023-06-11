@@ -1,3 +1,5 @@
+#ifndef PARSER_H
+#define PARSER_H
 #include "../ast/ast.h"
 
 typedef struct Parser Parser;
@@ -21,6 +23,8 @@ void free_parser(Parser *);
 
 Program *parse_program(Parser *);
 
+void print_parser_errors(Parser *p);
+
 typedef enum {
   _,
   LOWEST,
@@ -41,3 +45,4 @@ typedef enum {
 } OperatorPrecedenceOrder;
 
 Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence);
+#endif //PARSER_H

@@ -7,18 +7,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../file_reader/file_reader.h"
+#include "../str_utils/str_utils.h"
 
 void read_char(Lexer *);
 
 Lexer *new_lexer(char *input) {
   Lexer *l = malloc(sizeof(Lexer));
   l->input = input;
+  l->file = NULL;
+  l->position = 0;
+  l->read_position = 0;
   read_char(l);
 
   return l;
 }
 
-void free_lexer(Lexer *l) { free(l); }
+Lexer *new_file_lexer(const char *filename) {
+  Lexer *l = malloc(sizeof(Lexer));
+  l->position = 0;
+  l->read_position = 0;
+  l->file = open_source_file(filename);
+
+  char buf[MAX_LEN];
+  read_file(buf, MAX_LEN, l->file);
+  l->input = strdup(buf);
+
+  read_char(l);
+
+  return l;
+}
+
+void free_lexer(Lexer *l) {
+  if (l->file) {
+    fclose(l->file);
+    free(l->input);
+  }
+  free(l);
+}
 
 void slice(const char *str, char *result, size_t start, size_t end) {
   strlcpy(result, str + start, end - start + 1);
@@ -26,7 +52,15 @@ void slice(const char *str, char *result, size_t start, size_t end) {
 
 void read_char(Lexer *l) {
   if (l->read_position >= strlen(l->input)) {
-    l->ch = 0;
+    if (l->file && !feof(l->file)) {
+      memset(l->input, 0, MAX_LEN);
+      read_file(l->input, MAX_LEN, l->file);
+      l->read_position = 0;
+      l->position = 0;
+      l->ch = l->input[l->read_position];
+    } else {
+      l->ch = 0;
+    }
   } else {
     l->ch = l->input[l->read_position];
   }
@@ -37,6 +71,11 @@ void read_char(Lexer *l) {
 
 char peek_char(Lexer *l) {
   if (l->read_position >= strlen(l->input)) {
+    if (l->file && !feof(l->file)) {
+      char c = fgetc(l->file);
+      ungetc(c, l->file);
+      return c;
+    }
     return '\0';
   }
 
@@ -46,30 +85,44 @@ char peek_char(Lexer *l) {
 bool is_letter(char c) { return isalpha(c) || c == '_'; }
 
 void read_identifier(Lexer *l, char *result) {
+  char buf[MAX_LEN];
   uint32_t position = l->position;
+  size_t i = 0;
+
   while (is_letter(l->ch)) {
+    buf[i] = l->ch;
     read_char(l);
+    i++;
   }
 
-  slice(l->input, result, position, l->position);
+  strlcpy(result, buf, l->position - position + 1);
 }
 
 void read_number(Lexer *l, char *result) {
+  char buf[MAX_LEN];
   uint32_t position = l->position;
+  size_t i = 0;
   while (isdigit(l->ch) || l->ch == '.') {
+    buf[i] = l->ch;
     read_char(l);
+    i++;
   }
 
-  slice(l->input, result, position, l->position);
+  strlcpy(result, buf, l->position - position + 1);
 }
 
 void read_hex(Lexer *l, char *result) {
+  char buf[MAX_LEN];
   uint32_t position = l->position;
+  size_t i = 0;
+
   while (isalnum(l->ch)) {
+    buf[i] = l->ch;
     read_char(l);
+    i++;
   }
 
-  slice(l->input, result, position, l->position);
+  strlcpy(result, buf, l->position - position + 1);
 }
 
 Token new_token(TokenType type, char literal) {
@@ -268,6 +321,9 @@ Token next_token(Lexer *l) {
       read_number(l, tok.literal);
       return tok;
     } else if (strcmp("\n", &l->ch) || strcmp("\0", &l->ch)) {
+      tok = new_token(END_OF_FILE, '\0');
+      return tok;
+    } else if (l->file != NULL && feof(l->file)) { 
       tok = new_token(END_OF_FILE, '\0');
       return tok;
     } else {

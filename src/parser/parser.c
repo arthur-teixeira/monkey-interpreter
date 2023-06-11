@@ -13,6 +13,16 @@
 
 #define ARRAY_LEN(arr, type) sizeof(arr) / sizeof(type)
 
+void print_parser_errors(Parser *p) {
+  Node *cur_error = p->errors->tail;
+  assert(cur_error != NULL);
+
+  while (cur_error != NULL) {
+    printf("%s\n", (char *)cur_error->value);
+    cur_error = cur_error->next;
+  }
+}
+
 void parser_next_token(Parser *p) {
   p->cur_token = p->peek_token;
   p->peek_token = next_token(p->l);
