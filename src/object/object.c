@@ -5,8 +5,9 @@
 #include <stdio.h>
 
 const char *ObjectTypeString[] = {
-    "INTEGER_OBJ",  "BOOLEAN_OBJ", "NULL_OBJ",    "RETURN_OBJ", "ERROR_OBJ",
-    "FUNCTION_OBJ", "STRING_OBJ",  "BUILTIN_OBJ", "ARRAY_OBJ",  "HASH_OBJ",
+    "INTEGER_OBJ", "BOOLEAN_OBJ",  "NULL_OBJ",     "RETURN_OBJ",
+    "ERROR_OBJ",   "FUNCTION_OBJ", "STRING_OBJ",   "BUILTIN_OBJ",
+    "ARRAY_OBJ",   "HASH_OBJ",     "CONTINUE_OBJ", "BREAK_OBJ",
 };
 
 void inspect_number_object(ResizableBuffer *buf, Number *obj) {

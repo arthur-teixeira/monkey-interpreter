@@ -802,6 +802,10 @@ ForLoop *new_for_loop(Parser *p) {
   } else {
     parser_next_token(p);
     loop->update = parse_statement(p);
+
+    if (peek_token_is(p, RPAREN)) {
+      parser_next_token(p);
+    }
   }
 
   if (!expect_peek(p, LBRACE)) {

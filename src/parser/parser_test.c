@@ -665,6 +665,28 @@ void test_parsing_or(void) {
   TEST_ASSERT_EQUAL(BOOL_EXPR, expression->left->type);
 }
 
+void test_parsing_loop_with_reassignment(void) {
+  char *input = "for (let i = 0; i < 10; i = i + 1) {"
+                "  puts(i);                          "
+                "}";
+
+  Program *p = parse_and_check_errors(input);
+  ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
+
+  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+
+  TEST_ASSERT_NOT_NULL(loop->initialization);
+  TEST_ASSERT_EQUAL(LET_STATEMENT, loop->initialization->type);
+
+  TEST_ASSERT_NOT_NULL(loop->condition);
+  TEST_ASSERT_EQUAL(INFIX_EXPR, loop->condition->type);
+
+  TEST_ASSERT_NOT_NULL(loop->update);
+  TEST_ASSERT_EQUAL(EXPR_STATEMENT, loop->update->type);
+
+  TEST_ASSERT_EQUAL(REASSIGN_EXPR, loop->update->expression->type);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -694,5 +716,6 @@ int main() {
   RUN_TEST(test_parsing_hex_literal);
   RUN_TEST(test_parsing_and);
   RUN_TEST(test_parsing_or);
+  RUN_TEST(test_parsing_loop_with_reassignment);
   return UNITY_END();
 }

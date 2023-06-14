@@ -270,6 +270,32 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   return obj;
 }
 
+Object *eval_boolean_infix_expression(Object *left, char *operator,
+                                      Object * right) {
+  // These work because we only have a single instance for the true and false
+  // objects, so we can simply do a pointer comparison.
+  if (strcmp(operator, "==") == 0)
+    return native_bool_to_boolean_object(right == left);
+
+  if (strcmp(operator, "!=") == 0)
+    return native_bool_to_boolean_object(right != left);
+
+  if (strcmp(operator, "&&") == 0)
+    return native_bool_to_boolean_object((right == &obj_true) &&
+                                         (left == &obj_true));
+
+  if (strcmp(operator, "||") == 0)
+    return native_bool_to_boolean_object((right == &obj_true) ||
+                                         (left == &obj_true));
+
+  char error_message[255];
+  sprintf(error_message, "unknown operator: %s %s %s",
+          ObjectTypeString[left->type], operator,
+          ObjectTypeString[right->type]);
+
+  return new_error(error_message);
+}
+
 Object *eval_string_infix_expression(Object *left, char *operator,
                                      Object * right) {
   assert(left->type == STRING_OBJ && "left object should be string");
@@ -343,22 +369,8 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
     return eval_string_infix_expression(left, expr->operator, right);
   }
 
-  // These work because we only have a single instance for the true and false
-  // objects, so we can simply do a pointer comparison.
-  if (strcmp(expr->operator, "==") == 0) {
-    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
-    return native_bool_to_boolean_object(right == left);
-  } else if (strcmp(expr->operator, "!=") == 0) {
-    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
-    return native_bool_to_boolean_object(right != left);
-  } else if (strcmp(expr->operator, "&&") == 0) {
-    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
-    return native_bool_to_boolean_object((right == &obj_true) &&
-                                         (left == &obj_true));
-  } else if (strcmp(expr->operator, "||") == 0) {
-    assert(right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ);
-    return native_bool_to_boolean_object((right == &obj_true) ||
-                                         (left == &obj_true));
+  if (right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ) {
+    return eval_boolean_infix_expression(left, expr->operator, right);
   }
 
   char error_message[255];
@@ -732,6 +744,9 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
   while ((condition = eval_loop_condition(condition_expr, env)) == &obj_true) {
     result = eval_block_statement(body->statements, env);
     if (result == NULL) {
+      if (update != NULL) {
+        eval(update, env);
+      }
       continue;
     }
 

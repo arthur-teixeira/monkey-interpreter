@@ -674,6 +674,29 @@ void test_floats(void) {
   test_number_object(evaluated, 4.00f);
 }
 
+void test_complex_program(void) {
+  char *input =
+  "let ALIVE = 1;"
+  "let DEAD = 0;"
+  "let test = [ALIVE, ALIVE, DEAD, ALIVE];"
+  "let printGen = fn(gen) { "
+  "  let buffer = \"\"; "
+  "  for (let i = 0; i < len(test); i = i + 1) { "
+  "    if (gen[i] == ALIVE) { "
+  "      buffer = buffer + \"*\"; "
+  "    } "
+  "    if (gen[i] == DEAD) { "
+  "      buffer = buffer + \" \"; "
+  "    } "
+  "  }   "
+  "  puts(buffer);"
+  "}; "
+  "printGen(test)";
+
+  Object *evaluated = test_eval(input);
+  TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -702,5 +725,6 @@ int main() {
   RUN_TEST(test_bitwise);
   RUN_TEST(test_and_and_or);
   RUN_TEST(test_floats);
+  RUN_TEST(test_complex_program);
   return UNITY_END();
 }
