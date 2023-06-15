@@ -5,7 +5,7 @@ let DEAD = 0;
 
 let printGen = fn(gen) {
   let buffer = "";
-  for (let i = 0; i < COLS; i = i + 1) {
+  for (let i = 0; i < len(gen); i = i + 1) {
     if (gen[i] == ALIVE) {
       buffer = buffer + "*";
     }
@@ -22,30 +22,14 @@ let computeCell = fn(a, b, c) {
   if (a == ALIVE && b == ALIVE && c == ALIVE) {
     return DEAD; 
   }
-  if (a == ALIVE && b == ALIVE && c == DEAD) {
-    return ALIVE;
-  }
-  if (a == ALIVE && b == DEAD && c == ALIVE) {
-    return ALIVE;
-  }
   if (a == ALIVE && b == DEAD && c == DEAD) {
     return DEAD; 
-  }
-  if (a == DEAD && b == ALIVE && c == ALIVE) {
-    return ALIVE;
-  }
-  if (a == DEAD && b == ALIVE && c == DEAD) {
-    return ALIVE;
-  }
-  if (a == DEAD && b == ALIVE && c == DEAD) {
-    return ALIVE;
-  }
-  if (a == DEAD && b == DEAD && c == ALIVE) {
-    return ALIVE;
   }
   if (a == DEAD && b == DEAD && c == DEAD) {
     return DEAD; 
   }
+
+  return ALIVE;
 }
 
 let computeNextGen = fn(prev) {
@@ -59,12 +43,12 @@ let computeNextGen = fn(prev) {
 }
 
 let gen = []
-for (let i = 0; i < COLS - 1; i++) {
+for (let i = 0; i < COLS - 1; i = i + 1) {
   push(gen, DEAD)
 }
 push(gen, ALIVE)
 
-for (let i = 0; i < COLS; i++) {
+for (let i = 0; i < COLS; i = i + 1) {
   let new = computeNextGen(gen)
   printGen(new)
   gen = new

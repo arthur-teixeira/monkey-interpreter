@@ -28,9 +28,9 @@ void print_parser_errors(Parser *p);
 typedef enum {
   _,
   LOWEST,
-  EQUALS,
   PREC_OR,
   PREC_AND,
+  EQUALS,
   BIT_OR,
   BIT_XOR,
   BIT_AND,

@@ -170,8 +170,7 @@ void test_boolean_expressions(void) {
 void test_integer_literal_expression(void) {
   char *input = "5;";
   Program *program = parse_and_check_errors(input);
-  NumberLiteral *literal =
-      test_single_expression_in_program(program, INT_EXPR);
+  NumberLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(5, literal->value);
   TEST_ASSERT_EQUAL_STRING("5", literal->token.literal);
@@ -318,7 +317,8 @@ void test_operator_precedence_parsing(void) {
       },
       {
           "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-          "add(a, b, 1.00, (2.00 * 3.00), (4.00 + 5.00), add(6.00, (7.00 * 8.00)));\n",
+          "add(a, b, 1.00, (2.00 * 3.00), (4.00 + 5.00), add(6.00, (7.00 * "
+          "8.00)));\n",
       },
       {
           "add(a + b + c * d / f + g)",
@@ -343,6 +343,10 @@ void test_operator_precedence_parsing(void) {
       {
           "5 + 5 % 2",
           "(5.00 + (5.00 % 2.00));\n",
+      },
+      {
+          "a == 1 && b == 1",
+          "((a == 1.00) && (b == 1.00));\n",
       },
   };
 
@@ -622,8 +626,7 @@ void test_parsing_reassignment(void) {
 void test_parsing_binary_literal(void) {
   char *input = "0b1010;";
   Program *program = parse_and_check_errors(input);
-  NumberLiteral *literal =
-      test_single_expression_in_program(program, INT_EXPR);
+  NumberLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(10, literal->value);
   TEST_ASSERT_EQUAL_STRING("1010", literal->token.literal);
@@ -632,8 +635,7 @@ void test_parsing_binary_literal(void) {
 void test_parsing_hex_literal(void) {
   char *input = "0xCAFE";
   Program *program = parse_and_check_errors(input);
-  NumberLiteral *literal =
-      test_single_expression_in_program(program, INT_EXPR);
+  NumberLiteral *literal = test_single_expression_in_program(program, INT_EXPR);
 
   TEST_ASSERT_EQUAL_INT64(51966, literal->value);
   TEST_ASSERT_EQUAL_STRING("CAFE", literal->token.literal);

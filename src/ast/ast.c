@@ -15,14 +15,8 @@ Identifier *new_identifier(Token token, char *value) {
     exit(EXIT_FAILURE);
   }
 
-  ident->value = malloc(sizeof(value));
-  if (ident == NULL) {
-    printf("Error allocating identifier value: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
   ident->token = token;
-  strlcpy(ident->value, value, sizeof(ident->value));
+  ident->value = strdup(value);
 
   return ident;
 }

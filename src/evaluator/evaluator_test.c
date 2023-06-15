@@ -616,8 +616,8 @@ void test_reassignment(void) {
 
 void test_bit_shift(void) {
   char *inputs[] = {
-    "2 << 1;",
-    "8 >> 1;",
+      "2 << 1;",
+      "8 >> 1;",
   };
 
   for (int i = 0; i < 2; ++i) {
@@ -633,9 +633,9 @@ void test_bitwise(void) {
   };
 
   struct testCase tests[] = {
-    {"57 | 34", 59},
-    {"55 & 123", 51},
-    {"120 ^ 392", 496},
+      {"57 | 34", 59},
+      {"55 & 123", 51},
+      {"120 ^ 392", 496},
   };
 
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); ++i) {
@@ -651,14 +651,10 @@ void test_and_and_or(void) {
   };
 
   struct testCase tests[] = {
-    {"true && true", true},
-    {"true && false", false},
-    {"false && true", false},
-    {"false && false", false},
-    {"true || true", true},
-    {"true || false", true},
-    {"false || true", true},
-    {"false || false", false},
+      {"true && true", true},   {"true && false", false},
+      {"false && true", false}, {"false && false", false},
+      {"true || true", true},   {"true || false", true},
+      {"false || true", true},  {"false || false", false},
   };
 
   for (size_t i = 0; i < ARRAY_LEN(tests, struct testCase); ++i) {
@@ -674,27 +670,59 @@ void test_floats(void) {
   test_number_object(evaluated, 4.00f);
 }
 
-void test_complex_program(void) {
-  char *input =
-  "let ALIVE = 1;"
-  "let DEAD = 0;"
-  "let test = [ALIVE, ALIVE, DEAD, ALIVE];"
-  "let printGen = fn(gen) { "
-  "  let buffer = \"\"; "
-  "  for (let i = 0; i < len(test); i = i + 1) { "
-  "    if (gen[i] == ALIVE) { "
-  "      buffer = buffer + \"*\"; "
-  "    } "
-  "    if (gen[i] == DEAD) { "
-  "      buffer = buffer + \" \"; "
-  "    } "
-  "  }   "
-  "  puts(buffer);"
-  "}; "
-  "printGen(test)";
+void test_rule_110(void) {
+  char *input = ""
+                "let COLS = 30;"
+                "let ALIVE = 1;"
+                "let DEAD = 0;"
+                "let printGen = fn(gen) {"
+                "  let buffer = \"\";"
+                "  for (let i = 0; i < len(gen); i = i + 1) {"
+                "    if (gen[i] == ALIVE) {"
+                "      buffer = buffer + \"*\";"
+                "    }"
+                "    if (gen[i] == DEAD) { "
+                "      buffer = buffer + \" \";"
+                "    }"
+                "  }"
+                "  puts(buffer);"
+                "};"
+
+                "let computeCell = fn(a, b, c) {"
+                "  if (a == ALIVE && b == ALIVE && c == ALIVE) {"
+                "    return DEAD; "
+                "  }"
+                "  if (a == ALIVE && b == DEAD && c == DEAD) {"
+                "    return DEAD; "
+                "  }"
+                "  if (a == DEAD && b == DEAD && c == DEAD) {"
+                "    return DEAD; "
+                "  }"
+
+                "  return ALIVE;"
+                "};"
+
+                "let computeNextGen = fn(prev) {"
+                "  let new = [];"
+                "  for (let i = 1; i < len(prev) - 1; i = i + 1) {"
+                "    new = push(new, computeCell(prev[i - 1], prev[i], prev[i + 1]));"
+                "  }"
+                "  return new;"
+                "};"
+
+                "let gen = [];"
+                "for (let i = 0; i < COLS - 1; i = i + 1) {"
+                "  gen = push(gen, DEAD);"
+                "}"
+                "gen = push(gen, ALIVE);"
+                "for (let i = 0; i < COLS; i = i + 1) {"
+                "  let new = computeNextGen(gen);"
+                "  printGen(new);"
+                "  gen = new;"
+                "}";
 
   Object *evaluated = test_eval(input);
-  TEST_ASSERT_EQUAL(NULL_OBJ, evaluated->type);
+  TEST_ASSERT_NULL(evaluated);
 }
 
 int main() {
@@ -725,6 +753,6 @@ int main() {
   RUN_TEST(test_bitwise);
   RUN_TEST(test_and_and_or);
   RUN_TEST(test_floats);
-  RUN_TEST(test_complex_program);
+  RUN_TEST(test_rule_110);
   return UNITY_END();
 }
