@@ -178,7 +178,7 @@ Object *push(LinkedList *args) {
   array_init(&new_arr->elements, old_arr->elements.len + 1);
 
   for (size_t i = 0; i < old_arr->elements.len; i++) {
-    new_arr->elements.arr[i] = old_arr->elements.arr[i];
+    array_append(&new_arr->elements, old_arr->elements.arr[i]);
   }
 
   array_append(&new_arr->elements, new_element);
