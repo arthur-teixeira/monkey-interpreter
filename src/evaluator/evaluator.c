@@ -373,6 +373,22 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
     return eval_boolean_infix_expression(left, expr->operator, right);
   }
 
+  if ((right->type == NULL_OBJ || left->type == NULL_OBJ)) {
+    if (strcmp(expr->operator, "==") == 0)
+      return native_bool_to_boolean_object(right == left);
+
+    if (strcmp(expr->operator, "!=") == 0)
+      return native_bool_to_boolean_object(right != left);
+
+    if (strcmp(expr->operator, "&&") == 0)
+      return native_bool_to_boolean_object((right == &obj_true) &&
+                                           (left == &obj_true));
+
+    if (strcmp(expr->operator, "||") == 0)
+      return native_bool_to_boolean_object((right == &obj_true) ||
+                                           (left == &obj_true));
+  }
+
   char error_message[255];
   if (right->type != left->type) {
     sprintf(error_message, "type mismatch: %s %s %s",
@@ -816,7 +832,7 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
   if (val_in_outer_env) {
     Environment *cur_env = env->outer;
     Object *outer_env_value;
-    while((outer_env_value = env_get(cur_env, stmt->name->value)) == NULL) {
+    while ((outer_env_value = env_get(cur_env, stmt->name->value)) == NULL) {
       cur_env = cur_env->outer;
     }
 

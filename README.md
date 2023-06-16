@@ -20,7 +20,7 @@ $ ./bin/program
 - [X] Bitwise operators
 - [X] && and || operators
 - [X] Floating point number support
-- [X] Interpret source files
-- [ ] Turing completeness proof (rule 110)
+- [X] Turing completeness proof (rule 110)
+- [ ] Interpret source files
 - [ ] Garbage collection
 - [ ] Concurrent GC

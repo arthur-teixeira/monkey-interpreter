@@ -151,7 +151,12 @@ Object *rest(LinkedList *args) {
   return new_arr_obj;
 }
 
-Object *push(LinkedList *args) {
+typedef enum {
+  APPEND_PUSH,
+  APPEND_SHIFT,
+} AppendType;
+
+Object *builtin_append(LinkedList *args, AppendType type) {
   Object *err = check_args_len(args, 2);
   if (err != NULL) {
     return err;
@@ -177,15 +182,29 @@ Object *push(LinkedList *args) {
   assert(new_arr != NULL && "Error allocating memory for new array");
   array_init(&new_arr->elements, old_arr->elements.len + 1);
 
+  if (type == APPEND_SHIFT) {
+    array_append(&new_arr->elements, new_element);
+  }
+
   for (size_t i = 0; i < old_arr->elements.len; i++) {
     array_append(&new_arr->elements, old_arr->elements.arr[i]);
   }
 
-  array_append(&new_arr->elements, new_element);
+  if (type == APPEND_PUSH) {
+    array_append(&new_arr->elements, new_element);
+  }
 
   new_arr_obj->object = new_arr;
 
   return new_arr_obj;
+}
+
+Object *push(LinkedList *args) {
+  return builtin_append(args, APPEND_PUSH);
+}
+
+Object *shift(LinkedList *args) {
+  return builtin_append(args, APPEND_SHIFT);
 }
 
 Object *builtin_puts(LinkedList *args) {
@@ -252,6 +271,10 @@ void set_push_builtin(hashmap_t *builtins) {
   put_builtin(builtins, "push", &push);
 }
 
+void set_shift_builtin(hashmap_t *builtins) {
+  put_builtin(builtins, "shift", &shift);
+}
+
 void set_puts_builtin(hashmap_t *builtins) {
   put_builtin(builtins, "puts", &builtin_puts);
 }
@@ -263,4 +286,5 @@ void get_builtins(hashmap_t *builtins) {
   set_rest_builtin(builtins);
   set_push_builtin(builtins);
   set_puts_builtin(builtins);
+  set_shift_builtin(builtins);
 }

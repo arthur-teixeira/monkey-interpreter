@@ -12,7 +12,7 @@ const char *ObjectTypeString[] = {
 
 void inspect_number_object(ResizableBuffer *buf, Number *obj) {
   char temp_buf[100];
-  sprintf(temp_buf, "%f", obj->value);
+  sprintf(temp_buf, "%d", (int)obj->value);
 
   append_to_buf(buf, temp_buf);
 }
