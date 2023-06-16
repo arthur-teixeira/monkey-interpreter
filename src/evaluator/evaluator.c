@@ -814,8 +814,14 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
   }
 
   if (val_in_outer_env) {
-    assert(env->outer != NULL);
-    env_set(env->outer, stmt->name->value, val);
+    Environment *cur_env = env->outer;
+    Object *outer_env_value;
+    while((outer_env_value = env_get(cur_env, stmt->name->value)) == NULL) {
+      cur_env = cur_env->outer;
+    }
+
+    assert(cur_env != NULL);
+    env_set(cur_env, stmt->name->value, val);
   } else {
     env_set(env, stmt->name->value, val);
   }
