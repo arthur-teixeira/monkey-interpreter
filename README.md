@@ -21,6 +21,6 @@ $ ./bin/program
 - [X] && and || operators
 - [X] Floating point number support
 - [X] Turing completeness proof (rule 110)
-- [ ] Interpret source files
+- [X] Interpret source files
 - [ ] Garbage collection
 - [ ] Concurrent GC
