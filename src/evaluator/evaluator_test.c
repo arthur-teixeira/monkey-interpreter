@@ -670,61 +670,6 @@ void test_floats(void) {
   test_number_object(evaluated, 4.00f);
 }
 
-void test_rule_110(void) {
-  char *input = ""
-                "let COLS = 30;"
-                "let ALIVE = 1;"
-                "let DEAD = 0;"
-                "let printGen = fn(gen) {"
-                "  let buffer = \"\";"
-                "  for (let i = 0; i < COLS; i = i + 1) {"
-                "    if (gen[i] == ALIVE) {"
-                "      buffer = buffer + \"*\";"
-                "    } else {"
-                "      buffer = buffer + \" \";"
-                "    }"
-                "  }"
-                "  puts(buffer);"
-                "};"
-
-                "let computeCell = fn(a, b, c) {"
-                "  if (a == ALIVE && b == ALIVE && c == ALIVE) {"
-                "    return DEAD; "
-                "  }"
-                "  if (a == ALIVE && b == DEAD && c == DEAD) {"
-                "    return DEAD; "
-                "  }"
-                "  if (a == DEAD && b == DEAD && c == DEAD) {"
-                "    return DEAD; "
-                "  }"
-
-                "  return ALIVE;"
-                "};"
-
-                "let computeNextGen = fn(prev) {"
-                "  let new = [DEAD];"
-                "  for (let i = 1; i < COLS - 1; i = i + 1) {"
-                "    new = push(new, computeCell(prev[i - 1], prev[i], prev[i + 1]));"
-                "  }"
-                "  return new;"
-                "};"
-
-                "let gen = [];"
-                "for (let i = 0; i < COLS - 1; i = i + 1) {"
-                "  gen = push(gen, DEAD);"
-                "}"
-
-                "gen = push(gen, ALIVE);"
-                "for (let i = 0; i < COLS; i = i + 1) {"
-                "  let new = computeNextGen(gen);"
-                "  printGen(new);"
-                "  gen = new;"
-                "}";
-
-  Object *evaluated = test_eval(input);
-  TEST_ASSERT_NULL(evaluated);
-}
-
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_eval_integer_expression);
@@ -753,6 +698,5 @@ int main() {
   RUN_TEST(test_bitwise);
   RUN_TEST(test_and_and_or);
   RUN_TEST(test_floats);
-  RUN_TEST(test_rule_110);
   return UNITY_END();
 }

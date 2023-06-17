@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "../file_reader/file_reader.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
 #include <ctype.h>
@@ -7,8 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../file_reader/file_reader.h"
-#include "../str_utils/str_utils.h"
 
 void read_char(Lexer *);
 
@@ -44,10 +43,6 @@ void free_lexer(Lexer *l) {
     free(l->input);
   }
   free(l);
-}
-
-void slice(const char *str, char *result, size_t start, size_t end) {
-  strlcpy(result, str + start, end - start + 1);
 }
 
 void read_char(Lexer *l) {
@@ -86,43 +81,43 @@ bool is_letter(char c) { return isalpha(c) || c == '_'; }
 
 void read_identifier(Lexer *l, char *result) {
   char buf[MAX_LEN];
-  uint32_t position = l->position;
-  size_t i = 0;
-
-  while (is_letter(l->ch)) {
+  size_t i;
+  for (i = 0; is_letter(l->ch); i++) {
     buf[i] = l->ch;
     read_char(l);
-    i++;
   }
-
-  strlcpy(result, buf, l->position - position + 1);
+  strlcpy(result, buf, i + 1);
 }
 
 void read_number(Lexer *l, char *result) {
   char buf[MAX_LEN];
-  uint32_t position = l->position;
-  size_t i = 0;
-  while (isdigit(l->ch) || l->ch == '.') {
+  size_t i;
+  for (i = 0; isdigit(l->ch) || l->ch == '.'; i++) {
     buf[i] = l->ch;
     read_char(l);
-    i++;
   }
-
-  strlcpy(result, buf, l->position - position + 1);
+  strlcpy(result, buf, i + 1);
 }
 
 void read_hex(Lexer *l, char *result) {
   char buf[MAX_LEN];
-  uint32_t position = l->position;
-  size_t i = 0;
-
-  while (isalnum(l->ch)) {
+  size_t i;
+  for (i = 0; isalnum(l->ch); i++) {
     buf[i] = l->ch;
     read_char(l);
-    i++;
   }
+  strlcpy(result, buf, i + 1);
+}
 
-  strlcpy(result, buf, l->position - position + 1);
+void read_string(char *result, Lexer *l) {
+  char buf[MAX_LEN];
+  size_t i;
+  read_char(l);
+  for (i = 0; l->ch != '"' && l->ch != '\0'; i++) {
+    buf[i] = l->ch;
+    read_char(l);
+  }
+  strlcpy(result, buf, i + 1);
 }
 
 Token new_token(TokenType type, char literal) {
@@ -132,7 +127,7 @@ Token new_token(TokenType type, char literal) {
   buf[0] = literal;
   buf[1] = '\0';
 
-  strncpy(tok.literal, buf, sizeof(tok.literal));
+  strlcpy(tok.literal, buf, sizeof(tok.literal));
 
   return tok;
 }
@@ -142,21 +137,6 @@ void skip_whitespace(Lexer *l) {
     read_char(l);
 }
 
-void read_string(char *result, Lexer *l) {
-  int start = l->read_position;
-  for (;;) {
-    read_char(l);
-
-    if (l->ch == '"' || l->ch == 0) {
-      break;
-    }
-  }
-
-  int end = l->position;
-
-  slice(l->input, result, start, end);
-}
-
 Token read_special_number(Lexer *l) {
   Token tok;
 
@@ -164,17 +144,17 @@ Token read_special_number(Lexer *l) {
   read_char(l);
   read_char(l);
 
-  switch(peek) {
-    case 'x':
-      tok.Type = HEX;
-      read_hex(l, tok.literal);
-      break;
-    case 'b':
-      tok.Type = BINARY;
-      read_number(l, tok.literal);
-      break;
-    default:
-      assert(0 && "unreachable");
+  switch (peek) {
+  case 'x':
+    tok.Type = HEX;
+    read_hex(l, tok.literal);
+    break;
+  case 'b':
+    tok.Type = BINARY;
+    read_number(l, tok.literal);
+    break;
+  default:
+    assert(0 && "unreachable");
   }
 
   return tok;
@@ -185,8 +165,8 @@ Token read_lshift(Lexer *l) {
   read_char(l);
 
   Token tok = {
-    .Type = LSHIFT,
-    .literal = "<<",
+      .Type = LSHIFT,
+      .literal = "<<",
   };
 
   return tok;
@@ -197,8 +177,8 @@ Token read_rshift(Lexer *l) {
   read_char(l);
 
   Token tok = {
-    .Type = RSHIFT,
-    .literal = ">>",
+      .Type = RSHIFT,
+      .literal = ">>",
   };
 
   return tok;
@@ -320,10 +300,10 @@ Token next_token(Lexer *l) {
       tok.Type = NUMBER;
       read_number(l, tok.literal);
       return tok;
-    } else if (strcmp("\n", &l->ch) || strcmp("\0", &l->ch)) {
+    } else if (!l->file && (strcmp("\n", &l->ch) || strcmp("\0", &l->ch))) {
       tok = new_token(END_OF_FILE, '\0');
       return tok;
-    } else if (l->file != NULL && feof(l->file)) { 
+    } else if (l->file && feof(l->file)) {
       tok = new_token(END_OF_FILE, '\0');
       return tok;
     } else {

@@ -12,7 +12,7 @@
 FILE *open_source_file(const char *filename) {
   FILE *file = fopen(filename, "r");
   if (!file) {
-    fprintf(stderr, "ERROR: Could not open file: %s\n", strerror(errno));
+    perror("ERROR: could not open file");
     exit(EXIT_FAILURE);
   }
 
@@ -28,10 +28,7 @@ void read_file(char *buf, size_t size, FILE *file) {
 }
 
 void eval_file(const char *filename) {
-    FILE *file = open_source_file(filename);
-    char buf[100];
-    read_file(buf, 100, file);
-    Lexer *l = new_lexer(buf);
+    Lexer *l = new_file_lexer(filename);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
     if (p->errors->size > 0) {
