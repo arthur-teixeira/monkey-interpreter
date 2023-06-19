@@ -10,6 +10,7 @@
 
 Identifier *new_identifier(Token token, char *value) {
   Identifier *ident = malloc(sizeof(Identifier));
+  ident->type = IDENT_EXPR;
   if (ident == NULL) {
     printf("Error allocating identifier: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
@@ -178,33 +179,33 @@ void reassign_to_string(ResizableBuffer *buf, Reassignment *expr) {
 void value_to_string(ResizableBuffer *buf, Expression *expr) {
   switch (expr->type) {
   case IDENT_EXPR:
-    return ident_expr_to_string(buf, expr->value);
+    return ident_expr_to_string(buf, (Identifier *)expr);
   case INT_EXPR:
-    return int_to_string(buf, expr->value);
+    return int_to_string(buf, (NumberLiteral *)expr);
   case PREFIX_EXPR:
-    return prefix_to_string(buf, expr->value);
+    return prefix_to_string(buf, (PrefixExpression *)expr);
   case INFIX_EXPR:
-    return infix_to_string(buf, expr->value);
+    return infix_to_string(buf, (InfixExpression *)expr);
   case BOOL_EXPR:
-    return bool_to_string(buf, expr->value);
+    return bool_to_string(buf, (BooleanLiteral *)expr);
   case IF_EXPR:
-    return if_to_string(buf, expr->value);
+    return if_to_string(buf, (IfExpression *)expr);
   case FN_EXPR:
-    return fn_to_string(buf, expr->value);
+    return fn_to_string(buf, (FunctionLiteral *)expr);
   case CALL_EXPR:
-    return call_to_string(buf, expr->value);
+    return call_to_string(buf, (CallExpression *)expr);
   case STRING_EXPR:
-    return string_literal_to_string(buf, expr->value);
+    return string_literal_to_string(buf, (StringLiteral *)expr);
   case ARRAY_EXPR:
-    return array_to_string(buf, expr->value);
+    return array_to_string(buf, (ArrayLiteral *)expr);
   case INDEX_EXPR:
-    return index_expression_to_string(buf, expr->value);
+    return index_expression_to_string(buf, (IndexExpression *)expr);
   case HASH_EXPR:
-    return hash_literal_to_string(buf, expr->value);
+    return hash_literal_to_string(buf, (HashLiteral *)expr);
   case WHILE_EXPR:
-    return while_to_string(buf, expr->value);
+    return while_to_string(buf, (WhileLoop *)expr);
   case FOR_EXPR:
-    return for_to_string(buf, expr->value);
+    return for_to_string(buf, (ForLoop *)expr);
   case REASSIGN_EXPR:
     assert(0);
   }

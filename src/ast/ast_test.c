@@ -9,25 +9,23 @@
 void test_ast_as_string(void) {
   LinkedList *statements = new_list();
   Identifier myVarIdent = {
-    {IDENT, "myVar"},
-    "myVar"
+    .type = IDENT_EXPR,
+    .token = {IDENT, "myVar"},
+    .value = "myVar"
   };
 
   Identifier anotherVarIdent = {
-    {IDENT, "anotherVar"},
-    "anotherVar"
+    .type = IDENT_EXPR,
+    .token = {IDENT, "anotherVar"},
+    .value = "anotherVar"
   };
 
-  Expression anotherVarExpr = {
-    IDENT_EXPR,
-    &anotherVarIdent
-  };
 
   Statement myVar = {
     LET_STATEMENT,
     {LET, "let"},
     &myVarIdent,
-    &anotherVarExpr,
+    (Expression *)&anotherVarIdent,
   };
   append(statements, &myVar);
 

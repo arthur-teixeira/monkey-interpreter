@@ -35,11 +35,11 @@ Program *parse_and_check_errors(char *input) {
   return program;
 }
 
-void *test_statement(Statement *stmt, ExprType type) {
+Expression *test_statement(Statement *stmt, ExprType type) {
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
   TEST_ASSERT_EQUAL(type, stmt->expression->type);
 
-  return stmt->expression->value;
+  return stmt->expression;
 }
 
 void *test_single_expression_in_program(Program *p, ExprType type) {
@@ -64,11 +64,11 @@ void test_ident_value(Identifier *ident, char *value) {
 void test_expr_value(Expression *expr, void *expected_value) {
   switch (expr->type) {
   case INT_EXPR:
-    return test_int_value(expr->value, *(long *)expected_value);
+    return test_int_value((NumberLiteral *)expr, *(long *)expected_value);
   case BOOL_EXPR:
-    return test_bool_value(expr->value, *(bool *)expected_value);
+    return test_bool_value((BooleanLiteral *)expr, *(bool *)expected_value);
   case IDENT_EXPR:
-    return test_ident_value(expr->value, expected_value);
+    return test_ident_value((Identifier *)expr, expected_value);
   default:
     TEST_FAIL();
   }
@@ -178,7 +178,7 @@ void test_integer_literal_expression(void) {
 
 void test_integer_literal(Expression *expr, long value) {
   TEST_ASSERT_EQUAL(INT_EXPR, expr->type);
-  NumberLiteral *lit = expr->value;
+  NumberLiteral *lit = (NumberLiteral *)expr;
 
   TEST_ASSERT_EQUAL_INT64(value, lit->value);
 
@@ -383,7 +383,7 @@ void test_nested_if_expression(void) {
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, nested_stmt->type);
   TEST_ASSERT_EQUAL(IF_EXPR, nested_stmt->expression->type);
 
-  IfExpression *nested_if = nested_stmt->expression->value;
+  IfExpression *nested_if = (IfExpression *)nested_stmt->expression;
 
   TEST_ASSERT_EQUAL(2, parent->consequence->statements->size);
   TEST_ASSERT_EQUAL(1, nested_if->consequence->statements->size);
@@ -434,7 +434,7 @@ void test_function_parameter_parsing(void) {
 void test_identifier(Expression *expr, char *expected_identifier) {
   TEST_ASSERT_EQUAL(IDENT_EXPR, expr->type);
 
-  Identifier *ident = expr->value;
+  Identifier *ident = (Identifier *)expr;
 
   TEST_ASSERT_EQUAL_STRING(expected_identifier, ident->value);
   TEST_ASSERT_EQUAL_STRING(expected_identifier, ident->token.literal);
@@ -444,7 +444,7 @@ void test_infix_expression(Expression *expr, char *expected_operator, long left,
                            long right) {
   TEST_ASSERT_EQUAL(INFIX_EXPR, expr->type);
 
-  InfixExpression *expression = expr->value;
+  InfixExpression *expression = (InfixExpression *)expr;
 
   TEST_ASSERT_EQUAL_STRING(expected_operator, expression->operator);
 
@@ -508,7 +508,7 @@ int iterate_over_string_int_hashmap(void *expected, hashmap_element_t *pair) {
   Expression *key_expr = (void *)pair->key;
   TEST_ASSERT_EQUAL(STRING_EXPR, key_expr->type);
 
-  StringLiteral *key = key_expr->value;
+  StringLiteral *key = (StringLiteral *)key_expr;
   int *expected_value =
       hashmap_get(expected_map, key->value, strlen(key->value));
   TEST_ASSERT_NOT_NULL(expected_value);
@@ -614,12 +614,12 @@ void test_parsing_reassignment(void) {
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
   TEST_ASSERT_EQUAL(REASSIGN_EXPR, stmt->expression->type);
 
-  Reassignment *reassign = stmt->expression->value;
+  Reassignment *reassign = (Reassignment *)stmt->expression;
 
   TEST_ASSERT_EQUAL_STRING("b", reassign->name->value);
   TEST_ASSERT_EQUAL(INT_EXPR, reassign->value->type);
 
-  NumberLiteral *intt = reassign->value->value;
+  NumberLiteral *intt = (NumberLiteral *)reassign->value;
   TEST_ASSERT_EQUAL(1, intt->value);
 }
 
@@ -647,7 +647,7 @@ void test_parsing_and(void) {
   Statement *stmt = program->statements->tail->value;
 
   TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
-  InfixExpression *expression = stmt->expression->value;
+  InfixExpression *expression = (InfixExpression *)stmt->expression;
   TEST_ASSERT_EQUAL_STRING("&&", expression->operator);
 
   TEST_ASSERT_EQUAL(BOOL_EXPR, expression->right->type);
@@ -660,7 +660,7 @@ void test_parsing_or(void) {
   Statement *stmt = program->statements->tail->value;
 
   TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
-  InfixExpression *expression = stmt->expression->value;
+  InfixExpression *expression = (InfixExpression *)stmt->expression;
   TEST_ASSERT_EQUAL_STRING("||", expression->operator);
 
   TEST_ASSERT_EQUAL(BOOL_EXPR, expression->right->type);

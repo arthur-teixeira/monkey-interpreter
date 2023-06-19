@@ -257,42 +257,21 @@ Statement *parse_statement(Parser *p) {
 }
 
 Expression *parse_identifier(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  expr->type = IDENT_EXPR;
-  Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
-  expr->value = ident;
-
-  return expr;
-}
-
-void int_conversion_error(Parser *p) {
-  char *err_msg = malloc(MAX_LEN + 50);
-  snprintf(err_msg, MAX_LEN + 50, "Could not parse %s to an integer",
-           p->cur_token.literal);
-
-  append(p->errors, err_msg);
-}
-
-NumberLiteral *new_number_literal(Parser *p) {
-  NumberLiteral *lit = malloc(sizeof(NumberLiteral));
-  assert(lit != NULL);
-
-  lit->value = strtof(p->cur_token.literal, NULL);
-  lit->token = p->cur_token;
-
-  return lit;
+  return (Expression *)new_identifier(p->cur_token, p->cur_token.literal);
 }
 
 Expression *parse_number_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
+  NumberLiteral *lit = malloc(sizeof(NumberLiteral));
+  assert(lit != NULL);
 
-  expr->type = INT_EXPR;
-  expr->value = new_number_literal(p);
+  lit->type = INT_EXPR;
+  lit->value = strtof(p->cur_token.literal, NULL);
+  lit->token = p->cur_token;
 
-  return expr;
+  return (Expression *)lit;
 }
 
-NumberLiteral *int_from_binary(Parser *p) {
+Expression *parse_binary_literal(Parser *p) {
   NumberLiteral *lit = malloc(sizeof(NumberLiteral));
   assert(lit != NULL);
 
@@ -304,23 +283,14 @@ NumberLiteral *int_from_binary(Parser *p) {
     result += (cur_val * (1 << multiplier++));
   }
 
+  lit->type = INT_EXPR;
   lit->value = result;
   lit->token = p->cur_token;
 
-  return lit;
+  return (Expression *)lit;
 }
 
-Expression *parse_binary_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL);
-
-  expr->type = INT_EXPR;
-  expr->value = int_from_binary(p);
-
-  return expr;
-}
-
-int htoi(char s[]) {
+int htoi(char *s) {
   int i = 0;
   int res = 0;
 
@@ -340,80 +310,40 @@ int htoi(char s[]) {
   return res;
 }
 
-NumberLiteral *int_from_hex(Parser *p) {
+Expression *parse_hex_literal(Parser *p) {
   NumberLiteral *intt = malloc(sizeof(NumberLiteral));
   assert(intt != NULL);
 
+  intt->type = INT_EXPR;
   intt->token = p->cur_token;
   intt->value = htoi(p->cur_token.literal);
 
-  return intt;
+  return (Expression *)intt;
 }
 
-Expression *parse_hex_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL);
-
-  expr->type = INT_EXPR;
-  expr->value = int_from_hex(p);
-
-  return expr;
-}
-
-PrefixExpression *new_prefix_expression(Parser *p) {
+Expression *parse_prefix_expression(Parser *p) {
   PrefixExpression *prefix = malloc(sizeof(PrefixExpression));
-  if (prefix == NULL) {
-    printf("ERROR: Could not create prefix expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+  assert(prefix != NULL);
 
-  prefix->operator= malloc(sizeof(p->cur_token.literal));
-  strlcpy(prefix->operator, p->cur_token.literal, sizeof(prefix->operator));
+  prefix->type = PREFIX_EXPR;
+  prefix->operator= strdup(p->cur_token.literal);
   prefix->token = p->cur_token;
 
   parser_next_token(p);
   prefix->right = parse_expression(p, PREFIX);
 
-  return prefix;
-}
-
-Expression *parse_prefix_expression(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  expr->type = PREFIX_EXPR;
-  expr->value = new_prefix_expression(p);
-
-  return expr;
-}
-
-BooleanLiteral *new_boolean_expression(Parser *p) {
-  BooleanLiteral *expr = malloc(sizeof(BooleanLiteral));
-  if (expr == NULL) {
-    printf("ERROR: Could not create boolean expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  expr->token = p->cur_token;
-  expr->value = cur_token_is(p, TRUE);
-
-  return expr;
+  return (Expression *)prefix;
 }
 
 Expression *parse_boolean(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+  BooleanLiteral *expr = malloc(sizeof(BooleanLiteral));
+  assert(expr != NULL);
 
   expr->type = BOOL_EXPR;
-  expr->value = new_boolean_expression(p);
+  expr->token = p->cur_token;
+  expr->value = cur_token_is(p, TRUE);
 
-  return expr;
+  return (Expression *)expr;
 }
 
 Expression *parse_grouped_expression(Parser *p) {
@@ -431,10 +361,7 @@ Expression *parse_grouped_expression(Parser *p) {
 
 BlockStatement *parse_block_statement(Parser *p) {
   BlockStatement *block = malloc(sizeof(BlockStatement));
-  if (block == NULL) {
-    printf("ERROR: Could not create block statement: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+  assert(block != NULL);
 
   block->token = p->cur_token;
   block->statements = new_list();
@@ -452,30 +379,25 @@ BlockStatement *parse_block_statement(Parser *p) {
   return block;
 }
 
-IfExpression *new_if_expression(Parser *p) {
-  IfExpression *expr = malloc(sizeof(IfExpression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create if expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
+Expression *parse_if_expression(Parser *p){
   if (!expect_peek(p, LPAREN)) {
-    free(expr);
     return NULL;
   }
+
+  IfExpression *expr = malloc(sizeof(IfExpression));
+  assert(expr != NULL);
+  expr->type = IF_EXPR;
 
   parser_next_token(p);
   expr->condition = parse_expression(p, LOWEST);
 
   if (!expect_peek(p, RPAREN)) {
-    free(expr->condition->value);
     free(expr->condition);
     free(expr);
     return NULL;
   }
 
   if (!expect_peek(p, LBRACE)) {
-    free(expr->condition->value);
     free(expr->condition);
     free(expr);
     return NULL;
@@ -484,12 +406,12 @@ IfExpression *new_if_expression(Parser *p) {
   expr->consequence = parse_block_statement(p);
 
   if (!peek_token_is(p, ELSE)) {
-    return expr;
+    return (Expression *)expr;
   }
 
   parser_next_token(p);
   if (!expect_peek(p, LBRACE)) {
-    free(expr->condition->value);
+    free(expr->condition);
     free(expr->condition);
     free_list(expr->consequence->statements);
     free(expr);
@@ -499,26 +421,8 @@ IfExpression *new_if_expression(Parser *p) {
 
   expr->alternative = parse_block_statement(p);
 
-  return expr;
-}
-
-Expression *parse_if_expression(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  expr->type = IF_EXPR;
-
-  IfExpression *iff = new_if_expression(p);
-  if (iff == NULL) {
-    free(expr);
-    return NULL;
-  }
-  expr->value = iff;
-
-  return expr;
-}
+  return (Expression *)expr;
+} 
 
 LinkedList *parse_function_parameters(Parser *p) {
   LinkedList *parameters = new_list();
@@ -548,21 +452,19 @@ LinkedList *parse_function_parameters(Parser *p) {
   return parameters;
 }
 
-FunctionLiteral *new_function_literal(Parser *p) {
-  FunctionLiteral *fn = malloc(sizeof(FunctionLiteral));
-  if (fn == NULL) {
-    printf("ERROR: Could not create function literal: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  fn->token = p->cur_token;
-
+Expression *parse_function_literal(Parser *p) {
   if (!expect_peek(p, LPAREN)) {
-    free(fn);
     return NULL;
   }
 
+  FunctionLiteral *fn = malloc(sizeof(FunctionLiteral));
+  assert(fn != NULL); 
+
+  fn->token = p->cur_token;
+  fn->type = FN_EXPR;
+
   LinkedList *parameters = parse_function_parameters(p);
-  if (parameters == NULL) {
+  if (!parameters) {
     free(fn);
     return NULL;
   }
@@ -577,63 +479,33 @@ FunctionLiteral *new_function_literal(Parser *p) {
   }
 
   fn->body = parse_block_statement(p);
-  return fn;
-}
+  return (Expression *)fn;
+} 
 
-Expression *parse_function_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  expr->type = FN_EXPR;
-
-  FunctionLiteral *value = new_function_literal(p);
-
-  if (value == NULL) {
-    free(expr);
-    return NULL;
-  }
-
-  expr->value = value;
-
-  return expr;
-}
-
-StringLiteral *new_string_literal(Parser *p) {
+Expression *parse_string_literal(Parser *p) {
   StringLiteral *str = malloc(sizeof(StringLiteral));
   assert(str != NULL && "error allocating memory for string literal");
 
   str->token = p->cur_token;
   str->len = strlen(p->cur_token.literal);
-  str->value = malloc(str->len + 1); // adding one to count for null terminator
-  assert(str->value != NULL &&
-         "error allocating memory for string literal value");
-  strlcpy(str->value, p->cur_token.literal, str->len + 1);
+  str->value = strdup(p->cur_token.literal);
+  str->type = STRING_EXPR;
 
-  return str;
-}
+  return (Expression *)str;
+} 
 
-Expression *parse_string_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "Error allocating memory for string expression");
-  expr->type = STRING_EXPR;
-
-  StringLiteral *str = new_string_literal(p);
-  expr->value = str;
-
-  return expr;
-}
-
-ArrayLiteral *new_array_literal(Parser *p) {
+Expression *parse_array_literal(Parser *p) {
   ArrayLiteral *arr = malloc(sizeof(ArrayLiteral));
+  assert(arr != NULL);
   arr->token = p->cur_token;
   arr->elements = malloc(sizeof(DynamicArray));
+  arr->type = ARRAY_EXPR;
+  assert(arr->elements != NULL);
   array_init(arr->elements, 10);
 
   if (peek_token_is(p, RBRACKET)) {
     parser_next_token(p);
-    return arr;
+    return (Expression *)arr;
   }
 
   parser_next_token(p);
@@ -650,26 +522,16 @@ ArrayLiteral *new_array_literal(Parser *p) {
     return NULL;
   }
 
-  return arr;
+  return (Expression *)arr;
 }
 
-Expression *parse_array_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "Error allocating memory for array expression");
-  expr->type = ARRAY_EXPR;
-
-  ArrayLiteral *arr = new_array_literal(p);
-  expr->value = arr;
-
-  return expr;
-}
-
-HashLiteral *new_hash_literal(Parser *p) {
+Expression *parse_hash_literal(Parser *p) {
   HashLiteral *hash = malloc(sizeof(HashLiteral));
   assert(hash != NULL && "Error allocating memory for hash");
 
   hash->len = 0;
   hash->token = p->cur_token;
+  hash->type = HASH_EXPR;
   hashmap_create(5, &hash->pairs);
 
   while (!peek_token_is(p, RBRACE)) {
@@ -700,24 +562,20 @@ HashLiteral *new_hash_literal(Parser *p) {
     return NULL;
   }
 
-  return hash;
+  return (Expression *)hash;
 }
 
-Expression *parse_hash_literal(Parser *p) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "Error allocating memory for hash expression");
+Expression *parse_while_loop(Parser *p) {
+  bool should_alter_loop_state = !INSIDE_LOOP;
 
-  expr->type = HASH_EXPR;
-  HashLiteral *hash = new_hash_literal(p);
-
-  expr->value = hash;
-  return expr;
-}
-
-WhileLoop *new_while_loop(Parser *p) {
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = true;
+  }
+  
   WhileLoop *loop = malloc(sizeof(WhileLoop));
   assert(loop != NULL && "Error allocating memory for while loop");
 
+  loop->type = WHILE_EXPR;
   loop->token = p->cur_token;
 
   // TODO: improve error messages
@@ -740,27 +598,11 @@ WhileLoop *new_while_loop(Parser *p) {
 
   loop->body = parse_block_statement(p);
 
-  return loop;
-}
-
-Expression *parse_while_loop(Parser *p) {
-  bool should_alter_loop_state = !INSIDE_LOOP;
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "Error allocating memory for while expression");
-  expr->type = WHILE_EXPR;
-
-  if (should_alter_loop_state) {
-    INSIDE_LOOP = true;
-  }
-  WhileLoop *loop = new_while_loop(p);
-
   if (should_alter_loop_state) {
     INSIDE_LOOP = false;
   }
 
-  expr->value = loop;
-
-  return expr;
+  return (Expression *)loop;
 }
 
 Statement *parse_if_exists(Parser *p, bool prev_exists) {
@@ -777,9 +619,16 @@ Statement *parse_if_exists(Parser *p, bool prev_exists) {
   return parse_statement(p);
 }
 
-ForLoop *new_for_loop(Parser *p) {
+Expression *parse_for_loop(Parser *p) {
+  bool should_alter_loop_state = !INSIDE_LOOP;
+
+  if (should_alter_loop_state) {
+    INSIDE_LOOP = true;
+  }
+
   ForLoop *loop = malloc(sizeof(ForLoop));
   assert(loop != NULL);
+  loop->type = FOR_EXPR;
 
   if (!expect_peek(p, LPAREN)) {
     free(loop);
@@ -818,53 +667,20 @@ ForLoop *new_for_loop(Parser *p) {
 
   loop->body = parse_block_statement(p);
 
-  return loop;
-}
-
-Expression *parse_for_loop(Parser *p) {
-  bool should_alter_loop_state = !INSIDE_LOOP;
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "Error allocating memory for for expression");
-  expr->type = FOR_EXPR;
-
-  if (should_alter_loop_state) {
-    INSIDE_LOOP = true;
-  }
-
-  ForLoop *loop = new_for_loop(p);
-
   if (should_alter_loop_state) {
     INSIDE_LOOP = false;
   }
 
-  expr->value = loop;
-
-  return expr;
-}
-
-InfixExpression *new_infix_expression(Parser *p) {
-  InfixExpression *infix = malloc(sizeof(InfixExpression));
-  if (infix == NULL) {
-    printf("ERROR: Could not create infix expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  infix->operator= malloc(sizeof(p->cur_token.literal));
-  strlcpy(infix->operator, p->cur_token.literal, sizeof(infix->operator));
-
-  infix->token = p->cur_token;
-
-  return infix;
+  return (Expression *)loop;
 }
 
 Expression *parse_infix_expression(Parser *p, Expression *left) {
-  Expression *expr = malloc(sizeof(Expression));
-  if (expr == NULL) {
-    printf("ERROR: Could not create expression: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-  expr->type = INFIX_EXPR;
-  InfixExpression *infix_expr = new_infix_expression(p);
+  InfixExpression *infix_expr = malloc(sizeof(InfixExpression));
+  assert(infix_expr != NULL); 
+
+  infix_expr->type = INFIX_EXPR;
+  infix_expr->operator = strdup(p->cur_token.literal);
+  infix_expr->token = p->cur_token;
 
   uint32_t precedence = cur_precedence(p);
   parser_next_token(p);
@@ -872,9 +688,7 @@ Expression *parse_infix_expression(Parser *p, Expression *left) {
   infix_expr->left = left;
   infix_expr->right = parse_expression(p, precedence);
 
-  expr->value = infix_expr;
-
-  return expr;
+  return (Expression *)infix_expr;
 }
 
 LinkedList *parse_call_arguments(Parser *p) {
@@ -904,12 +718,8 @@ LinkedList *parse_call_arguments(Parser *p) {
 }
 
 Expression *parse_call_expression(Parser *p, Expression *function) {
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL && "ERROR: could not allocate memory for expression");
-
-  expr->type = CALL_EXPR;
-
   CallExpression *call = malloc(sizeof(CallExpression));
+  call->type = CALL_EXPR;
   assert(call != NULL &&
          "ERROR: could not allocate memory for call expression");
 
@@ -919,23 +729,18 @@ Expression *parse_call_expression(Parser *p, Expression *function) {
 
   if (args == NULL) {
     free(call);
-    free(expr);
     return NULL;
   }
 
   call->arguments = args;
 
-  expr->value = call;
-  return expr;
+  return (Expression *)call;
 }
 
 Expression *parse_index_expression(Parser *p, Expression *left) {
-  Expression *exp = malloc(sizeof(Expression));
-  assert(exp != NULL && "Error allocating memory for index expression");
-  exp->type = INDEX_EXPR;
-
   IndexExpression *index_expr = malloc(sizeof(IndexExpression));
   assert(index_expr != NULL && "Error allocating memory for index expression");
+  index_expr->type = INDEX_EXPR;
   index_expr->token = p->cur_token;
   index_expr->left = left;
 
@@ -945,33 +750,27 @@ Expression *parse_index_expression(Parser *p, Expression *left) {
 
   if (!expect_peek(p, RBRACKET)) {
     free(index_expr);
-    free(exp);
     return NULL;
   }
 
-  exp->value = index_expr;
-
-  return exp;
+  return (Expression *)index_expr;
 }
 
 Expression *parse_reassignment_expression(Parser *p, Expression *left) {
   assert(left->type == IDENT_EXPR);
-  Expression *expr = malloc(sizeof(Expression));
-  assert(expr != NULL);
-  expr->type = REASSIGN_EXPR;
 
   Reassignment *reassignment = malloc(sizeof(Reassignment));
   assert(reassignment != NULL);
-  reassignment->name = left->value;
+
+  reassignment->type = REASSIGN_EXPR;
+  reassignment->name = (Identifier *)left;
   reassignment->token = p->cur_token;
 
   parser_next_token(p);
 
   reassignment->value = parse_expression(p, LOWEST);
 
-  expr->value = reassignment;
-
-  return expr;
+  return (Expression *)reassignment;
 }
 
 Parser *new_parser(Lexer *l) {
@@ -1004,9 +803,8 @@ Parser *new_parser(Lexer *l) {
   register_prefix_fn(p, parse_hex_literal, HEX);
 
   TokenType infix_expressions[] = {
-      PLUS, MINUS,  SLASH,  ASTERISK, EQ,  NOT_EQ, LT,
-      GT,   LSHIFT, RSHIFT, MOD,      BOR, BAND,   BXOR,
-      AND, OR,
+      PLUS,   MINUS,  SLASH, ASTERISK, EQ,   NOT_EQ, LT,  GT,
+      LSHIFT, RSHIFT, MOD,   BOR,      BAND, BXOR,   AND, OR,
   };
 
   for (int i = 0; i < ARRAY_LEN(infix_expressions, TokenType); ++i) {

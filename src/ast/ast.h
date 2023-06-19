@@ -8,21 +8,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct {
-  Token token;
-  char *value;
-} Identifier;
-
-Identifier *new_identifier(Token, char *);
-void free_identifier(Identifier *);
-
-typedef struct {
-  Token token;
-  double value;
-} NumberLiteral;
-
-void int_to_string(ResizableBuffer *, NumberLiteral *);
-
 typedef enum {
   LET_STATEMENT,
   RETURN_STATEMENT,
@@ -49,13 +34,35 @@ typedef enum {
   REASSIGN_EXPR,
 } ExprType;
 
+// Acts as an "interface". Entry level functions will receive a pointer
+// to an Expression struct. Depending on the type, the struct will be cast
+// to its correct type. Every type "implements" this interface by having a
+// property called "type" as the first member of the struct.
 typedef struct {
   ExprType type;
-  void *value;
 } Expression;
+
 void value_to_string(ResizableBuffer *, Expression *);
 
 typedef struct {
+  ExprType type; // IDENT_EXPR
+  Token token;
+  char *value;
+} Identifier;
+
+Identifier *new_identifier(Token, char *);
+void free_identifier(Identifier *);
+
+typedef struct {
+  ExprType type; // INT_EXPR
+  Token token;
+  double value;
+} NumberLiteral;
+
+void int_to_string(ResizableBuffer *, NumberLiteral *);
+
+typedef struct {
+  ExprType type; // PREFIX_EXPR
   Token token;
   char *operator;
   Expression *right;
@@ -64,6 +71,7 @@ typedef struct {
 void prefix_to_string(ResizableBuffer *, PrefixExpression *);
 
 typedef struct {
+  ExprType type; // INFIX_EXPR
   Token token;
   Expression *left;
   char *operator;
@@ -73,6 +81,7 @@ typedef struct {
 void infix_to_string(ResizableBuffer *, InfixExpression *);
 
 typedef struct {
+  ExprType type; // BOOL_EXPR
   Token token;
   bool value;
 } BooleanLiteral;
@@ -87,6 +96,7 @@ typedef struct {
 void block_to_string(ResizableBuffer *, BlockStatement *);
 
 typedef struct {
+  ExprType type; // IF_EXPR
   Token token;
   Expression *condition;
   BlockStatement *consequence;
@@ -96,6 +106,7 @@ typedef struct {
 void if_to_string(ResizableBuffer *, IfExpression *);
 
 typedef struct {
+  ExprType type; // FN_EXPR
   Token token;
   LinkedList *parameters; // Identifier*[];
   BlockStatement *body;
@@ -104,6 +115,7 @@ typedef struct {
 void fn_to_string(ResizableBuffer *, FunctionLiteral *);
 
 typedef struct {
+  ExprType type; // STRING_EXPR
   Token token;
   char *value;
   uint32_t len;
@@ -112,6 +124,7 @@ typedef struct {
 void string_literal_to_string(ResizableBuffer *, StringLiteral *);
 
 typedef struct {
+  ExprType type; // CALL_EXPR
   Token token;
   Expression *function;
   LinkedList *arguments; // TODO: Expression*[];
@@ -120,6 +133,7 @@ typedef struct {
 void call_to_string(ResizableBuffer *, CallExpression *);
 
 typedef struct {
+  ExprType type; // ARRAY_EXPR
   Token token;
   DynamicArray *elements;
 } ArrayLiteral;
@@ -127,6 +141,7 @@ typedef struct {
 void array_to_string(ResizableBuffer *, ArrayLiteral *);
 
 typedef struct {
+  ExprType type; // INDEX_EXPR
   Token token;
   Expression *left;
   Expression *index;
@@ -135,6 +150,7 @@ typedef struct {
 void index_expression_to_string(ResizableBuffer *, IndexExpression *);
 
 typedef struct {
+  ExprType type; // HASH_EXPR
   Token token;
   hashmap_t pairs;
   size_t len;
@@ -143,6 +159,7 @@ typedef struct {
 void hash_literal_to_string(ResizableBuffer *, HashLiteral *);
 
 typedef struct {
+  ExprType type; // REASSIGN_EXPR
   Token token;
   Identifier *name;
   Expression *value;
@@ -151,6 +168,7 @@ typedef struct {
 void reassign_to_string(ResizableBuffer *, Reassignment *);
 
 typedef struct {
+  ExprType type; // WHILE_EXPR
   Token token;
   Expression *condition;
   BlockStatement *body;
@@ -168,6 +186,7 @@ typedef struct {
 void stmt_to_string(ResizableBuffer *, Statement *);
 
 typedef struct {
+  ExprType type; // FOR_EXPR
   Token token;
   Statement *initialization;
   Expression *condition;
@@ -182,9 +201,9 @@ typedef struct {
 } Program;
 
 Program *new_program(void);
-
 void free_program(Program *p);
 
 void program_string(ResizableBuffer *, Program *);
+
 void ident_expr_to_string(ResizableBuffer *buf, Identifier *expr);
 void block_to_string(ResizableBuffer *buf, BlockStatement *block);

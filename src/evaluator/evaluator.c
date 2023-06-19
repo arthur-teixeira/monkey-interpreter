@@ -848,38 +848,38 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
-    return new_integer(expr->value);
+    return new_integer((NumberLiteral *)expr);
   case BOOL_EXPR:
-    return new_boolean(expr->value);
+    return new_boolean((BooleanLiteral *)expr);
   case STRING_EXPR:
-    return eval_string_expression(expr->value);
+    return eval_string_expression((StringLiteral *)expr);
   case PREFIX_EXPR:
-    return eval_prefix_expression(expr->value, env);
+    return eval_prefix_expression((PrefixExpression *)expr, env);
   case INFIX_EXPR:
-    return eval_infix_expression(expr->value, env);
+    return eval_infix_expression((InfixExpression *)expr, env);
   case IF_EXPR:
-    return eval_if_expression(expr->value, env);
+    return eval_if_expression((IfExpression *)expr, env);
   case IDENT_EXPR:
-    return eval_identifier(expr->value, env);
+    return eval_identifier((Identifier *)expr, env);
   case FN_EXPR:
-    return eval_function_literal(expr->value, env);
+    return eval_function_literal((FunctionLiteral *)expr, env);
   case CALL_EXPR:
-    return eval_function_call(expr->value, env);
+    return eval_function_call((CallExpression *)expr, env);
   case ARRAY_EXPR:
-    return eval_array_literal(expr->value, env);
+    return eval_array_literal((ArrayLiteral *)expr, env);
   case INDEX_EXPR:
-    return eval_index_expression(expr->value, env);
+    return eval_index_expression((IndexExpression *)expr, env);
   case HASH_EXPR:
-    return eval_hash_literal(expr->value, env);
+    return eval_hash_literal((HashLiteral *)expr, env);
   case WHILE_EXPR:
-    return eval_while_loop(expr->value, env);
+    return eval_while_loop((WhileLoop *)expr, env);
   case FOR_EXPR:
-    return eval_for_loop(expr->value, env);
+    return eval_for_loop((ForLoop *)expr, env);
   case REASSIGN_EXPR:
-    return eval_reassignment(expr->value, env);
-  default:
-    assert(0 && "not implemented");
+    return eval_reassignment((Reassignment *)expr, env);
   }
+
+  assert(0 && "unreachable");
 }
 
 Object *eval_return_statement(Expression *expr, Environment *env) {
