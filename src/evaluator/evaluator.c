@@ -10,22 +10,17 @@
 
 void free_object(Object *obj) {
   if (obj->type != BOOLEAN_OBJ) {
-    free(obj->object);
     free(obj);
   }
 }
 
 Object *new_error(char *message) {
-  Object *error_obj = malloc(sizeof(Object));
-  assert(error_obj != NULL && "Error allocating memory for error object");
-  error_obj->type = ERROR_OBJ;
-
   Error *err = malloc(sizeof(Error));
   assert(err != NULL && "Error allocating memory for error");
   err->message = strdup(message);
-  error_obj->object = err;
+  err->type = ERROR_OBJ;
 
-  return error_obj;
+  return (Object *)err;
 }
 
 bool is_error(Object *obj) {
@@ -62,7 +57,7 @@ Object *eval_program(Program *program, Environment *env) {
     result = eval(cur_node->value, env);
 
     if (result != NULL && result->type == RETURN_OBJ) {
-      ReturnValue *ret = result->object;
+      ReturnValue *ret = (ReturnValue *)result;
       Object *ret_value = ret->value;
       free_object(result);
       return ret_value;
@@ -79,103 +74,70 @@ Object *eval_program(Program *program, Environment *env) {
 }
 
 Object *new_integer(NumberLiteral *lit) {
-  Object *obj = malloc(sizeof(Object));
-  assert(obj != NULL && "Error allocating memory for integer object");
-
-  obj->type = NUMBER_OBJ;
-
   Number *int_obj = malloc(sizeof(Number));
   assert(int_obj != NULL && "Error allocating memory for integer");
 
   int_obj->value = lit->value;
-  obj->object = int_obj;
+  int_obj->type = NUMBER_OBJ;
 
-  return obj;
+  return (Object *)int_obj;
 }
 
-static Boolean bool_true = {
-    true,
+static Boolean obj_true = {
+    .type = BOOLEAN_OBJ,
+    .value = true,
 };
 
-static Boolean bool_false = {
-    false,
+static Boolean obj_false = {
+    .type = BOOLEAN_OBJ,
+    .value = false,
 };
 
-static Object obj_true = {
-    BOOLEAN_OBJ,
-    &bool_true,
+static Null obj_null = {
+  .type = NULL_OBJ,
 };
-
-static Object obj_false = {
-    BOOLEAN_OBJ,
-    &bool_false,
-};
-
-static Null null_value = {};
-
-static Object obj_null = {
-    NULL_OBJ,
-    &null_value,
-};
-
-Object *new_boolean(BooleanLiteral *bol) {
-  if (bol->value) {
-    return &obj_true;
-  }
-
-  return &obj_false;
-}
 
 Object *native_bool_to_boolean_object(bool condition) {
   if (condition) {
-    return &obj_true;
+    return (Object*)&obj_true;
   }
 
-  return &obj_false;
+  return (Object*)&obj_false;
+}
+
+Object *new_boolean(BooleanLiteral *bol) {
+  return native_bool_to_boolean_object(bol->value);
 }
 
 Object *inverted_boolean(Boolean *bol) {
-  if (bol->value) {
-    return &obj_false;
-  }
-
-  return &obj_true;
+  return native_bool_to_boolean_object(!bol->value);
 }
 
 Object *eval_string_expression(StringLiteral *expr) {
-  Object *str_obj = malloc(sizeof(Object));
-  assert(str_obj != NULL && "Error allocating memory for string object");
-  str_obj->type = STRING_OBJ;
-
   String *str = malloc(sizeof(String));
   assert(str != NULL && "error allocating memory for string");
 
+  str->type = STRING_OBJ;
   str->len = expr->len;
   str->value = strdup(expr->value);
 
-  str_obj->object = str;
-
-  return str_obj;
+  return (Object *)str;
 }
 
 Object *cast_int_to_boolean(Number *intt) {
-  if (intt->value) {
-    return &obj_false;
-  }
-
-  return &obj_true;
+  return native_bool_to_boolean_object(!intt->value);
 }
 
 Object *eval_bang_operator_expression(Object *right) {
   switch (right->type) {
   case BOOLEAN_OBJ:
-    return inverted_boolean(right->object);
+    return inverted_boolean((Boolean *)right);
   case NULL_OBJ:
-    return &obj_true;
+    return (Object *)&obj_true;
   case NUMBER_OBJ:
-    return cast_int_to_boolean(right->object);
+    return cast_int_to_boolean((Number *)right);
   default:
-    return &obj_false;
+    return (Object *)&obj_false;
   }
 }
 
@@ -188,25 +150,21 @@ Object *eval_minus_operator_expression(Object *right) {
     return new_error(error_message);
   };
 
-  Number *intt = right->object;
-
-  Object *new_int_obj = malloc(sizeof(Object));
-  assert(new_int_obj != NULL && "error allocating memory for new integer obj");
-  new_int_obj->type = NUMBER_OBJ;
+  Number *intt = (Number *)right;
 
   Number *new_int = malloc(sizeof(Number));
   assert(new_int != NULL && "error allocating memory for new integer");
 
+  new_int->type = NUMBER_OBJ;
   new_int->value = -intt->value;
-  new_int_obj->object = new_int;
 
-  return new_int_obj;
+  return (Object *)new_int;
 }
 
 Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
                                        Object * right_obj) {
-  Number *left = left_obj->object;
-  Number *right = right_obj->object;
+  Number *left = (Number *)left_obj;
+  Number *right = (Number*)right_obj;
 
   if (strcmp(operator, ">") == 0) {
     return native_bool_to_boolean_object(left->value > right->value);
@@ -229,17 +187,13 @@ Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
 
 Object *eval_integer_infix_expression(Object *left_obj, char *operator,
                                       Object * right_obj) {
-  Object *obj = malloc(sizeof(Object));
-  assert(obj != NULL && "error allocating memory for infix integer");
-  obj->type = NUMBER_OBJ;
-
   Number *evaluated = malloc(sizeof(Number));
   assert(evaluated != NULL && "error allocating memory for evaluated integer");
 
-  Number *left = left_obj->object;
-  Number *right = right_obj->object;
+  evaluated->type = NUMBER_OBJ;
+  Number *left = (Number *)left_obj;
+  Number *right = (Number*)right_obj;
 
-  // TODO: add %, >=, <=
   if (strcmp(operator, "+") == 0) {
     evaluated->value = left->value + right->value;
   } else if (strcmp(operator, "-") == 0) {
@@ -261,13 +215,11 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
   } else if (strcmp(operator, "%") == 0) {
     evaluated->value = (long)left->value % (long)right->value;
   } else {
-    free(obj);
     free(evaluated);
     return eval_integer_boolean_operation(left_obj, operator, right_obj);
   }
 
-  obj->object = evaluated;
-  return obj;
+  return (Object *)evaluated;
 }
 
 Object *eval_boolean_infix_expression(Object *left, char *operator,
@@ -281,12 +233,12 @@ Object *eval_boolean_infix_expression(Object *left, char *operator,
     return native_bool_to_boolean_object(right != left);
 
   if (strcmp(operator, "&&") == 0)
-    return native_bool_to_boolean_object((right == &obj_true) &&
-                                         (left == &obj_true));
+    return native_bool_to_boolean_object(((Boolean *)right == &obj_true) &&
+                                         ((Boolean *)left == &obj_true));
 
   if (strcmp(operator, "||") == 0)
-    return native_bool_to_boolean_object((right == &obj_true) ||
-                                         (left == &obj_true));
+    return native_bool_to_boolean_object(((Boolean *)right == &obj_true) ||
+                                         ((Boolean *)left == &obj_true));
 
   char error_message[255];
   sprintf(error_message, "unknown operator: %s %s %s",
@@ -310,13 +262,13 @@ Object *eval_string_infix_expression(Object *left, char *operator,
     return new_error(error_message);
   }
 
-  String *left_str = left->object;
-  String *right_str = right->object;
-
-  Object *new_str_obj = malloc(sizeof(Object));
-  new_str_obj->type = STRING_OBJ;
+  String *left_str = (String *)left;
+  String *right_str = (String *)right;
 
   String *new_string = malloc(sizeof(String));
+  assert(new_string != NULL);
+
+  new_string->type = STRING_OBJ;
   new_string->len = left_str->len + right_str->len;
 
   new_string->value = malloc(new_string->len + 1);
@@ -324,8 +276,7 @@ Object *eval_string_infix_expression(Object *left, char *operator,
   strlcpy(new_string->value, left_str->value, new_string->len + 1);
   strncat(new_string->value, right_str->value, new_string->len + 1);
 
-  new_str_obj->object = new_string;
-  return new_str_obj;
+  return (Object *)new_string;
 }
 
 Object *eval_prefix_expression(PrefixExpression *expr, Environment *env) {
@@ -381,12 +332,12 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
       return native_bool_to_boolean_object(right != left);
 
     if (strcmp(expr->operator, "&&") == 0)
-      return native_bool_to_boolean_object((right == &obj_true) &&
-                                           (left == &obj_true));
+      return native_bool_to_boolean_object(((Boolean *)right == &obj_true) &&
+                                           ((Boolean *)left == &obj_true));
 
     if (strcmp(expr->operator, "||") == 0)
-      return native_bool_to_boolean_object((right == &obj_true) ||
-                                           (left == &obj_true));
+      return native_bool_to_boolean_object(((Boolean *)right == &obj_true) ||
+                                           ((Boolean *)left == &obj_true));
   }
 
   char error_message[255];
@@ -405,7 +356,7 @@ Object *eval_infix_expression(InfixExpression *expr, Environment *env) {
 }
 
 bool is_truthy(Object *obj) {
-  if (obj == NULL || obj == &obj_false) {
+  if (obj == NULL || (Boolean *)obj == &obj_false) {
     return false;
   }
 
@@ -450,18 +401,14 @@ Object *eval_identifier(Identifier *ident, Environment *env) {
 }
 
 Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
-  Object *fn_obj = malloc(sizeof(Object));
-  fn_obj->type = FUNCTION_OBJ;
-
   Function *fn = malloc(sizeof(Function));
+  fn->type = FUNCTION_OBJ;
   fn->env = env;
 
   fn->body = lit->body;
   fn->parameters = lit->parameters;
 
-  fn_obj->object = fn;
-
-  return fn_obj;
+  return (Object *)fn;
 }
 
 LinkedList *eval_expressions(LinkedList *expressions, Environment *env) {
@@ -509,7 +456,7 @@ Environment *extend_function_env(Function *fn, LinkedList *args) {
 
 Object *unwrap_return_value(Object *evaluated) {
   if (evaluated->type == RETURN_OBJ) {
-    ReturnValue *ret = evaluated->object;
+    ReturnValue *ret = (ReturnValue *)evaluated;
     return ret->value;
   }
 
@@ -518,7 +465,7 @@ Object *unwrap_return_value(Object *evaluated) {
 
 Object *apply_function(Object *fn_obj, LinkedList *args) {
   if (fn_obj->type == BUILTIN_OBJ) {
-    Builtin *builtin = fn_obj->object;
+    Builtin *builtin = (Builtin *)fn_obj;
     Object *result = builtin->fn(args);
 
     return result;
@@ -529,7 +476,7 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
     sprintf(err_msg, "Not a function: %s", ObjectTypeString[FUNCTION_OBJ]);
     return new_error(err_msg);
   }
-  Function *fn = fn_obj->object;
+  Function *fn = (Function *)fn_obj;
 
   if (fn->parameters->size != args->size) {
     char err_msg[255];
@@ -564,9 +511,6 @@ Object *eval_function_call(CallExpression *call, Environment *env) {
 }
 
 Object *eval_array_literal(ArrayLiteral *literal, Environment *env) {
-  Object *array_obj = malloc(sizeof(Object));
-  assert(array_obj != NULL && "Error allocating memory for array object");
-
   Array *array = malloc(sizeof(Array));
   assert(array != NULL && "Error allocating memory for array");
   array_init(&array->elements, literal->elements->len);
@@ -581,10 +525,8 @@ Object *eval_array_literal(ArrayLiteral *literal, Environment *env) {
     array_append(&array->elements, evaluated);
   }
 
-  array_obj->type = ARRAY_OBJ;
-  array_obj->object = array;
-
-  return array_obj;
+  array->type = ARRAY_OBJ;
+  return (Object *)array;
 }
 
 Object *eval_array_indexing(Object *left, IndexExpression *idx,
@@ -601,11 +543,11 @@ Object *eval_array_indexing(Object *left, IndexExpression *idx,
   }
 
   assert(left->type == ARRAY_OBJ);
-  Array *evaluated_array = left->object;
-  Number *index = evaluated_index->object;
+  Array *evaluated_array = (Array *)left;
+  Number *index = (Number *)evaluated_index;
 
   if (index->value > evaluated_array->elements.len - 1 || index->value < 0) {
-    return &obj_null;
+    return (Object*)&obj_null;
   }
 
   return evaluated_array->elements.arr[(long)index->value];
@@ -616,7 +558,7 @@ Object *eval_hash_indexing(Object *left, IndexExpression *idx,
   Object *evaluated_index = eval_expression(idx->index, env);
 
   assert(left->type == HASH_OBJ);
-  Hash *hash_object = left->object;
+  Hash *hash_object = (Hash*)left;
 
   int32_t key = get_hash_key(evaluated_index);
   if (key == -1) {
@@ -629,10 +571,10 @@ Object *eval_hash_indexing(Object *left, IndexExpression *idx,
 
   HashPair *pair = hashmap_get(&hash_object->pairs, &key, sizeof(int32_t));
   if (pair == NULL) {
-    return &obj_null;
+    return (Object *)&obj_null;
   }
 
-  return &pair->value;
+  return pair->value;
 }
 
 Object *eval_index_expression(IndexExpression *idx, Environment *env) {
@@ -690,8 +632,8 @@ int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
 
   HashPair *hash_pair = malloc(sizeof(HashPair));
   assert(pair != NULL);
-  hash_pair->key = *key;
-  hash_pair->value = *value;
+  hash_pair->key = key;
+  hash_pair->value = value;
 
   hashmap_put(eval_context->evaluated_hash, hash_key_in_heap, sizeof(int32_t),
               hash_pair);
@@ -700,10 +642,6 @@ int iter_eval_hash_literal(void *context, hashmap_element_t *pair) {
 }
 
 Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
-  Object *hash_obj = malloc(sizeof(Object));
-  assert(hash_obj != NULL);
-  hash_obj->type = HASH_OBJ;
-
   Hash *hash = malloc(sizeof(Hash));
   assert(hash != NULL);
 
@@ -717,16 +655,14 @@ Object *eval_hash_literal(HashLiteral *lit, Environment *env) {
   hashmap_iterate_pairs(&lit->pairs, &iter_eval_hash_literal, &context);
 
   if (context.error != NULL) {
-    free(hash_obj);
     hashmap_destroy(&hash->pairs);
     free(hash);
 
     return context.error;
   }
 
-  hash_obj->object = hash;
-
-  return hash_obj;
+  hash->type = HASH_OBJ;
+  return (Object *)hash;
 }
 
 Object *check_non_boolean_condition(Object *condition) {
@@ -742,7 +678,7 @@ Object *check_non_boolean_condition(Object *condition) {
 
 Object *eval_loop_condition(Expression *condition_expr, Environment *env) {
   if (condition_expr == NULL) {
-    return &obj_true;
+    return (Object *)&obj_true;
   }
 
   return eval_expression(condition_expr, env);
@@ -757,7 +693,7 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
   }
 
   Object *result;
-  while ((condition = eval_loop_condition(condition_expr, env)) == &obj_true) {
+  while ((condition = eval_loop_condition(condition_expr, env)) == (Object*)&obj_true) {
     result = eval_block_statement(body->statements, env);
     if (result == NULL) {
       if (update != NULL) {
@@ -883,24 +819,19 @@ Object *eval_expression(Expression *expr, Environment *env) {
 }
 
 Object *eval_return_statement(Expression *expr, Environment *env) {
-  Object *ret_obj = malloc(sizeof(Object));
-  assert(ret_obj != NULL && "error allocating memory for return object");
-  ret_obj->type = RETURN_OBJ;
-
   ReturnValue *ret = malloc(sizeof(ReturnValue));
   assert(ret != NULL && "error allocating memory for return value");
 
   ret->value = eval_expression(expr, env);
 
-  ret_obj->object = ret;
-
   if (is_error(ret->value)) {
     Object *err = ret->value;
-    free(ret_obj);
-
+    free(ret);
     return err;
   }
-  return ret_obj;
+
+  ret->type = RETURN_OBJ;
+  return (Object *)ret;
 }
 
 Object *eval_let_statement(Statement *stmt, Environment *env) {
@@ -918,7 +849,6 @@ Object *eval_continue_statement(Statement *stmt) {
   assert(obj != NULL);
 
   obj->type = CONTINUE_OBJ;
-  obj->object = NULL;
 
   return obj;
 }
@@ -928,7 +858,6 @@ Object *eval_break_statement(Statement *stmt) {
   assert(obj != NULL);
 
   obj->type = BREAK_OBJ;
-  obj->object = NULL;
 
   return obj;
 }

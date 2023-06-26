@@ -7,11 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 
-static Null null_value = {};
-
 static Object obj_null = {
-    NULL_OBJ,
-    &null_value,
+    .type = NULL_OBJ,
 };
 
 Object *check_args_len(LinkedList *args, size_t expected) {
@@ -40,18 +37,12 @@ Object *unsupported_arg_error(Object *obj, ObjectType type, char *fn_name) {
 }
 
 Object *make_result(double value) {
-  Object *result = malloc(sizeof(Object));
+  Number *result = malloc(sizeof(Number));
   assert(result != NULL);
-
   result->type = NUMBER_OBJ;
+  result->value = value;
 
-  Number *intt = malloc(sizeof(Number));
-  assert(intt != NULL);
-  intt->value = value;
-
-  result->object = intt;
-
-  return result;
+  return (Object *)result;
 }
 
 Object *len(LinkedList *args) {
@@ -64,9 +55,9 @@ Object *len(LinkedList *args) {
 
   switch (obj->type) {
   case STRING_OBJ:
-    return make_result(((String *)obj->object)->len);
+    return make_result(((String *)obj)->len);
   case ARRAY_OBJ:
-    return make_result(((Array *)obj->object)->elements.len);
+    return make_result(((Array *)obj)->elements.len);
   default:
     break;
   }
@@ -87,7 +78,7 @@ Object *first(LinkedList *args) {
     return err;
   }
 
-  Array *arr = arg->object;
+  Array *arr = (Array *)arg;
 
   if (arr->elements.len < 1) {
     return &obj_null;
@@ -109,7 +100,7 @@ Object *last(LinkedList *args) {
     return err;
   }
 
-  Array *arr = arg->object;
+  Array *arr = (Array *)arg;
   if (arr->elements.len < 1) {
     return &obj_null;
   }
@@ -130,15 +121,11 @@ Object *rest(LinkedList *args) {
     return err;
   }
 
-  Object *new_arr_obj = malloc(sizeof(Object));
-  assert(new_arr_obj != NULL && "Error allocating memory for new array");
-
-  new_arr_obj->type = ARRAY_OBJ;
 
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL && "Error allocating memory for new array");
 
-  Array *old_arr = arg->object;
+  Array *old_arr = (Array *)arg;
 
   array_init(&new_arr->elements, old_arr->elements.len - 1);
 
@@ -146,9 +133,9 @@ Object *rest(LinkedList *args) {
     array_append(&new_arr->elements, old_arr->elements.arr[i]);
   }
 
-  new_arr_obj->object = new_arr;
+  new_arr->type = ARRAY_OBJ;
 
-  return new_arr_obj;
+  return (Object *)new_arr;
 }
 
 typedef enum {
@@ -171,12 +158,7 @@ Object *builtin_append(LinkedList *args, AppendType type) {
     return err;
   }
 
-  Array *old_arr = old_arr_obj->object;
-
-  Object *new_arr_obj = malloc(sizeof(Object));
-  assert(new_arr_obj != NULL && "Error allocating memory for new array");
-
-  new_arr_obj->type = ARRAY_OBJ;
+  Array *old_arr = (Array*)old_arr_obj;
 
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL && "Error allocating memory for new array");
@@ -194,9 +176,8 @@ Object *builtin_append(LinkedList *args, AppendType type) {
     array_append(&new_arr->elements, new_element);
   }
 
-  new_arr_obj->object = new_arr;
-
-  return new_arr_obj;
+  new_arr->type = ARRAY_OBJ;
+  return (Object *)new_arr;
 }
 
 Object *push(LinkedList *args) {
@@ -232,23 +213,18 @@ Object *builtin_puts(LinkedList *args) {
 
   Object *result = malloc(sizeof(Object));
   result->type = NULL_OBJ;
-  result->object = NULL;
   
   return result;
 }
 
 void put_builtin(hashmap_t *builtins, char *fn_name, BuiltinFunction fn) {
-  Object *builtin_obj = malloc(sizeof(Object));
-  assert(builtin_obj != NULL);
-  builtin_obj->type = BUILTIN_OBJ;
-
   Builtin *builtin = malloc(sizeof(Builtin));
   assert(builtin != NULL);
 
+  builtin->type = BUILTIN_OBJ;
   builtin->fn = fn;
-  builtin_obj->object = builtin;
 
-  hashmap_put(builtins, fn_name, strlen(fn_name), builtin_obj);
+  hashmap_put(builtins, fn_name, strlen(fn_name), builtin);
 }
 
 void set_len_builtin(hashmap_t *builtins) {

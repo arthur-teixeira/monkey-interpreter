@@ -26,13 +26,13 @@ Object *test_eval(char *input) {
 
 void test_number_object(Object *evaluated, double expected) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, evaluated->type);
-  Number *num = evaluated->object;
+  Number *num = (Number *)evaluated;
   TEST_ASSERT_EQUAL_FLOAT(expected, num->value);
 }
 
 void test_boolean_object(Object *evaluated, bool expected) {
   TEST_ASSERT_EQUAL(BOOLEAN_OBJ, evaluated->type);
-  Boolean *bol = evaluated->object;
+  Boolean *bol = (Boolean *)evaluated;
   TEST_ASSERT_EQUAL(expected, bol->value);
 }
 
@@ -231,7 +231,7 @@ void test_error_handling(void) {
 
     TEST_ASSERT_EQUAL(ERROR_OBJ, evaluated->type);
 
-    Error *error_obj = evaluated->object;
+    Error *error_obj = (Error *)evaluated;
     TEST_ASSERT_EQUAL_STRING(tests[i].expected_message, error_obj->message);
   }
 }
@@ -260,7 +260,7 @@ void test_function_object(void) {
   Object *evaluated = test_eval(input);
   TEST_ASSERT_EQUAL(FUNCTION_OBJ, evaluated->type);
 
-  Function *fn = evaluated->object;
+  Function *fn = (Function *)evaluated;
 
   TEST_ASSERT_EQUAL(1, fn->parameters->size);
 
@@ -318,7 +318,7 @@ void test_string_literal(void) {
 
   TEST_ASSERT_EQUAL(STRING_OBJ, evaluated->type);
 
-  String *str = evaluated->object;
+  String *str = (String *)evaluated;
 
   TEST_ASSERT_EQUAL_STRING("Hello world", str->value);
 }
@@ -328,7 +328,7 @@ void test_string_concatenation(void) {
   Object *evaluated = test_eval(input);
   TEST_ASSERT_EQUAL(STRING_OBJ, evaluated->type);
 
-  String *str = evaluated->object;
+  String *str = (String *)evaluated;
 
   char *expected_string = "Hello World!";
 
@@ -358,7 +358,7 @@ void test_builtin_len_function(void) {
 
     if (tests[i].expected_error != NULL) {
       TEST_ASSERT_EQUAL(ERROR_OBJ, evaluated->type);
-      Error *err = evaluated->object;
+      Error *err = (Error *)evaluated;
       TEST_ASSERT_EQUAL_STRING(tests[i].expected_error, err->message);
     } else {
       test_number_object(evaluated, tests[i].expected_value);
@@ -373,7 +373,7 @@ void test_array_literals(void) {
 
   TEST_ASSERT_EQUAL(ARRAY_OBJ, evaluated->type);
 
-  Array *arr = evaluated->object;
+  Array *arr = (Array *)evaluated;
 
   test_number_object(arr->elements.arr[0], 1);
   test_number_object(arr->elements.arr[1], 4);
@@ -464,23 +464,16 @@ void test_builtin_array_functions(void) {
   }
 }
 
-Object *wrap_object(void *str, ObjectType type) {
-  Object *obj = malloc(sizeof(Object));
-  obj->type = type;
-  obj->object = str;
-
-  return obj;
-}
-
 int iter_hash_literal_test(void *generated_map, hashmap_element_t *pair) {
   hashmap_t *map = generated_map;
 
   const int32_t *key = pair->key;
 
   HashPair *value = hashmap_get(map, key, sizeof(int32_t));
+  printf("expected value: %ld\n", *(long *)pair->data);
   TEST_ASSERT_NOT_NULL(value);
 
-  test_number_object(&value->value, *(long *)pair->data);
+  test_number_object(value->value, *(long *)pair->data);
 
   return 0;
 }
@@ -498,45 +491,40 @@ void test_hash_literals(void) {
   Object *evaluated = test_eval(input);
   TEST_ASSERT_EQUAL(HASH_OBJ, evaluated->type);
 
-  Hash *hash = evaluated->object;
+  Hash *hash = (Hash *)evaluated;
 
   hashmap_t expected_map;
   hashmap_create(4, &expected_map);
 
-  String one = {"one", strlen("one")};
-  Object *one_obj = wrap_object(&one, STRING_OBJ);
+  String one = {STRING_OBJ, "one", strlen("one")};
+  Object *one_obj = (Object *)&one;
   int32_t one_key = get_hash_key(one_obj);
   long one_val = 1;
 
   hashmap_put(&expected_map, &one_key, sizeof(int32_t), &one_val);
 
-  String two = {"two", strlen("two")};
-  Object *two_obj = wrap_object(&two, STRING_OBJ);
+  String two = {STRING_OBJ, "two", strlen("two")};
+  Object *two_obj = (Object *)&two;
   int32_t two_key = get_hash_key(two_obj);
   long two_val = 2;
 
   hashmap_put(&expected_map, &two_key, sizeof(int32_t), &two_val);
 
-  String three = {"three", strlen("three")};
-  Object *three_obj = wrap_object(&three, STRING_OBJ);
+  String three = {STRING_OBJ, "three", strlen("three")};
+  Object *three_obj = (Object *)&three;
   int32_t three_key = get_hash_key(three_obj);
   long three_val = 3;
 
   hashmap_put(&expected_map, &three_key, sizeof(int32_t), &three_val);
 
-  Number four = {4};
-  Object *four_obj = wrap_object(&four, NUMBER_OBJ);
+  Number four = {NUMBER_OBJ, 4};
+  Object *four_obj = (Object *)&four;
   int32_t four_key = get_hash_key(four_obj);
   long four_val = 4;
 
   hashmap_put(&expected_map, &four_key, sizeof(int32_t), &four_val);
 
   hashmap_iterate_pairs(&expected_map, &iter_hash_literal_test, &hash->pairs);
-
-  free(one_obj);
-  free(two_obj);
-  free(three_obj);
-  free(four_obj);
 }
 
 void test_hash_index_expressions(void) {

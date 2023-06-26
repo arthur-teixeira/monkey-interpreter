@@ -83,9 +83,9 @@ int hash_inspect_iter(void *buf, hashmap_element_t *pair) {
 
   ResizableBuffer *char_buf = buf;
 
-  inspect_object(char_buf, &value->key);
+  inspect_object(char_buf, value->key);
   append_to_buf(char_buf, ": ");
-  inspect_object(char_buf, &value->value);
+  inspect_object(char_buf, value->value);
   append_to_buf(char_buf, ", ");
 
   return 0;
@@ -100,25 +100,25 @@ void inspect_hash_object(ResizableBuffer *buf, Hash *hash) {
 void inspect_object(ResizableBuffer *buf, Object *obj) {
   switch (obj->type) {
   case NUMBER_OBJ:
-    return inspect_number_object(buf, obj->object);
+    return inspect_number_object(buf, (Number *)obj);
   case BOOLEAN_OBJ:
-    return inspect_boolean_object(buf, obj->object);
+    return inspect_boolean_object(buf, (Boolean *)obj);
   case RETURN_OBJ:
-    return inspect_return_object(buf, obj->object);
+    return inspect_return_object(buf, (ReturnValue *)obj);
   case NULL_OBJ:
     return inspect_null_object(buf);
   case ERROR_OBJ:
-    return inspect_error_object(buf, obj->object);
+    return inspect_error_object(buf, (Error *)obj);
   case FUNCTION_OBJ:
-    return inspect_function_object(buf, obj->object);
+    return inspect_function_object(buf, (Function *)obj);
   case STRING_OBJ:
-    return inspect_string_object(buf, obj->object);
+    return inspect_string_object(buf, (String *)obj);
   case BUILTIN_OBJ:
     return inspect_builtin(buf);
   case ARRAY_OBJ:
-    return inspect_array_object(buf, obj->object);
+    return inspect_array_object(buf, (Array *)obj);
   case HASH_OBJ:
-    return inspect_hash_object(buf, obj->object);
+    return inspect_hash_object(buf, (Hash *)obj);
   default:
     return; // break and continue object are sentinel values
   }
@@ -136,17 +136,15 @@ int32_t get_int_hash_key(Number *integer) {
   return (long)integer->value << NUMBER_OBJ;
 }
 
-int32_t invalid_key() { return -1; }
-
 int32_t get_hash_key(Object *obj) {
   switch (obj->type) {
   case STRING_OBJ:
-    return get_string_hash_key(obj->object);
+    return get_string_hash_key((String *)obj);
   case BOOLEAN_OBJ:
-    return get_bool_hash_key(obj->object);
+    return get_bool_hash_key((Boolean *)obj);
   case NUMBER_OBJ:
-    return get_int_hash_key(obj->object);
+    return get_int_hash_key((Number *)obj);
   default:
-    return invalid_key();
+    return -1;
   }
 }
