@@ -150,6 +150,9 @@ Object *builtin_append(LinkedList *args, AppendType type) {
   }
 
   Object *old_arr_obj = args->tail->value;
+  size_t new_element_size = sizeof_object(args->tail->next->value);
+  Object *new_element = malloc(new_element_size);
+  memcpy(new_element, args->tail->next->value, new_element_size);
 
   err = unsupported_arg_error(old_arr_obj, ARRAY_OBJ, "push");
   if (err != NULL) {

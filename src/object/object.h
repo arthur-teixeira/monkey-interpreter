@@ -90,4 +90,5 @@ typedef struct {
   hashmap_t pairs;
 } Hash;
 
+size_t sizeof_object(Object *);
 #endif

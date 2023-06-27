@@ -148,3 +148,33 @@ int32_t get_hash_key(Object *obj) {
     return -1;
   }
 }
+
+size_t sizeof_object(Object *obj) {
+    switch (obj->type) {
+    case STRING_OBJ:
+        return sizeof(String);
+    case BOOLEAN_OBJ:
+        return sizeof(Boolean);
+    case NUMBER_OBJ:
+        return sizeof(Number);
+    case RETURN_OBJ:
+        return sizeof(ReturnValue);
+    case NULL_OBJ:
+        return sizeof(Null);
+    case ERROR_OBJ:
+        return sizeof(Error);
+    case FUNCTION_OBJ:
+        return sizeof(Function);
+    case BUILTIN_OBJ:
+        return sizeof(Builtin);
+    case ARRAY_OBJ:
+        return sizeof(Array);
+    case HASH_OBJ:
+        return sizeof(Hash);
+    case CONTINUE_OBJ:
+    case BREAK_OBJ:
+        return sizeof(Object);
+    }
+
+    assert(0 && "unknown object type");
+}
