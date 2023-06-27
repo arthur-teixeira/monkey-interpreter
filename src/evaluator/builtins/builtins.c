@@ -150,22 +150,22 @@ Object *builtin_append(LinkedList *args, AppendType type) {
   }
 
   Object *old_arr_obj = args->tail->value;
-  Object *new_element = malloc(sizeof(Object));
-  memcpy(new_element, args->tail->next->value, sizeof(Object));
 
   err = unsupported_arg_error(old_arr_obj, ARRAY_OBJ, "push");
   if (err != NULL) {
     return err;
   }
 
-  Array *old_arr = (Array*)old_arr_obj;
+  Array *old_arr = (Array*)args->tail->value;
 
   Array *new_arr = malloc(sizeof(Array));
-  assert(new_arr != NULL && "Error allocating memory for new array");
+  assert(new_arr != NULL);
+
+  new_arr->type = ARRAY_OBJ;
   array_init(&new_arr->elements, old_arr->elements.len + 1);
 
   if (type == APPEND_SHIFT) {
-    array_append(&new_arr->elements, new_element);
+    array_append(&new_arr->elements, args->tail->next->value);
   }
 
   for (size_t i = 0; i < old_arr->elements.len; i++) {
@@ -173,10 +173,9 @@ Object *builtin_append(LinkedList *args, AppendType type) {
   }
 
   if (type == APPEND_PUSH) {
-    array_append(&new_arr->elements, new_element);
+    array_append(&new_arr->elements, args->tail->next->value);
   }
 
-  new_arr->type = ARRAY_OBJ;
   return (Object *)new_arr;
 }
 
@@ -190,7 +189,6 @@ Object *shift(LinkedList *args) {
 
 Object *builtin_puts(LinkedList *args) {
   if (args->size == 0) {
-
     char err_msg[255];
     sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
             args->size);
@@ -200,7 +198,7 @@ Object *builtin_puts(LinkedList *args) {
 
   Node *cur_node = args->tail;
   while (cur_node != NULL) {
-    Object *value = cur_node->value;
+    Object *value = (Object *)cur_node->value;
     ResizableBuffer buf;
     init_resizable_buffer(&buf, 100);
 
