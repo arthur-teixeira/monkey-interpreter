@@ -685,30 +685,28 @@ Expression *parse_infix_expression(Parser *p, Expression *left) {
   return (Expression *)infix_expr;
 }
 
-LinkedList *parse_call_arguments(Parser *p) {
-  LinkedList *arguments = new_list();
+void parse_call_arguments(CallExpression *expr, Parser *p) {
+  array_init(&expr->arguments, 5);
+
 
   if (peek_token_is(p, RPAREN)) {
     parser_next_token(p);
-    return arguments;
+    return;
   }
 
   parser_next_token(p);
-  append(arguments, parse_expression(p, LOWEST));
+  array_append(&expr->arguments, parse_expression(p, LOWEST));
 
   while (peek_token_is(p, COMMA)) {
     parser_next_token(p);
     parser_next_token(p);
-    append(arguments, parse_expression(p, LOWEST));
+    array_append(&expr->arguments, parse_expression(p, LOWEST));
   }
 
   if (!expect_peek(p, RPAREN)) {
-    free_list(arguments); // TODO: Need to free each expression
-                          // based on its type
-    return NULL;
+    array_free(&expr->arguments);
+    expr->arguments.len = -1;
   }
-
-  return arguments;
 }
 
 Expression *parse_call_expression(Parser *p, Expression *function) {
@@ -719,14 +717,11 @@ Expression *parse_call_expression(Parser *p, Expression *function) {
 
   call->token = p->cur_token;
   call->function = function;
-  LinkedList *args = parse_call_arguments(p);
-
-  if (args == NULL) {
+  parse_call_arguments(call, p);
+  if (call->arguments.len == -1) {
     free(call);
     return NULL;
   }
-
-  call->arguments = args;
 
   return (Expression *)call;
 }

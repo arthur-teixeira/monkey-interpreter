@@ -408,40 +408,34 @@ Object *eval_function_literal(FunctionLiteral *lit, Environment *env) {
   return (Object *)fn;
 }
 
-LinkedList *eval_expressions(LinkedList *expressions, Environment *env) {
-  LinkedList *evaluated = new_list();
+DynamicArray eval_expressions(DynamicArray *expressions, Environment *env) {
+  DynamicArray evaluated;
+  array_init(&evaluated, expressions->len);
 
-  Node *cur_expression_node = expressions->tail;
-  while (cur_expression_node != NULL) {
-    Expression *cur_expression = cur_expression_node->value;
-    Object *evaluated_expression = eval_expression(cur_expression, env);
+  for (uint32_t i = 0; i < expressions->len; i++) {
+    Object *evaluated_expression = eval_expression(expressions->arr[i], env);
 
     if (is_error(evaluated_expression)) {
-      free_list(evaluated);
-
-      LinkedList *list_with_error = new_list();
-      append(list_with_error, evaluated);
-      return list_with_error;
+      array_free(&evaluated);
+      array_init(&evaluated, 1);
+      array_append(&evaluated, evaluated_expression);
+      return evaluated;
     }
 
-    append(evaluated, evaluated_expression);
-
-    cur_expression_node = cur_expression_node->next;
+    array_append(&evaluated, evaluated_expression);
   }
 
   return evaluated;
 }
 
-Environment *extend_function_env(Function *fn, LinkedList *args) {
-  assert(args->size == fn->parameters.len);
+Environment *extend_function_env(const Function *fn, const DynamicArray *args) {
+  assert(args->len == fn->parameters.len);
 
   Environment *env = new_enclosed_environment(fn->env);
-  Node *cur_argument_node = args->tail; // Object *
 
-  for (uint32_t i = 0; i < fn->parameters.len;
-       i++, cur_argument_node = cur_argument_node->next) {
+  for (uint32_t i = 0; i < fn->parameters.len; i++) {
     Identifier *parameter_ident = fn->parameters.arr[i];
-    env_set(env, parameter_ident->value, cur_argument_node->value);
+    env_set(env, parameter_ident->value, args->arr[i]);
   }
 
   return env;
@@ -456,7 +450,7 @@ Object *unwrap_return_value(Object *evaluated) {
   return evaluated;
 }
 
-Object *apply_function(Object *fn_obj, LinkedList *args) {
+Object *apply_function(Object *fn_obj, DynamicArray args) {
   if (fn_obj->type == BUILTIN_OBJ) {
     Builtin *builtin = (Builtin *)fn_obj;
     Object *result = builtin->fn(args);
@@ -471,14 +465,14 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   }
   Function *fn = (Function *)fn_obj;
 
-  if (fn->parameters.len != args->size) {
+  if (fn->parameters.len != args.len) {
     char err_msg[255];
     sprintf(err_msg, "Wrong parameter count: Expected %ld got %ld",
-            fn->parameters.len, args->size);
+            fn->parameters.len, args.len);
     return new_error(err_msg);
   }
 
-  Environment *extended_env = extend_function_env(fn, args);
+  Environment *extended_env = extend_function_env(fn, &args);
   Object *evaluated = eval_block_statement(&fn->body->statements, extended_env);
 
   return unwrap_return_value(evaluated);
@@ -490,13 +484,13 @@ Object *eval_function_call(CallExpression *call, Environment *env) {
     return fn;
   }
 
-  LinkedList *args = eval_expressions(call->arguments, env);
-  if (args->size == 1 && is_error(args->tail->value)) {
+  DynamicArray args = eval_expressions(&call->arguments, env);
+  if (args.len == 1 && is_error(args.arr[0])) {
     free_object(fn);
     Object *ret_value = malloc(sizeof(Object));
 
-    memcpy(args->tail->value, ret_value, sizeof(Object));
-    free_list(args);
+    memcpy(args.arr[0], ret_value, sizeof(Object));
+    array_free(&args);
     return ret_value;
   }
 

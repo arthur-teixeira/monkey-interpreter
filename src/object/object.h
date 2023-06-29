@@ -62,7 +62,7 @@ typedef struct {
   uint32_t len;
 } String;
 
-typedef Object *(*BuiltinFunction)(LinkedList *args); // Takes Object*[]
+typedef Object *(*BuiltinFunction)(DynamicArray args); // Takes Object*[]
 
 typedef struct {
   ObjectType type; // BUILTIN_OBJ

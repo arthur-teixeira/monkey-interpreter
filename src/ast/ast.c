@@ -82,13 +82,14 @@ void call_to_string(ResizableBuffer *buf, CallExpression *call) {
   value_to_string(buf, call->function);
   append_to_buf(buf, "(");
 
-  Node *cur_node = call->arguments->tail;
-  for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
-    value_to_string(buf, cur_node->value);
-    if (i < call->arguments->size - 1) {
+  for (uint32_t i = 0; i < call->arguments.len; i++) {
+    value_to_string(buf, call->arguments.arr[i]);
+
+    if (i < call->arguments.len - 1) {
       append_to_buf(buf, ", ");
     }
   }
+
   append_to_buf(buf, ")");
 }
 

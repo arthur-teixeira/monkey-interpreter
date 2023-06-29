@@ -46,4 +46,5 @@ void int_array_free(IntArray *arr) {
     arr->arr = NULL;
     arr->len = 0;
     arr->cap = 0;
+
 }

@@ -11,12 +11,12 @@ static Object obj_null = {
     .type = NULL_OBJ,
 };
 
-Object *check_args_len(LinkedList *args, size_t expected) {
-  if (args->size != expected) {
+Object *check_args_len(const DynamicArray *args, size_t expected) {
+  if (args->len != expected) {
 
     char err_msg[255];
-    sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
-            args->size);
+    sprintf(err_msg, "wrong number of arguments: Expected %ld got %ld",
+            expected, args->len);
 
     return new_error(err_msg);
   }
@@ -45,13 +45,13 @@ Object *make_result(double value) {
   return (Object *)result;
 }
 
-Object *len(LinkedList *args) {
-  Object *err = check_args_len(args, 1);
+Object *len(DynamicArray args) {
+  Object *err = check_args_len(&args, 1);
   if (err != NULL) {
     return err;
   }
 
-  Object *obj = args->tail->value;
+  Object *obj = args.arr[0];
 
   switch (obj->type) {
   case STRING_OBJ:
@@ -65,13 +65,13 @@ Object *len(LinkedList *args) {
   return unsupported_arg_error(obj, -1, "len");
 }
 
-Object *first(LinkedList *args) {
-  Object *err = check_args_len(args, 1);
+Object *first(DynamicArray args) {
+  Object *err = check_args_len(&args, 1);
   if (err != NULL) {
     return err;
   }
 
-  Object *arg = args->tail->value;
+  Object *arg = args.arr[0];
 
   err = unsupported_arg_error(arg, ARRAY_OBJ, "first");
   if (err != NULL) {
@@ -87,13 +87,13 @@ Object *first(LinkedList *args) {
   return arr->elements.arr[0];
 }
 
-Object *last(LinkedList *args) {
-  Object *err = check_args_len(args, 1);
+Object *last(DynamicArray args) {
+  Object *err = check_args_len(&args, 1);
   if (err != NULL) {
     return err;
   }
 
-  Object *arg = args->tail->value;
+  Object *arg = args.arr[0];
 
   err = unsupported_arg_error(arg, ARRAY_OBJ, "last");
   if (err != NULL) {
@@ -108,19 +108,18 @@ Object *last(LinkedList *args) {
   return arr->elements.arr[arr->elements.len - 1];
 }
 
-Object *rest(LinkedList *args) {
-  Object *err = check_args_len(args, 1);
+Object *rest(DynamicArray args) {
+  Object *err = check_args_len(&args, 1);
   if (err != NULL) {
     return err;
   }
 
-  Object *arg = args->tail->value;
+  Object *arg = args.arr[0];
 
   err = unsupported_arg_error(arg, ARRAY_OBJ, "rest");
   if (err != NULL) {
     return err;
   }
-
 
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL && "Error allocating memory for new array");
@@ -143,23 +142,23 @@ typedef enum {
   APPEND_SHIFT,
 } AppendType;
 
-Object *builtin_append(LinkedList *args, AppendType type) {
+Object *builtin_append(const DynamicArray *args, AppendType type) {
   Object *err = check_args_len(args, 2);
   if (err != NULL) {
     return err;
   }
 
-  Object *old_arr_obj = args->tail->value;
-  size_t new_element_size = sizeof_object(args->tail->next->value);
+  Object *old_arr_obj = args->arr[0];
+  size_t new_element_size = sizeof_object(args->arr[1]);
   Object *new_element = malloc(new_element_size);
-  memcpy(new_element, args->tail->next->value, new_element_size);
+  memcpy(new_element, args->arr[1], new_element_size);
 
   err = unsupported_arg_error(old_arr_obj, ARRAY_OBJ, "push");
   if (err != NULL) {
     return err;
   }
 
-  Array *old_arr = (Array*)args->tail->value;
+  Array *old_arr = (Array *)args->arr[0];
 
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL);
@@ -168,7 +167,7 @@ Object *builtin_append(LinkedList *args, AppendType type) {
   array_init(&new_arr->elements, old_arr->elements.len + 1);
 
   if (type == APPEND_SHIFT) {
-    array_append(&new_arr->elements, args->tail->next->value);
+    array_append(&new_arr->elements, args->arr[1]);
   }
 
   for (size_t i = 0; i < old_arr->elements.len; i++) {
@@ -176,45 +175,39 @@ Object *builtin_append(LinkedList *args, AppendType type) {
   }
 
   if (type == APPEND_PUSH) {
-    array_append(&new_arr->elements, args->tail->next->value);
+    array_append(&new_arr->elements, args->arr[1]);
   }
 
   return (Object *)new_arr;
 }
 
-Object *push(LinkedList *args) {
-  return builtin_append(args, APPEND_PUSH);
-}
+Object *push(DynamicArray args) { return builtin_append(&args, APPEND_PUSH); }
 
-Object *shift(LinkedList *args) {
-  return builtin_append(args, APPEND_SHIFT);
-}
+Object *shift(DynamicArray args) { return builtin_append(&args, APPEND_SHIFT); }
 
-Object *builtin_puts(LinkedList *args) {
-  if (args->size == 0) {
+Object *builtin_puts(DynamicArray args) {
+  if (args.len == 0) {
     char err_msg[255];
     sprintf(err_msg, "wrong number of arguments: Expected 1 got %ld",
-            args->size);
+            args.len);
 
     return new_error(err_msg);
   }
 
-  Node *cur_node = args->tail;
-  while (cur_node != NULL) {
-    Object *value = (Object *)cur_node->value;
+  for (uint32_t i = 0; i < args.len; i++) {
+    Object *value = args.arr[i];
     ResizableBuffer buf;
     init_resizable_buffer(&buf, 100);
 
     inspect_object(&buf, value);
     printf("%s\n", buf.buf);
 
-    cur_node = cur_node->next;
     free(buf.buf);
   }
 
   Object *result = malloc(sizeof(Object));
   result->type = NULL_OBJ;
-  
+
   return result;
 }
 

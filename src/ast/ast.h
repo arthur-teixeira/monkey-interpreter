@@ -127,7 +127,7 @@ typedef struct {
   ExprType type; // CALL_EXPR
   Token token;
   Expression *function;
-  LinkedList *arguments; // TODO: Expression*[];
+  DynamicArray arguments; // TODO: Expression*[];
 } CallExpression;
 
 void call_to_string(ResizableBuffer *, CallExpression *);

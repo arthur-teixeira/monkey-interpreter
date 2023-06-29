@@ -455,14 +455,10 @@ void test_call_expression_parsing(void) {
 
   test_identifier(expr->function, "add");
 
-  Node *cur_node = expr->arguments->tail;
-
-  TEST_ASSERT_EQUAL(3, expr->arguments->size);
-  test_integer_literal(cur_node->value, 1); // 1st argument
-  cur_node = cur_node->next;
-  test_infix_expression(cur_node->value, "*", 2, 3); // 2nd argument
-  cur_node = cur_node->next;
-  test_infix_expression(cur_node->value, "+", 4, 5); // 3rd argument
+  TEST_ASSERT_EQUAL(3, expr->arguments.len);
+  test_integer_literal(expr->arguments.arr[0], 1); // 1st argument
+  test_infix_expression(expr->arguments.arr[1], "*", 2, 3); // 2nd argument
+  test_infix_expression(expr->arguments.arr[2], "+", 4, 5); // 3rd argument
 }
 
 void test_string_literal_expression(void) {
