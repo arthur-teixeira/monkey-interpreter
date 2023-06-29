@@ -470,7 +470,6 @@ int iter_hash_literal_test(void *generated_map, hashmap_element_t *pair) {
   const int32_t *key = pair->key;
 
   HashPair *value = hashmap_get(map, key, sizeof(int32_t));
-  printf("expected value: %ld\n", *(long *)pair->data);
   TEST_ASSERT_NOT_NULL(value);
 
   test_number_object(value->value, *(long *)pair->data);

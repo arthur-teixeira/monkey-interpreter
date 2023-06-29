@@ -126,6 +126,7 @@ void test_file_lexing(void) {
   };
 
   test_tokens(lexer, tests, LEN(tests));
+  free_lexer(lexer);
 }
 
 void test_file_larger_than_buffer(void) {
@@ -142,6 +143,7 @@ void test_file_larger_than_buffer(void) {
   };
 
   test_tokens(lexer, tests, LEN(tests));
+  free_lexer(lexer);
 }
 
 int main() {
