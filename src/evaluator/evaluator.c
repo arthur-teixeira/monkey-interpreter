@@ -31,19 +31,16 @@ bool is_error(Object *obj) {
   return false;
 }
 
-Object *eval_block_statement(LinkedList *statements, Environment *env) {
+Object *eval_block_statement(DynamicArray *statements, Environment *env) {
   Object *result;
-
-  Node *cur_node = statements->tail;
-  while (cur_node != NULL) {
-    result = eval(cur_node->value, env);
+  for (uint32_t i = 0; i < statements->len; i++) {
+    result = eval(statements->arr[i], env);
 
     if (result != NULL &&
         (result->type == RETURN_OBJ || result->type == ERROR_OBJ ||
          result->type == CONTINUE_OBJ || result->type == BREAK_OBJ)) {
       return result;
     }
-    cur_node = cur_node->next;
   }
 
   return result;
@@ -371,9 +368,9 @@ Object *eval_if_expression(IfExpression *expr, Environment *env) {
   }
 
   if (is_truthy(condition)) {
-    return eval_block_statement(expr->consequence->statements, env);
+    return eval_block_statement(&expr->consequence->statements, env);
   } else if (expr->alternative != NULL) {
-    return eval_block_statement(expr->alternative->statements, env);
+    return eval_block_statement(&expr->alternative->statements, env);
   }
 
   return NULL;
@@ -482,7 +479,7 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   }
 
   Environment *extended_env = extend_function_env(fn, args);
-  Object *evaluated = eval_block_statement(fn->body->statements, extended_env);
+  Object *evaluated = eval_block_statement(&fn->body->statements, extended_env);
 
   return unwrap_return_value(evaluated);
 }
@@ -691,7 +688,7 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
   Object *result;
   while ((condition = eval_loop_condition(condition_expr, env)) ==
          (Object *)&obj_true) {
-    result = eval_block_statement(body->statements, env);
+    result = eval_block_statement(&body->statements, env);
     if (result == NULL) {
       if (update != NULL) {
         eval(update, env);

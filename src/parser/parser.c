@@ -364,14 +364,14 @@ BlockStatement *parse_block_statement(Parser *p) {
   assert(block != NULL);
 
   block->token = p->cur_token;
-  block->statements = new_list();
+  array_init(&block->statements, 10);
 
   parser_next_token(p);
 
   while (!cur_token_is(p, RBRACE) && !cur_token_is(p, END_OF_FILE)) {
     Statement *stmt = parse_statement(p);
     if (stmt != NULL) {
-      append(block->statements, stmt);
+      array_append(&block->statements, stmt);
     }
     parser_next_token(p);
   }
@@ -412,8 +412,7 @@ Expression *parse_if_expression(Parser *p){
   parser_next_token(p);
   if (!expect_peek(p, LBRACE)) {
     free(expr->condition);
-    free(expr->condition);
-    free_list(expr->consequence->statements);
+    array_free(&expr->consequence->statements);
     free(expr);
 
     return NULL;

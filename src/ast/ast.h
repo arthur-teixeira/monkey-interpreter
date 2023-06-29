@@ -90,7 +90,7 @@ void bool_to_string(ResizableBuffer *, BooleanLiteral *);
 
 typedef struct {
   Token token;
-  LinkedList *statements;
+  DynamicArray statements;
 } BlockStatement;
 
 void block_to_string(ResizableBuffer *, BlockStatement *);

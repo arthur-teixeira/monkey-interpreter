@@ -44,11 +44,8 @@ void ident_expr_to_string(ResizableBuffer *buf, Identifier *expr) {
 }
 
 void block_to_string(ResizableBuffer *buf, BlockStatement *block) {
-  Node *cur_node = block->statements->tail;
-
-  while (cur_node != NULL) {
-    stmt_to_string(buf, cur_node->value);
-    cur_node = cur_node->next;
+  for (uint32_t i = 0; i < block->statements.len; i++) {
+      stmt_to_string(buf, block->statements.arr[i]);
   }
 }
 

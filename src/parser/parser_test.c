@@ -368,7 +368,7 @@ void test_if_expression(void) {
   Program *program = parse_and_check_errors(input);
   IfExpression *expr = test_single_expression_in_program(program, IF_EXPR);
 
-  TEST_ASSERT_EQUAL(1, expr->consequence->statements->size);
+  TEST_ASSERT_EQUAL(1, expr->consequence->statements.len);
   TEST_ASSERT_NOT_NULL(expr->alternative);
 }
 
@@ -378,15 +378,15 @@ void test_nested_if_expression(void) {
   Program *program = parse_and_check_errors(input);
   IfExpression *parent = test_single_expression_in_program(program, IF_EXPR);
 
-  Statement *nested_stmt = parent->consequence->statements->tail->value;
+  Statement *nested_stmt = parent->consequence->statements.arr[0];
 
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, nested_stmt->type);
   TEST_ASSERT_EQUAL(IF_EXPR, nested_stmt->expression->type);
 
   IfExpression *nested_if = (IfExpression *)nested_stmt->expression;
 
-  TEST_ASSERT_EQUAL(2, parent->consequence->statements->size);
-  TEST_ASSERT_EQUAL(1, nested_if->consequence->statements->size);
+  TEST_ASSERT_EQUAL(2, parent->consequence->statements.len);
+  TEST_ASSERT_EQUAL(1, nested_if->consequence->statements.len);
 }
 
 void test_function_literal(void) {
@@ -553,7 +553,7 @@ void test_parsing_while_loops(void) {
   Program *p = parse_and_check_errors(input);
   WhileLoop *loop = test_single_expression_in_program(p, WHILE_EXPR);
 
-  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(1, loop->body->statements.len);
   TEST_ASSERT_EQUAL(INFIX_EXPR, loop->condition->type);
 }
 
@@ -565,7 +565,7 @@ void test_parsing_full_for_loop(void) {
   Program *p = parse_and_check_errors(input);
   ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
 
-  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(1, loop->body->statements.len);
 
   TEST_ASSERT_NOT_NULL(loop->initialization);
   TEST_ASSERT_EQUAL(LET_STATEMENT, loop->initialization->type);
@@ -582,7 +582,7 @@ void test_infinite_for_loop(void) {
 
   Program *p = parse_and_check_errors(input);
   ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
-  TEST_ASSERT_EQUAL(0, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(0, loop->body->statements.len);
 
   TEST_ASSERT_NULL(loop->initialization);
   TEST_ASSERT_NULL(loop->condition);
@@ -595,7 +595,7 @@ void test_incomplete_for_loop(void) {
   Program *p = parse_and_check_errors(input);
   ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
 
-  TEST_ASSERT_EQUAL(0, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(0, loop->body->statements.len);
 
   TEST_ASSERT_NOT_NULL(loop->initialization);
   TEST_ASSERT_NULL(loop->condition);
@@ -673,7 +673,7 @@ void test_parsing_loop_with_reassignment(void) {
   Program *p = parse_and_check_errors(input);
   ForLoop *loop = test_single_expression_in_program(p, FOR_EXPR);
 
-  TEST_ASSERT_EQUAL(1, loop->body->statements->size);
+  TEST_ASSERT_EQUAL(1, loop->body->statements.len);
 
   TEST_ASSERT_NOT_NULL(loop->initialization);
   TEST_ASSERT_EQUAL(LET_STATEMENT, loop->initialization->type);
