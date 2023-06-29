@@ -5,6 +5,7 @@
 
 typedef uint8_t OpCode_t;
 typedef IntArray Instruction; // IntArray<Opcode_t>
+typedef IntArray Instructions;
 
 typedef enum {
     OP_CONSTANT,
@@ -18,3 +19,5 @@ typedef struct {
 } Definition;
 
 Instruction make_instruction(OpCode_t, int *, size_t);
+
+char *instructions_to_string(Instructions);

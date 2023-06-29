@@ -42,3 +42,7 @@ Instruction make_instruction(OpCode_t op_code, int *operands,
 
   return instruction;
 }
+
+char *instructions_to_string(Instructions instructions) {
+
+}

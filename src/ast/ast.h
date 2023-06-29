@@ -1,3 +1,5 @@
+#ifndef AST_H
+#define AST_H
 #include "../dyn_array/dyn_array.h"
 #include "../hashmap/hashmap.h"
 #include "../lexer/lexer.h"
@@ -206,3 +208,5 @@ void program_string(ResizableBuffer *, Program *);
 
 void ident_expr_to_string(ResizableBuffer *buf, Identifier *expr);
 void block_to_string(ResizableBuffer *buf, BlockStatement *block);
+
+#endif // AST_H

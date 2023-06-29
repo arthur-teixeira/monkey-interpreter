@@ -43,6 +43,37 @@ void test_make(void) {
     int_array_free(&op_constant_instructions);
 }
 
+Instructions concat_instructions(size_t instruction_count, Instruction instructions[]) {
+    Instructions result;
+    int_array_init(&result, instruction_count);
+
+    for (size_t i = 0; i < instruction_count; i++) {
+        Instruction ins = instructions[i];
+        for (size_t j = 0; j < ins.len; j++) {
+            int_array_append(&result, ins.arr[j]);
+        }
+    }
+
+    return result;
+}
+
+void test_instructions_string(void) {
+    Instruction instructions[] = {
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_CONSTANT, (int[]){2}, 1),
+        make_instruction(OP_CONSTANT, (int[]){65535}, 1),
+    };
+
+    char *expected = ""
+        "0000 OP_CONSTANT 1\n"
+        "0003 OP_CONSTANT 2\n"
+        "0006 OP_CONSTANT 65535\n";
+
+    Instructions ins = concat_instructions(3, instructions);
+
+    TEST_ASSERT_EQUAL_STRING(expected, instructions_to_string(ins));
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_make);
