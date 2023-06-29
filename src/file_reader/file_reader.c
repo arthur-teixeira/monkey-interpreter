@@ -31,7 +31,7 @@ void eval_file(const char *filename) {
     Lexer *l = new_file_lexer(filename);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
-    if (p->errors->size > 0) {
+    if (p->errors.len > 0) {
       print_parser_errors(p);
       free_parser(p);
       free_program(program);

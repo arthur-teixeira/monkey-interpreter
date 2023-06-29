@@ -14,12 +14,8 @@
 #define ARRAY_LEN(arr, type) sizeof(arr) / sizeof(type)
 
 void print_parser_errors(Parser *p) {
-  Node *cur_error = p->errors->tail;
-  assert(cur_error != NULL);
-
-  while (cur_error != NULL) {
-    printf("%s\n", (char *)cur_error->value);
-    cur_error = cur_error->next;
+  for (uint32_t i = 0; i < p->errors.len; i++) {
+    printf("%s\n", (char *)p->errors.arr[i]);
   }
 }
 
@@ -73,7 +69,7 @@ void peek_error(Parser *p, TokenType t) {
   sprintf(err_msg, "Expected next token to be %s, got %s.\n", TOKEN_STRING[t],
           TOKEN_STRING[p->peek_token.Type]);
 
-  append(p->errors, err_msg);
+  array_append(&p->errors, err_msg);
 }
 
 bool expect_peek(Parser *p, TokenType t) {
@@ -144,7 +140,7 @@ Statement *parse_return_statement(Parser *p) {
 void no_prefix_parse_fn_error(Parser *p, TokenType type) {
   char *msg = malloc(255);
   sprintf(msg, "No prefix parse function for %s found", TOKEN_STRING[type]);
-  append(p->errors, msg);
+  array_append(&p->errors, msg);
 }
 
 Expression *parse_expression(Parser *p, OperatorPrecedenceOrder precedence) {
@@ -192,7 +188,7 @@ void illegal_statement_error(Parser *p, char *stmt_type) {
   char *err_msg = malloc(MAX_LEN);
   snprintf(err_msg, MAX_LEN, "Illegal %s statement", stmt_type);
 
-  append(p->errors, err_msg);
+  array_append(&p->errors, err_msg);
 }
 
 static bool INSIDE_LOOP = false;
@@ -774,7 +770,7 @@ Expression *parse_reassignment_expression(Parser *p, Expression *left) {
 Parser *new_parser(Lexer *l) {
   Parser *p = malloc(sizeof(Parser));
   p->l = l;
-  p->errors = new_list();
+  array_init(&p->errors, 1);
 
   for (uint32_t i = 0; i < TOKEN_COUNT; i++) {
     p->precedences[i] = LOWEST;
@@ -823,7 +819,7 @@ Parser *new_parser(Lexer *l) {
 
 void free_parser(Parser *p) {
   free_lexer(p->l);
-  free_list(p->errors);
+  array_free(&p->errors);
   free(p);
 }
 

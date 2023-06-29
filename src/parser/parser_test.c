@@ -9,19 +9,16 @@
 #include <string.h>
 
 void check_parser_errors(Parser *p) {
-  if (p->errors->size == 0) {
+  if (p->errors.len == 0) {
     return;
   }
 
-  printf("ERROR: parser has %zu errors\n", p->errors->size);
+  printf("ERROR: parser has %zu errors\n", p->errors.len);
 
-  Node *n = p->errors->tail;
-  while (n != NULL) {
-    char *value = n->value;
-    printf("Parser error: %s\n", value);
-
-    n = n->next;
+  for (uint32_t i = 0; i < p->errors.len; i++) {
+    printf("Parser error: %s\n", (char *)p->errors.arr[i]);
   }
+
   TEST_FAIL();
 }
 
@@ -419,10 +416,10 @@ void test_function_parameter_parsing(void) {
     TEST_ASSERT_EQUAL(i, fn->parameters.len);
 
     for (uint32_t j = 0; j < fn->parameters.len; j++) {
-        Identifier *ident = fn->parameters.arr[j];
-        TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j],
-                ident->token.literal);
-        TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
+      Identifier *ident = fn->parameters.arr[j];
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j],
+                               ident->token.literal);
+      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
     }
 
     free(p);

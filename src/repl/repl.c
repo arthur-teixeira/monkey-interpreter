@@ -63,7 +63,7 @@ void start_repl() {
     Lexer *l = new_lexer(input_buf->buffer);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
-    if (p->errors->size > 0) {
+    if (p->errors.len > 0) {
       print_parser_errors(p);
       free(buf.buf);
       free_parser(p);
