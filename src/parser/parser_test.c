@@ -40,9 +40,9 @@ Expression *test_statement(Statement *stmt, ExprType type) {
 }
 
 void *test_single_expression_in_program(Program *p, ExprType type) {
-  TEST_ASSERT_EQUAL(1, p->statements->size);
+  TEST_ASSERT_EQUAL(1, p->statements.len);
 
-  Statement *stmt = p->statements->tail->value;
+  Statement *stmt = p->statements.arr[0];
   return test_statement(stmt, type);
 }
 
@@ -88,11 +88,10 @@ void test_let_statements() {
 
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(TestCase); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
-    Node *stmt_node = program->statements->tail;
     TEST_ASSERT_NOT_NULL(program);
-    TEST_ASSERT_EQUAL(1, program->statements->size);
+    TEST_ASSERT_EQUAL(1, program->statements.len);
 
-    Statement *stmt = stmt_node->value;
+    Statement *stmt =program->statements.arr[0]; 
 
     TEST_ASSERT_EQUAL_STRING("let", stmt->token.literal);
     TEST_ASSERT_EQUAL(LET_STATEMENT, stmt->type);
@@ -123,10 +122,9 @@ void test_return_statements(void) {
   for (uint32_t i = 0; i < sizeof(tests) / sizeof(struct testCase); i++) {
     Program *program = parse_and_check_errors(tests[i].input);
     TEST_ASSERT_NOT_NULL(program);
-    TEST_ASSERT_EQUAL(1, program->statements->size);
+    TEST_ASSERT_EQUAL(1, program->statements.len);
 
-    Node *stmt_node = program->statements->tail;
-    Statement *stmt = stmt_node->value;
+    Statement *stmt = program->statements.arr[0];
     TEST_ASSERT_EQUAL_STRING("return", stmt->token.literal);
     test_expr_value(stmt->expression, tests[i].expected_value);
     free(program);
@@ -456,7 +454,7 @@ void test_call_expression_parsing(void) {
   test_identifier(expr->function, "add");
 
   TEST_ASSERT_EQUAL(3, expr->arguments.len);
-  test_integer_literal(expr->arguments.arr[0], 1); // 1st argument
+  test_integer_literal(expr->arguments.arr[0], 1);          // 1st argument
   test_infix_expression(expr->arguments.arr[1], "*", 2, 3); // 2nd argument
   test_infix_expression(expr->arguments.arr[2], "+", 4, 5); // 3rd argument
 }
@@ -599,9 +597,9 @@ void test_parsing_reassignment(void) {
   char *input = "let b = 0; b = 1";
 
   Program *p = parse_and_check_errors(input);
-  TEST_ASSERT_EQUAL(2, p->statements->size);
+  TEST_ASSERT_EQUAL(2, p->statements.len);
 
-  Statement *stmt = p->statements->tail->next->value;
+  Statement *stmt = p->statements.arr[1];
   TEST_ASSERT_EQUAL(EXPR_STATEMENT, stmt->type);
   TEST_ASSERT_EQUAL(REASSIGN_EXPR, stmt->expression->type);
 
@@ -635,7 +633,7 @@ void test_parsing_hex_literal(void) {
 void test_parsing_and(void) {
   char *input = "true && true";
   Program *program = parse_and_check_errors(input);
-  Statement *stmt = program->statements->tail->value;
+  Statement *stmt = program->statements.arr[0];
 
   TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
   InfixExpression *expression = (InfixExpression *)stmt->expression;
@@ -648,7 +646,7 @@ void test_parsing_and(void) {
 void test_parsing_or(void) {
   char *input = "true || true";
   Program *program = parse_and_check_errors(input);
-  Statement *stmt = program->statements->tail->value;
+  Statement *stmt = program->statements.arr[0];
 
   TEST_ASSERT_EQUAL(INFIX_EXPR, stmt->expression->type);
   InfixExpression *expression = (InfixExpression *)stmt->expression;

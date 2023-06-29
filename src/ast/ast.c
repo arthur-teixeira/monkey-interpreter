@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../dyn_array/dyn_array.h"
 
 Identifier *new_identifier(Token token, char *value) {
   Identifier *ident = malloc(sizeof(Identifier));
@@ -29,13 +30,14 @@ void free_identifier(Identifier *ident) {
 
 Program *new_program(void) {
   Program *program = malloc(sizeof(Program));
-  program->statements = new_list();
-
+  assert(program != NULL);
+  array_init(&program->statements, 1);
+  
   return program;
 }
 
 void free_program(Program *p) {
-  free_list(p->statements);
+  array_free(&p->statements);
   free(p);
 }
 
@@ -290,11 +292,8 @@ void stmt_to_string(ResizableBuffer *buf, Statement *stmt) {
 }
 
 void program_string(ResizableBuffer *buf, Program *p) {
-  Node *cur = p->statements->tail;
-  while (cur != NULL) {
-    Statement *cur_stmt = cur->value;
-    stmt_to_string(buf, cur_stmt);
-    cur = cur->next;
+  for (uint32_t i = 0; i < p->statements.len; i++ ) {
+    stmt_to_string(buf, p->statements.arr[i]);
   }
   append_to_buf(buf, ";\n");
 }

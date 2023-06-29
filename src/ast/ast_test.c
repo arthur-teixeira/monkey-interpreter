@@ -7,7 +7,9 @@
 #include "ast.h"
 
 void test_ast_as_string(void) {
-  LinkedList *statements = new_list();
+  DynamicArray statements;
+  array_init(&statements, 2);
+
   Identifier myVarIdent = {
     .type = IDENT_EXPR,
     .token = {IDENT, "myVar"},
@@ -27,7 +29,7 @@ void test_ast_as_string(void) {
     &myVarIdent,
     (Expression *)&anotherVarIdent,
   };
-  append(statements, &myVar);
+  array_append(&statements, &myVar);
 
   Program p = {
     statements

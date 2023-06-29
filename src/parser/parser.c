@@ -824,7 +824,7 @@ Program *parse_program(Parser *p) {
   for (uint32_t i = 0; !cur_token_is(p, END_OF_FILE); i++) {
     Statement *stmt = parse_statement(p);
     if (stmt != NULL) {
-      append(program->statements, stmt);
+      array_append(&program->statements, stmt);
     }
     parser_next_token(p);
   }

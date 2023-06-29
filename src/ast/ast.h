@@ -197,7 +197,7 @@ typedef struct {
 void for_to_string(ResizableBuffer *, ForLoop *);
 
 typedef struct {
-  LinkedList *statements; // Statement*[];
+  DynamicArray statements; // Statement*[];
 } Program;
 
 Program *new_program(void);

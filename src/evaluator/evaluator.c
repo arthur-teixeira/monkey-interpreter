@@ -49,22 +49,19 @@ Object *eval_block_statement(DynamicArray *statements, Environment *env) {
 Object *eval_program(Program *program, Environment *env) {
   Object *result;
 
-  Node *cur_node = program->statements->tail;
-  while (cur_node != NULL) {
-    result = eval(cur_node->value, env);
+  for (uint32_t i = 0; i < program->statements.len; i ++) {
+      result = eval(program->statements.arr[i], env);
 
-    if (result != NULL && result->type == RETURN_OBJ) {
-      ReturnValue *ret = (ReturnValue *)result;
-      Object *ret_value = ret->value;
-      free_object(result);
-      return ret_value;
-    }
+      if (result != NULL && result->type == RETURN_OBJ) {
+          ReturnValue *ret = (ReturnValue *)result;
+          Object *ret_value = ret->value;
+          free_object(result);
+          return ret_value;
+      }
 
-    if (result != NULL && result->type == ERROR_OBJ) {
-      return result;
-    }
-
-    cur_node = cur_node->next;
+      if (result != NULL && result->type == ERROR_OBJ) {
+          return result;
+      }
   }
 
   return result;
