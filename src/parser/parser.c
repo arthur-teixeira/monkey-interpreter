@@ -424,8 +424,9 @@ Expression *parse_if_expression(Parser *p){
   return (Expression *)expr;
 } 
 
-LinkedList *parse_function_parameters(Parser *p) {
-  LinkedList *parameters = new_list();
+DynamicArray parse_function_parameters(Parser *p) {
+  DynamicArray parameters;
+  array_init(&parameters, 10);
 
   if (peek_token_is(p, RPAREN)) {
     parser_next_token(p);
@@ -435,18 +436,18 @@ LinkedList *parse_function_parameters(Parser *p) {
   parser_next_token(p);
 
   Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
-  append(parameters, ident);
+  array_append(&parameters, ident);
 
   while (peek_token_is(p, COMMA)) {
     parser_next_token(p);
     parser_next_token(p);
     Identifier *ident = new_identifier(p->cur_token, p->cur_token.literal);
-    append(parameters, ident);
+    array_append(&parameters, ident);
   }
 
   if (!expect_peek(p, RPAREN)) {
-    free_list(parameters);
-    return NULL;
+    array_free(&parameters);
+    parameters.len = -1;
   }
 
   return parameters;
@@ -463,16 +464,14 @@ Expression *parse_function_literal(Parser *p) {
   fn->token = p->cur_token;
   fn->type = FN_EXPR;
 
-  LinkedList *parameters = parse_function_parameters(p);
-  if (!parameters) {
+  fn->parameters = parse_function_parameters(p);
+  if (fn->parameters.len < 0) {
     free(fn);
     return NULL;
   }
 
-  fn->parameters = parameters;
-
   if (!expect_peek(p, LBRACE)) {
-    free_list(fn->parameters);
+    array_free(&fn->parameters);
     free(fn);
 
     return NULL;

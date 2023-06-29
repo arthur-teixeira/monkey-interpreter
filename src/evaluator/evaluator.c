@@ -94,15 +94,15 @@ static Boolean obj_false = {
 };
 
 static Null obj_null = {
-  .type = NULL_OBJ,
+    .type = NULL_OBJ,
 };
 
 Object *native_bool_to_boolean_object(bool condition) {
   if (condition) {
-    return (Object*)&obj_true;
+    return (Object *)&obj_true;
   }
 
-  return (Object*)&obj_false;
+  return (Object *)&obj_false;
 }
 
 Object *new_boolean(BooleanLiteral *bol) {
@@ -164,7 +164,7 @@ Object *eval_minus_operator_expression(Object *right) {
 Object *eval_integer_boolean_operation(Object *left_obj, char *operator,
                                        Object * right_obj) {
   Number *left = (Number *)left_obj;
-  Number *right = (Number*)right_obj;
+  Number *right = (Number *)right_obj;
 
   if (strcmp(operator, ">") == 0) {
     return native_bool_to_boolean_object(left->value > right->value);
@@ -192,7 +192,7 @@ Object *eval_integer_infix_expression(Object *left_obj, char *operator,
 
   evaluated->type = NUMBER_OBJ;
   Number *left = (Number *)left_obj;
-  Number *right = (Number*)right_obj;
+  Number *right = (Number *)right_obj;
 
   if (strcmp(operator, "+") == 0) {
     evaluated->value = left->value + right->value;
@@ -436,19 +436,15 @@ LinkedList *eval_expressions(LinkedList *expressions, Environment *env) {
 }
 
 Environment *extend_function_env(Function *fn, LinkedList *args) {
-  assert(args->size == fn->parameters->size);
+  assert(args->size == fn->parameters.len);
 
   Environment *env = new_enclosed_environment(fn->env);
-  Node *cur_argument_node = args->tail;            // Object *
-  Node *cur_parameter_node = fn->parameters->tail; // Identifier *
+  Node *cur_argument_node = args->tail; // Object *
 
-  while (cur_parameter_node != NULL && cur_parameter_node != NULL) {
-    Identifier *parameter_ident = cur_parameter_node->value;
-
+  for (uint32_t i = 0; i < fn->parameters.len;
+       i++, cur_argument_node = cur_argument_node->next) {
+    Identifier *parameter_ident = fn->parameters.arr[i];
     env_set(env, parameter_ident->value, cur_argument_node->value);
-
-    cur_argument_node = cur_argument_node->next;
-    cur_parameter_node = cur_parameter_node->next;
   }
 
   return env;
@@ -478,10 +474,10 @@ Object *apply_function(Object *fn_obj, LinkedList *args) {
   }
   Function *fn = (Function *)fn_obj;
 
-  if (fn->parameters->size != args->size) {
+  if (fn->parameters.len != args->size) {
     char err_msg[255];
     sprintf(err_msg, "Wrong parameter count: Expected %ld got %ld",
-            fn->parameters->size, args->size);
+            fn->parameters.len, args->size);
     return new_error(err_msg);
   }
 
@@ -547,7 +543,7 @@ Object *eval_array_indexing(Object *left, IndexExpression *idx,
   Number *index = (Number *)evaluated_index;
 
   if (index->value > evaluated_array->elements.len - 1 || index->value < 0) {
-    return (Object*)&obj_null;
+    return (Object *)&obj_null;
   }
 
   return evaluated_array->elements.arr[(long)index->value];
@@ -558,7 +554,7 @@ Object *eval_hash_indexing(Object *left, IndexExpression *idx,
   Object *evaluated_index = eval_expression(idx->index, env);
 
   assert(left->type == HASH_OBJ);
-  Hash *hash_object = (Hash*)left;
+  Hash *hash_object = (Hash *)left;
 
   int32_t key = get_hash_key(evaluated_index);
   if (key == -1) {
@@ -693,7 +689,8 @@ Object *eval_loop(Expression *condition_expr, BlockStatement *body,
   }
 
   Object *result;
-  while ((condition = eval_loop_condition(condition_expr, env)) == (Object*)&obj_true) {
+  while ((condition = eval_loop_condition(condition_expr, env)) ==
+         (Object *)&obj_true) {
     result = eval_block_statement(body->statements, env);
     if (result == NULL) {
       if (update != NULL) {

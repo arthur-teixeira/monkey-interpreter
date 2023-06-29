@@ -51,7 +51,7 @@ typedef struct {
 
 typedef struct {
   ObjectType type; // FUNCTION_OBJ
-  LinkedList *parameters;
+  DynamicArray parameters;
   BlockStatement *body;
   Environment *env;
 } Function;

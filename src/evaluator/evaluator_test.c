@@ -262,9 +262,9 @@ void test_function_object(void) {
 
   Function *fn = (Function *)evaluated;
 
-  TEST_ASSERT_EQUAL(1, fn->parameters->size);
+  TEST_ASSERT_EQUAL(1, fn->parameters.len);
 
-  Identifier *param = fn->parameters->tail->value;
+  Identifier *param = fn->parameters.arr[0];
   ResizableBuffer buf;
   init_resizable_buffer(&buf, 1000);
 

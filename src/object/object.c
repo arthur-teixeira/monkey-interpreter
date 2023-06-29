@@ -40,18 +40,12 @@ void inspect_error_object(ResizableBuffer *buf, Error *obj) {
 void inspect_function_object(ResizableBuffer *buf, Function *obj) {
   append_to_buf(buf, "fn (");
 
-  Node *cur_node = obj->parameters->tail;
-  int i = 0;
-  while (cur_node != NULL) {
-    Identifier *ident = cur_node->value;
-
+  for (uint32_t i = 0; i < obj->parameters.len; i++) {
+    Identifier *ident = obj->parameters.arr[i];
     append_to_buf(buf, ident->value);
-
-    if (++i < obj->parameters->size) {
+    if (++i < obj->parameters.len - 1) {
       append_to_buf(buf, ", ");
     }
-
-    cur_node = cur_node->next;
   }
 
   append_to_buf(buf, ")");
@@ -150,31 +144,31 @@ int32_t get_hash_key(Object *obj) {
 }
 
 size_t sizeof_object(Object *obj) {
-    switch (obj->type) {
-    case STRING_OBJ:
-        return sizeof(String);
-    case BOOLEAN_OBJ:
-        return sizeof(Boolean);
-    case NUMBER_OBJ:
-        return sizeof(Number);
-    case RETURN_OBJ:
-        return sizeof(ReturnValue);
-    case NULL_OBJ:
-        return sizeof(Null);
-    case ERROR_OBJ:
-        return sizeof(Error);
-    case FUNCTION_OBJ:
-        return sizeof(Function);
-    case BUILTIN_OBJ:
-        return sizeof(Builtin);
-    case ARRAY_OBJ:
-        return sizeof(Array);
-    case HASH_OBJ:
-        return sizeof(Hash);
-    case CONTINUE_OBJ:
-    case BREAK_OBJ:
-        return sizeof(Object);
-    }
+  switch (obj->type) {
+  case STRING_OBJ:
+    return sizeof(String);
+  case BOOLEAN_OBJ:
+    return sizeof(Boolean);
+  case NUMBER_OBJ:
+    return sizeof(Number);
+  case RETURN_OBJ:
+    return sizeof(ReturnValue);
+  case NULL_OBJ:
+    return sizeof(Null);
+  case ERROR_OBJ:
+    return sizeof(Error);
+  case FUNCTION_OBJ:
+    return sizeof(Function);
+  case BUILTIN_OBJ:
+    return sizeof(Builtin);
+  case ARRAY_OBJ:
+    return sizeof(Array);
+  case HASH_OBJ:
+    return sizeof(Hash);
+  case CONTINUE_OBJ:
+  case BREAK_OBJ:
+    return sizeof(Object);
+  }
 
-    assert(0 && "unknown object type");
+  assert(0 && "unknown object type");
 }

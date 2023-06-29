@@ -395,7 +395,7 @@ void test_function_literal(void) {
   Program *program = parse_and_check_errors(input);
   FunctionLiteral *fn = test_single_expression_in_program(program, FN_EXPR);
 
-  TEST_ASSERT_EQUAL(2, fn->parameters->size);
+  TEST_ASSERT_EQUAL(2, fn->parameters.len);
   TEST_ASSERT_NOT_NULL(fn->body);
 }
 
@@ -416,15 +416,13 @@ void test_function_parameter_parsing(void) {
     Program *p = parse_and_check_errors(tests[i].input);
     FunctionLiteral *fn = test_single_expression_in_program(p, FN_EXPR);
 
-    TEST_ASSERT_EQUAL(i, fn->parameters->size);
+    TEST_ASSERT_EQUAL(i, fn->parameters.len);
 
-    Node *cur_node = fn->parameters->tail;
-    for (uint32_t j = 0; j < i && cur_node != NULL;
-         j++, cur_node = cur_node->next) {
-      Identifier *ident = cur_node->value;
-      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j],
-                               ident->token.literal);
-      TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
+    for (uint32_t j = 0; j < fn->parameters.len; j++) {
+        Identifier *ident = fn->parameters.arr[j];
+        TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j],
+                ident->token.literal);
+        TEST_ASSERT_EQUAL_STRING(tests[i].expected_params[j], ident->value);
     }
 
     free(p);

@@ -108,7 +108,7 @@ void if_to_string(ResizableBuffer *, IfExpression *);
 typedef struct {
   ExprType type; // FN_EXPR
   Token token;
-  LinkedList *parameters; // Identifier*[];
+  DynamicArray parameters; // Identifier*[];
   BlockStatement *body;
 } FunctionLiteral;
 

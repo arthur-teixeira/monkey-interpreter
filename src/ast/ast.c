@@ -65,18 +65,18 @@ void if_to_string(ResizableBuffer *buf, IfExpression *expr) {
 }
 
 void fn_to_string(ResizableBuffer *buf, FunctionLiteral *fn) {
-append_to_buf(buf, fn->token.literal);
+  append_to_buf(buf, fn->token.literal);
   append_to_buf(buf, "(");
 
-  Node *cur_node = fn->parameters->tail;
-  for (uint32_t i = 0; cur_node != NULL; i++, cur_node = cur_node->next) {
-    Identifier *ident = cur_node->value;
+  uint32_t i;
+  for (i = 0; i < fn->parameters.len - 1; i++) {
+    Identifier *ident = fn->parameters.arr[i];
     append_to_buf(buf, ident->value);
-
-    if (i < fn->parameters->size - 1) {
-      append_to_buf(buf, ", ");
-    }
+    append_to_buf(buf, ", ");
   }
+
+  Identifier *ident = fn->parameters.arr[++i];
+  append_to_buf(buf, ident->value);
 
   append_to_buf(buf, ")");
 }
@@ -105,7 +105,7 @@ void array_to_string(ResizableBuffer *buf, ArrayLiteral *array_literal) {
   for (size_t i = 0; i < array_literal->elements->len; i++) {
     value_to_string(buf, array_literal->elements->arr[i]);
 
-    if (i < array_literal->elements->len -1) {
+    if (i < array_literal->elements->len - 1) {
       append_to_buf(buf, ", ");
     }
   }
@@ -127,11 +127,11 @@ int hash_literal_iterator(void *buf, hashmap_element_t *pair) {
 
   append_to_buf(buf, ":");
 
-  Expression* value = pair->data;
+  Expression *value = pair->data;
   value_to_string(buf, value);
 
   append_to_buf(buf, ", ");
-  
+
   return 1;
 }
 
@@ -274,9 +274,7 @@ void continue_to_string(ResizableBuffer *buf) {
   append_to_buf(buf, "continue;");
 }
 
-void break_to_string(ResizableBuffer *buf) {
-  append_to_buf(buf, "break;");
-}
+void break_to_string(ResizableBuffer *buf) { append_to_buf(buf, "break;"); }
 
 void stmt_to_string(ResizableBuffer *buf, Statement *stmt) {
   switch (stmt->type) {
