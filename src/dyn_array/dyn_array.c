@@ -4,7 +4,7 @@
 void array_append(DynamicArray *arr, void *value) {
   if (arr->cap == arr->len) {
     arr->cap *= 2;
-    arr->arr = realloc(arr->arr, arr->cap);
+    arr->arr = realloc(arr->arr, arr->cap * sizeof(void*));
   }
 
   arr->arr[arr->len++] = value;
@@ -29,7 +29,7 @@ void array_free(DynamicArray *arr) {
 void int_array_append(IntArray *arr, int value) {
     if (arr->cap == arr->len) {
         arr->cap *= 2;
-        arr->arr = realloc(arr->arr, arr->cap);
+        arr->arr = realloc(arr->arr, arr->cap * sizeof(int));
     }
     
     arr->arr[arr->len++] = value;
