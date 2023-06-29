@@ -1,7 +1,6 @@
 #include "../dyn_array/dyn_array.h"
 #include "../hashmap/hashmap.h"
 #include "../lexer/lexer.h"
-#include "../linked_list/linked_list.h"
 #include "../str_utils/str_utils.h"
 #include <stdbool.h>
 #include <stddef.h>
