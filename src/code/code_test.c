@@ -2,6 +2,9 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "../dyn_array/dyn_array.h"
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -71,11 +74,48 @@ void test_instructions_string(void) {
 
     Instructions ins = concat_instructions(3, instructions);
 
-    TEST_ASSERT_EQUAL_STRING(expected, instructions_to_string(ins));
+    ResizableBuffer buf;
+    init_resizable_buffer(&buf, strlen(expected));
+
+    instructions_to_string(&buf, &ins);
+
+    TEST_ASSERT_EQUAL_STRING(expected, buf.buf);
+    free(buf.buf);
+}
+
+void test_read_operands(void) {
+    struct testCase {
+        OpCode op;
+        int operands[2];
+        int bytes_read;
+    };
+    
+    struct testCase tests[] = {
+        {OP_CONSTANT, {65535}, 2},
+    };
+
+    for (size_t i = 0; i < 1; i++) {
+        struct testCase test = tests[i];
+        Instruction ins = make_instruction(test.op, test.operands, 1);
+
+        Definition *def = lookup(test.op);
+        TEST_ASSERT_NOT_NULL(def);
+
+        size_t bytes_read;
+        IntArray operands = read_operands(def, &ins, 1, &bytes_read);
+
+        TEST_ASSERT_EQUAL(test.bytes_read, bytes_read);
+
+        for (size_t j = 0; j < def->operand_count; j++) {
+            TEST_ASSERT_EQUAL(test.operands[j], operands.arr[j]);
+        }
+    }
 }
 
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_make);
+    RUN_TEST(test_instructions_string);
+    RUN_TEST(test_read_operands);
     return UNITY_END();
 }

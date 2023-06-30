@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "../dyn_array/dyn_array.h"
+#include "../str_utils/str_utils.h"
 
 #define OPERAND_WIDTHS 4
 
@@ -20,4 +21,8 @@ typedef struct {
 
 Instruction make_instruction(OpCode_t, int *, size_t);
 
-char *instructions_to_string(Instructions);
+void instructions_to_string(ResizableBuffer *, const Instructions *);
+
+Definition *lookup(OpCode_t);
+
+IntArray read_operands(Definition *, const Instructions *instructions, size_t, size_t *);
