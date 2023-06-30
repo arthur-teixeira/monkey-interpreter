@@ -15,14 +15,14 @@ static Definition definitions[OP_COUNT] = {
     },
 };
 
-Definition *lookup(OpCode_t opcode) {
+Definition *lookup(OpCode opcode) {
   if (opcode > OP_COUNT) {
     return NULL;
   }
   return &definitions[opcode];
 }
 
-Instruction make_instruction(OpCode_t op_code, int *operands,
+Instruction make_instruction(OpCode op_code, int *operands,
                              size_t operand_count) {
   Definition *def = lookup(op_code);
   assert(def != NULL);

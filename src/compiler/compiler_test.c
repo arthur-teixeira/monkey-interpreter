@@ -44,6 +44,8 @@ void test_instructions(size_t instructions_count, Instruction expected[],
   for (uint32_t i = 0; i < instructions_count; i++) {
     TEST_ASSERT_EQUAL(concatted.arr[i], actual.arr[i]);
   }
+
+  int_array_free(&concatted);
 }
 
 void test_integer_object(int expected, Object *actual) {
@@ -66,7 +68,7 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 
     Program *program = parse(test.input);
     Compiler *compiler = new_compiler();
-    int8_t result = compile(compiler, program);
+    int8_t result = compile_program(compiler, program);
     if (result < 0) {
       TEST_FAIL_MESSAGE("compiler error");
     }
@@ -78,6 +80,9 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 
     test_constants(test.expected_constants_len, test.expected_constants,
                    code.constants);
+
+    free_program(program);
+    free_compiler(compiler);
   }
 }
 
@@ -104,6 +109,9 @@ void test_integer_arithmetic(void) {
   };
 
   run_compiler_tests(tests, 1);
+
+  int_array_free(&first_instruction);
+  int_array_free(&second_instruction);
 }
 
 int main(void) {

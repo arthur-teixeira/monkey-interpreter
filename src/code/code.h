@@ -4,7 +4,6 @@
 
 #define OPERAND_WIDTHS 4
 
-typedef uint8_t OpCode_t;
 typedef IntArray Instruction; // IntArray<Opcode_t>
 typedef IntArray Instructions;
 
@@ -19,10 +18,10 @@ typedef struct {
     int operand_widths[OPERAND_WIDTHS];
 } Definition;
 
-Instruction make_instruction(OpCode_t, int *, size_t);
+Instruction make_instruction(OpCode, int *, size_t);
 
 void instructions_to_string(ResizableBuffer *, const Instructions *);
 
-Definition *lookup(OpCode_t);
+Definition *lookup(OpCode);
 
 IntArray read_operands(Definition *, const Instructions *instructions, size_t, size_t *);

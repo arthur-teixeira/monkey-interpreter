@@ -8,7 +8,9 @@ typedef struct {
 
 Compiler *new_compiler();
 
-int8_t compile(Compiler *, Program *);
+int8_t compile_program(Compiler *, Program *);
+int8_t compile_statement(Compiler *, Statement *);
+int8_t compile_expression(Compiler *, Expression *);
 
 void free_compiler(Compiler *);
 
