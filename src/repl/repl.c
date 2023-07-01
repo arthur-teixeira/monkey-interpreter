@@ -81,17 +81,19 @@ void start_repl(ReplMode mode) {
       break;
     case REPL_COMPILE: {
       Compiler *compiler = new_compiler();
-      int8_t result = compile_program(compiler, program);
-      if (result < 0) {
-        printf("Compilation failed\n");
+      CompilerResult compiler_result = compile_program(compiler, program);
+      if (compiler_result != COMPILER_OK) {
+        char err[100];
+        compiler_error(compiler_result, err, 100);
+        printf("Compilation failed: %s\n", err);
         continue;
       }
 
       VM *vm = new_vm(bytecode(compiler));
-      VMError vm_result = run_vm(vm);
+      VMResult vm_result = run_vm(vm);
       if (vm_result != VM_OK) {
         char err[100];
-        vm_error(result, err, 100);
+        vm_error(vm_result, err, 100);
         printf("VM failed: %s\n", err);
         continue;
       }

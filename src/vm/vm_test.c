@@ -42,7 +42,7 @@ void run_vm_tests(vmTestCase tests[], size_t tests_count) {
         }
 
         VM *vm = new_vm(bytecode(compiler));
-        VMError vm_result = run_vm(vm);
+        VMResult vm_result = run_vm(vm);
         if (vm_result != VM_OK) {
             TEST_FAIL_MESSAGE("Compiler error");
         }

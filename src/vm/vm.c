@@ -30,7 +30,7 @@ Object *stack_top(VM *vm) {
   return vm->stack[vm->sp - 1];
 }
 
-VMError stack_push(VM *vm, Object *value) {
+VMResult stack_push(VM *vm, Object *value) {
   if (vm->sp >= STACK_SIZE) {
     return VM_STACK_OVERFLOW;
   }
@@ -39,7 +39,7 @@ VMError stack_push(VM *vm, Object *value) {
   return VM_OK;
 }
 
-VMError stack_push_constant(VM *vm, uint16_t constant_index) {
+VMResult stack_push_constant(VM *vm, uint16_t constant_index) {
   return stack_push(vm, vm->constants.arr[constant_index]);
 }
 
@@ -47,7 +47,7 @@ Object *stack_pop(VM *vm) {
     return vm->stack[--vm->sp];
 }
 
-VMError run_vm(VM *vm) {
+VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
     OpCode op = vm->instructions.arr[ip];
 
@@ -56,7 +56,7 @@ VMError run_vm(VM *vm) {
       uint16_t constant_index =
           big_endian_read_uint16(&vm->instructions, ip + 1);
 
-      VMError result = stack_push_constant(vm, constant_index);
+      VMResult result = stack_push_constant(vm, constant_index);
       if (result != VM_OK) {
         return result;
       }
@@ -81,7 +81,7 @@ VMError run_vm(VM *vm) {
   return VM_OK;
 }
 
-void vm_error(VMError error, char *buf, size_t bufsize) {
+void vm_error(VMResult error, char *buf, size_t bufsize) {
   switch (error) {
   case VM_OK:
     return;

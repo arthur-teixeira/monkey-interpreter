@@ -4,6 +4,11 @@
 #include "../code/code.h"
 #include "../ast/ast.h"
 
+typedef enum {
+    COMPILER_OK,
+    COMPILER_UNKNOWN_OPERATOR,
+} CompilerResult;
+
 typedef struct {
     Instructions instructions;
     DynamicArray constants; // Object*[]
@@ -11,9 +16,9 @@ typedef struct {
 
 Compiler *new_compiler();
 
-int8_t compile_program(Compiler *, Program *);
-int8_t compile_statement(Compiler *, Statement *);
-int8_t compile_expression(Compiler *, Expression *);
+CompilerResult compile_program(Compiler *, Program *);
+CompilerResult compile_statement(Compiler *, Statement *);
+CompilerResult compile_expression(Compiler *, Expression *);
 
 void free_compiler(Compiler *);
 
@@ -24,5 +29,7 @@ typedef struct {
 } Bytecode;
 
 Bytecode bytecode(Compiler *);
+
+void compiler_error(CompilerResult, char *, size_t);
 
 #endif // COMPILER_H

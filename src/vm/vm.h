@@ -17,12 +17,12 @@ typedef struct {
 typedef enum {
     VM_OK,
     VM_STACK_OVERFLOW,
-} VMError;
+} VMResult;
 
 VM *new_vm(Bytecode);
 void free_vm(VM *);
-VMError run_vm(VM *);
-void vm_error(VMError, char *, size_t);
+VMResult run_vm(VM *);
+void vm_error(VMResult, char *, size_t);
 
 Object *stack_top(VM *);
 

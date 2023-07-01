@@ -13,9 +13,7 @@ Compiler *new_compiler() {
   return compiler;
 }
 
-void free_compiler(Compiler *compiler) {
-  free(compiler);
-}
+void free_compiler(Compiler *compiler) { free(compiler); }
 
 size_t add_constant(Compiler *compiler, Object *obj) {
   array_append(&compiler->constants, obj);
@@ -39,51 +37,54 @@ size_t emit(Compiler *compiler, OpCode op, int *operands,
   return position;
 }
 
-int8_t compile_program(Compiler *compiler, Program *program) {
+CompilerResult compile_program(Compiler *compiler, Program *program) {
   for (size_t i = 0; i < program->statements.len; i++) {
     int8_t result = compile_statement(compiler, program->statements.arr[i]);
-    if (result < 0) {
+    if (result != COMPILER_OK) {
       return result;
     }
   }
 
-  return 0;
+  return COMPILER_OK;
 }
 
-int8_t compile_statement(Compiler *compiler, Statement *stmt) {
+CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
   switch (stmt->type) {
   case EXPR_STATEMENT:
     return compile_expression(compiler, stmt->expression);
   default:
     assert(0 && "not implemented");
   }
-  return 0;
+  return COMPILER_OK;
 }
 
-static int8_t compile_operand(Compiler *compiler, char *operand) {
-    if (strncmp(operand, "+", 1) == 0) {
-        emit(compiler, OP_ADD, (int[]){}, 0);
-        return 0;
-    }
-    return -1;
+static CompilerResult compile_operand(Compiler *compiler, char *operand) {
+  if (strncmp(operand, "+", 1) == 0) {
+    emit(compiler, OP_ADD, (int[]){}, 0);
+    return COMPILER_OK;
+  }
+
+  return COMPILER_UNKNOWN_OPERATOR;
 }
 
-int8_t compile_infix_expression(Compiler *compiler, InfixExpression *expr) {
-  int8_t result = compile_expression(compiler, ((InfixExpression *)expr)->left);
-  if (result < 0) {
+CompilerResult compile_infix_expression(Compiler *compiler,
+                                        InfixExpression *expr) {
+
+  CompilerResult result;
+  result = compile_expression(compiler, ((InfixExpression *)expr)->left);
+  if (result != COMPILER_OK) {
     return result;
   }
 
   result = compile_expression(compiler, ((InfixExpression *)expr)->right);
-  if (result < 0) {
+  if (result != COMPILER_OK) {
     return result;
   }
 
-  result = compile_operand(compiler, ((InfixExpression *)expr)->operator);
-  return result;
+  return compile_operand(compiler, ((InfixExpression *)expr)->operator);
 }
 
-int8_t compile_expression(Compiler *compiler, Expression *expr) {
+CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   switch (expr->type) {
   case INFIX_EXPR:
     return compile_infix_expression(compiler, (InfixExpression *)expr);
@@ -96,7 +97,8 @@ int8_t compile_expression(Compiler *compiler, Expression *expr) {
   default:
     assert(0 && "not implemented");
   }
-  return 0;
+
+  return COMPILER_OK;
 }
 
 Bytecode bytecode(Compiler *compiler) {
@@ -106,4 +108,14 @@ Bytecode bytecode(Compiler *compiler) {
   };
 
   return bytecode;
+}
+
+void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
+  switch (error) {
+  case COMPILER_UNKNOWN_OPERATOR:
+    snprintf(buf, bufsize, "unknown operator\n");
+    break;
+  case COMPILER_OK:
+    break;
+  }
 }
