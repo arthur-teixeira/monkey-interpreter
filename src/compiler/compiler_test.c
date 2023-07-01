@@ -87,23 +87,20 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 }
 
 void test_integer_arithmetic(void) {
-  int first_args[] = {1};
-  Instruction first_instruction = make_instruction(OP_CONSTANT, first_args, 1);
-
-  int second_args[] = {2};
-  Instruction second_instruction =
-      make_instruction(OP_CONSTANT, second_args, 1);
-
+  Instruction first_instruction = make_instruction(OP_CONSTANT, (int[]){0}, 1);
+  Instruction second_instruction = make_instruction(OP_CONSTANT, (int[]){1}, 1);
+  Instruction third_instruction = make_instruction(OP_ADD, (int[]){}, 0);
   compilerTestCase tests[] = {
       {
           .input = "1 + 2",
           .expected_constants_len = 2,
           .expected_constants = {1, 2},
-          .expected_instructions_len = 2,
+          .expected_instructions_len = 3,
           .expected_instructions =
               {
                   first_instruction,
                   second_instruction,
+                  third_instruction,
               },
       },
   };

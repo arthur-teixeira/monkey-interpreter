@@ -60,6 +60,14 @@ int8_t compile_statement(Compiler *compiler, Statement *stmt) {
   return 0;
 }
 
+static int8_t compile_operand(Compiler *compiler, char *operand) {
+    if (strncmp(operand, "+", 1) == 0) {
+        emit(compiler, OP_ADD, (int[]){}, 0);
+        return 0;
+    }
+    return -1;
+}
+
 int8_t compile_infix_expression(Compiler *compiler, InfixExpression *expr) {
   int8_t result = compile_expression(compiler, ((InfixExpression *)expr)->left);
   if (result < 0) {
@@ -71,7 +79,8 @@ int8_t compile_infix_expression(Compiler *compiler, InfixExpression *expr) {
     return result;
   }
 
-  return 0;
+  result = compile_operand(compiler, ((InfixExpression *)expr)->operator);
+  return result;
 }
 
 int8_t compile_expression(Compiler *compiler, Expression *expr) {
@@ -79,13 +88,9 @@ int8_t compile_expression(Compiler *compiler, Expression *expr) {
   case INFIX_EXPR:
     return compile_infix_expression(compiler, (InfixExpression *)expr);
   case INT_EXPR: {
-    Number *num = malloc(sizeof(Number));
-    assert(num != NULL);
-    num->type = NUMBER_OBJ;
-    num->value = ((NumberLiteral *)expr)->value;
-    size_t new_constant_pos = add_constant(compiler, (Object *)num);
-    int operands[] = {new_constant_pos};
-    emit(compiler, OP_CONSTANT, operands, 1);
+    Object *num = new_number(((NumberLiteral *)expr)->value);
+    size_t new_constant_pos = add_constant(compiler, num);
+    emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;
   }
   default:

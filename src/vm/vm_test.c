@@ -59,7 +59,9 @@ void run_vm_tests(vmTestCase tests[], size_t tests_count) {
 
 void test_integer_arithmetic(void) {
     vmTestCase tests[] = {
-        {"1 + 2", 2}, // FIXME
+        {"1", 1},
+        {"2", 2},
+        {"1 + 2", 3},
     };
 
     run_vm_tests(tests, ARRAY_LEN(tests));

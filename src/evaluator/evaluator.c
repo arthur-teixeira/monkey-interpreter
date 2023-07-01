@@ -67,16 +67,6 @@ Object *eval_program(Program *program, Environment *env) {
   return result;
 }
 
-Object *new_integer(NumberLiteral *lit) {
-  Number *int_obj = malloc(sizeof(Number));
-  assert(int_obj != NULL && "Error allocating memory for integer");
-
-  int_obj->value = lit->value;
-  int_obj->type = NUMBER_OBJ;
-
-  return (Object *)int_obj;
-}
-
 static Boolean obj_true = {
     .type = BOOLEAN_OBJ,
     .value = true,
@@ -769,7 +759,7 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
 Object *eval_expression(Expression *expr, Environment *env) {
   switch (expr->type) {
   case INT_EXPR:
-    return new_integer((NumberLiteral *)expr);
+    return new_number(((NumberLiteral *)expr)->value);
   case BOOL_EXPR:
     return new_boolean((BooleanLiteral *)expr);
   case STRING_EXPR:

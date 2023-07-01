@@ -172,3 +172,13 @@ size_t sizeof_object(Object *obj) {
 
   assert(0 && "unknown object type");
 }
+
+Object *new_number(double value) {
+  Number *int_obj = malloc(sizeof(Number));
+  assert(int_obj != NULL && "Error allocating memory for integer");
+
+  int_obj->value = value;
+  int_obj->type = NUMBER_OBJ;
+
+  return (Object *)int_obj;
+}

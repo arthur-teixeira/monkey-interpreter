@@ -13,6 +13,11 @@ static Definition definitions[OP_COUNT] = {
         .operand_count = 1,
         .operand_widths = {2},
     },
+    {
+        .name = "OP_ADD",
+        .operand_count = 0,
+        .operand_widths = {},
+    },
 };
 
 Definition *lookup(OpCode opcode) {
@@ -35,7 +40,7 @@ Instruction make_instruction(OpCode op_code, int *operands,
   Instruction instruction;
 
   int_array_init(&instruction, operand_count + 1);
-  int_array_append(&instruction, op_code);
+  int_array_append(&instruction, (uint8_t)op_code);
 
   for (size_t i = 0; i < operand_count; i++) {
     switch (def->operand_widths[i]) {
@@ -57,6 +62,9 @@ void format_instruction(char buf[MAX_LEN], const Definition *def,
   }
 
   switch (def->operand_count) {
+  case 0:
+      sprintf(buf, "%s", def->name);
+      return;
   case 1:
     sprintf(buf, "%s %d", def->name, operands->arr[0]);
     return;

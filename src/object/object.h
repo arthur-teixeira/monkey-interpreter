@@ -91,4 +91,7 @@ typedef struct {
 } Hash;
 
 size_t sizeof_object(Object *);
+
+Object *new_number(double);
+
 #endif

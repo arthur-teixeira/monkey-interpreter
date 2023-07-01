@@ -14,7 +14,7 @@ void test_make(void) {
        int operands[1];
        Instruction expected;
     }; 
-    struct testCase tests[1];
+    struct testCase tests[2];
 
     Instruction op_constant_instructions;
     int_array_init(&op_constant_instructions, 3);
@@ -29,6 +29,18 @@ void test_make(void) {
     };
 
     tests[0] = op_constant_test;
+
+    Instruction op_add_instruction;
+    int_array_init(&op_add_instruction, 1);
+    int_array_append(&op_add_instruction, OP_ADD);
+
+    struct testCase op_add_test = {
+        .op = OP_ADD,
+        .operands = {},
+        .expected = op_add_instruction,
+    };
+    
+    tests[1] = op_add_test;
 
     for (uint32_t i = 0; i < ARRAY_LEN(tests); i++) {
         struct testCase test = tests[i];
@@ -62,15 +74,15 @@ Instructions concat_instructions(size_t instruction_count, Instruction instructi
 
 void test_instructions_string(void) {
     Instruction instructions[] = {
-        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_ADD, (int[]){}, 0),
         make_instruction(OP_CONSTANT, (int[]){2}, 1),
         make_instruction(OP_CONSTANT, (int[]){65535}, 1),
     };
 
     char *expected = ""
-        "0000 OP_CONSTANT 1\n"
-        "0003 OP_CONSTANT 2\n"
-        "0006 OP_CONSTANT 65535\n";
+        "0000 OP_ADD\n"
+        "0001 OP_CONSTANT 2\n"
+        "0004 OP_CONSTANT 65535\n";
 
     Instructions ins = concat_instructions(3, instructions);
 
