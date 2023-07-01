@@ -1,4 +1,7 @@
+#include "repl.h"
+#include "../compiler/compiler.h"
 #include "../evaluator/evaluator.h"
+#include "../vm/vm.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -39,42 +42,66 @@ void read_input(InputBuffer *input_buffer) {
   input_buffer->buffer[bytes_read - 1] = 0;
 }
 
-void print_token(Token *tok) {
-  printf("Type: %s\n", TOKEN_STRING[tok->Type]);
-  printf("Value: %s\n", tok->literal);
-  printf("---------\n");
+void interpret(ResizableBuffer *buf, Program *program, Environment *env) {
+  Object *evaluated = eval_program(program, env);
+  if (evaluated != NULL) {
+    inspect_object(buf, evaluated);
+    printf("%s\n", buf->buf);
+  }
 }
 
-void start_repl() {
+void start_repl(ReplMode mode) {
   InputBuffer *input_buf = new_input_buffer();
   Environment *env = new_environment();
 
+  printf("Hello from Monkey!\n");
   while (true) {
     printf(PROMPT);
     read_input(input_buf);
 
     if (*(input_buf->buffer) == '\0') {
-      return;
+      continue;
     }
-
-    ResizableBuffer buf;
-    init_resizable_buffer(&buf, 100);
 
     Lexer *l = new_lexer(input_buf->buffer);
     Parser *p = new_parser(l);
     Program *program = parse_program(p);
     if (p->errors.len > 0) {
       print_parser_errors(p);
-      free(buf.buf);
       free_parser(p);
       free_program(program);
       continue;
     }
 
-    Object *evaluated = eval_program(program, env);
-    if (evaluated != NULL) {
-      inspect_object(&buf, evaluated);
+    ResizableBuffer buf;
+    init_resizable_buffer(&buf, 100);
+    switch (mode) {
+    case REPL_INTERPRET:
+      interpret(&buf, program, env);
+      break;
+    case REPL_COMPILE: {
+      Compiler *compiler = new_compiler();
+      int8_t result = compile_program(compiler, program);
+      if (result < 0) {
+        printf("Compilation failed\n");
+        continue;
+      }
+
+      VM *vm = new_vm(bytecode(compiler));
+      VMError vm_result = run_vm(vm);
+      if (vm_result != VM_OK) {
+        char err[100];
+        vm_error(result, err, 100);
+        printf("VM failed: %s\n", err);
+        continue;
+      }
+
+      Object *top = stack_top(vm);
+      inspect_object(&buf, top);
       printf("%s\n", buf.buf);
+      free_compiler(compiler);
+      free_vm(vm);
+    }
     }
 
     free(buf.buf);
