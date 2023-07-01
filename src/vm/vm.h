@@ -17,6 +17,7 @@ typedef struct {
 typedef enum {
     VM_OK,
     VM_STACK_OVERFLOW,
+    VM_UNSUPPORTED_OPERATION,
 } VMResult;
 
 VM *new_vm(Bytecode);

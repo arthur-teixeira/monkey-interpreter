@@ -16,12 +16,46 @@ static Definition definitions[OP_COUNT] = {
     {
         .name = "OP_ADD",
         .operand_count = 0,
-        .operand_widths = {},
     },
     {
         .name = "OP_POP",
         .operand_count = 0,
-        .operand_widths = {},
+    },
+    {
+        .name = "OP_SUB",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_MUL",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_DIV",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_LSHIFT",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_RSHIFT",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_MOD",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_BIT_OR",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_BIT_AND",
+        .operand_count = 0,
+    },
+    {
+        .name = "OP_BIT_XOR",
+        .operand_count = 0,
     },
 };
 

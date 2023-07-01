@@ -5,6 +5,8 @@
 #include "compiler.h"
 #include <stdint.h>
 
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
+
 typedef struct {
   char *input;
   size_t expected_constants_len;
@@ -43,6 +45,7 @@ void test_instructions(size_t instructions_count, Instruction expected[],
 
   for (uint32_t i = 0; i < instructions_count; i++) {
     TEST_ASSERT_EQUAL(concatted.arr[i], actual.arr[i]);
+    int_array_free(&expected[i]);
   }
 
   int_array_free(&concatted);
@@ -87,33 +90,142 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 }
 
 void test_integer_arithmetic(void) {
-  Instruction first_instruction = make_instruction(OP_CONSTANT, (int[]){0}, 1);
-  Instruction second_instruction = make_instruction(OP_CONSTANT, (int[]){1}, 1);
-  Instruction third_instruction = make_instruction(OP_ADD, (int[]){}, 0);
-  Instruction fourth_instruction = make_instruction(OP_POP, (int[]){}, 0);
-
-  compilerTestCase tests[] = {
-      {
-          .input = "1 + 2",
-          .expected_constants_len = 2,
-          .expected_constants = {1, 2},
-          .expected_instructions_len = 4,
-          .expected_instructions =
+  compilerTestCase
+      tests[] =
+          {
               {
-                  first_instruction,
-                  second_instruction,
-                  third_instruction,
-                  fourth_instruction,
+                  .input = "1 + 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_ADD, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
               },
-      },
-  };
+              {
+                  .input = "1 - 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_SUB, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "1 * 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_MUL, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 / 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_DIV, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 << 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_LSHIFT, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 >> 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_RSHIFT, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 % 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_MOD, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 | 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_BIT_OR, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 & 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_BIT_AND, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "2 ^ 1",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_BIT_XOR, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+          };
 
-  run_compiler_tests(tests, 1);
-
-  int_array_free(&first_instruction);
-  int_array_free(&second_instruction);
-  int_array_free(&third_instruction);
-  int_array_free(&fourth_instruction);
+  run_compiler_tests(tests, ARRAY_LEN(tests));
 }
 
 int main(void) {

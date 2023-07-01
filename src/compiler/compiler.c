@@ -37,6 +37,10 @@ size_t emit(Compiler *compiler, OpCode op, int *operands,
   return position;
 }
 
+size_t emit_no_operands(Compiler *compiler, OpCode op) {
+  return emit(compiler, op, (int[]){}, 0);
+}
+
 CompilerResult compile_program(Compiler *compiler, Program *program) {
   for (size_t i = 0; i < program->statements.len; i++) {
     int8_t result = compile_statement(compiler, program->statements.arr[i]);
@@ -65,8 +69,39 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
 }
 
 static CompilerResult compile_operand(Compiler *compiler, char *operand) {
-  if (strncmp(operand, "+", 1) == 0) {
-    emit(compiler, OP_ADD, (int[]){}, 0);
+  switch (operand[0]) {
+  case '+':
+    emit_no_operands(compiler, OP_ADD);
+    return COMPILER_OK;
+  case '-':
+    emit_no_operands(compiler, OP_SUB);
+    return COMPILER_OK;
+  case '*':
+    emit_no_operands(compiler, OP_MUL);
+    return COMPILER_OK;
+  case '/':
+    emit_no_operands(compiler, OP_DIV);
+    return COMPILER_OK;
+  case '&':
+    emit_no_operands(compiler, OP_BIT_AND);
+    return COMPILER_OK;
+  case '|':
+    emit_no_operands(compiler, OP_BIT_OR);
+    return COMPILER_OK;
+  case '^':
+    emit_no_operands(compiler, OP_BIT_XOR);
+    return COMPILER_OK;
+  case '%':
+    emit_no_operands(compiler, OP_MOD);
+    return COMPILER_OK;
+  }
+
+  if (strncmp(operand, "<<", 2) == 0) {
+    emit(compiler, OP_LSHIFT, (int[]){}, 0);
+    return COMPILER_OK;
+  }
+  if (strncmp(operand, ">>", 2) == 0) {
+    emit(compiler, OP_RSHIFT, (int[]){}, 0);
     return COMPILER_OK;
   }
 

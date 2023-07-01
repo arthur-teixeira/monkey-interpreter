@@ -14,6 +14,15 @@ typedef enum {
     OP_CONSTANT,
     OP_ADD,
     OP_POP,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OP_LSHIFT,
+    OP_RSHIFT,
+    OP_MOD,
+    OP_BIT_OR,
+    OP_BIT_AND,
+    OP_BIT_XOR,
     OP_COUNT,
 } OpCode;
 
