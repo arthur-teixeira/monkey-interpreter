@@ -14,7 +14,6 @@ Compiler *new_compiler() {
 }
 
 void free_compiler(Compiler *compiler) {
-  array_free(&compiler->constants);
   free(compiler);
 }
 
@@ -62,7 +61,7 @@ int8_t compile_statement(Compiler *compiler, Statement *stmt) {
 }
 
 int8_t compile_infix_expression(Compiler *compiler, InfixExpression *expr) {
-  size_t result = compile_expression(compiler, ((InfixExpression *)expr)->left);
+  int8_t result = compile_expression(compiler, ((InfixExpression *)expr)->left);
   if (result < 0) {
     return result;
   }

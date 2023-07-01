@@ -1,3 +1,6 @@
+#ifndef COMPILER_H
+#define COMPILER_H
+
 #include "../code/code.h"
 #include "../ast/ast.h"
 
@@ -21,3 +24,5 @@ typedef struct {
 } Bytecode;
 
 Bytecode bytecode(Compiler *);
+
+#endif // COMPILER_H

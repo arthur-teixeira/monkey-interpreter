@@ -1,3 +1,6 @@
+#ifndef CODE_H
+#define CODE_H
+
 #include <stdint.h>
 #include "../dyn_array/dyn_array.h"
 #include "../str_utils/str_utils.h"
@@ -25,3 +28,5 @@ void instructions_to_string(ResizableBuffer *, const Instructions *);
 Definition *lookup(OpCode);
 
 IntArray read_operands(Definition *, const Instructions *instructions, size_t, size_t *);
+
+#endif // CODE_H
