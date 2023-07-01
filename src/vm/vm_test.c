@@ -46,9 +46,8 @@ void run_vm_tests(vmTestCase tests[], size_t tests_count) {
         if (vm_result != VM_OK) {
             TEST_FAIL_MESSAGE("Compiler error");
         }
-        TEST_ASSERT_TRUE(vm->sp > 0);
 
-        Object *top = stack_top(vm);
+        Object *top = vm_last_popped_stack_elem(vm);
         test_expected_object(test.expected, top);
 
         free_program(program);

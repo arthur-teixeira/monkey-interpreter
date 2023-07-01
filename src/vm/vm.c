@@ -43,9 +43,7 @@ VMResult stack_push_constant(VM *vm, uint16_t constant_index) {
   return stack_push(vm, vm->constants.arr[constant_index]);
 }
 
-Object *stack_pop(VM *vm) {
-    return vm->stack[--vm->sp];
-}
+Object *stack_pop(VM *vm) { return vm->stack[--vm->sp]; }
 
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
@@ -73,12 +71,19 @@ VMResult run_vm(VM *vm) {
       stack_push(vm, new_number(left->value + right->value));
       break;
     }
+    case OP_POP:
+      (void)stack_pop(vm);
+      break;
     case OP_COUNT:
       assert(0 && "unreachable");
     }
   }
 
   return VM_OK;
+}
+
+Object *vm_last_popped_stack_elem(VM *vm) {
+  return vm->stack[vm->sp];
 }
 
 void vm_error(VMResult error, char *buf, size_t bufsize) {

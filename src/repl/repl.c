@@ -98,7 +98,7 @@ void start_repl(ReplMode mode) {
         continue;
       }
 
-      Object *top = stack_top(vm);
+      Object *top = vm_last_popped_stack_elem(vm);
       inspect_object(&buf, top);
       printf("%s\n", buf.buf);
       free_compiler(compiler);

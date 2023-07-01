@@ -13,6 +13,7 @@ typedef IntArray Instructions;
 typedef enum {
     OP_CONSTANT,
     OP_ADD,
+    OP_POP,
     OP_COUNT,
 } OpCode;
 

@@ -23,6 +23,7 @@ VM *new_vm(Bytecode);
 void free_vm(VM *);
 VMResult run_vm(VM *);
 void vm_error(VMResult, char *, size_t);
+Object *vm_last_popped_stack_elem(VM *);
 
 Object *stack_top(VM *);
 

@@ -18,6 +18,11 @@ static Definition definitions[OP_COUNT] = {
         .operand_count = 0,
         .operand_widths = {},
     },
+    {
+        .name = "OP_POP",
+        .operand_count = 0,
+        .operand_widths = {},
+    },
 };
 
 Definition *lookup(OpCode opcode) {

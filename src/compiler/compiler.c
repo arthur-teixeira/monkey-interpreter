@@ -50,8 +50,14 @@ CompilerResult compile_program(Compiler *compiler, Program *program) {
 
 CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
   switch (stmt->type) {
-  case EXPR_STATEMENT:
-    return compile_expression(compiler, stmt->expression);
+  case EXPR_STATEMENT: {
+    CompilerResult result = compile_expression(compiler, stmt->expression);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+    emit(compiler, OP_POP, (int[]){}, 0);
+    break;
+  }
   default:
     assert(0 && "not implemented");
   }

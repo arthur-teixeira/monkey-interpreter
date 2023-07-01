@@ -90,17 +90,20 @@ void test_integer_arithmetic(void) {
   Instruction first_instruction = make_instruction(OP_CONSTANT, (int[]){0}, 1);
   Instruction second_instruction = make_instruction(OP_CONSTANT, (int[]){1}, 1);
   Instruction third_instruction = make_instruction(OP_ADD, (int[]){}, 0);
+  Instruction fourth_instruction = make_instruction(OP_POP, (int[]){}, 0);
+
   compilerTestCase tests[] = {
       {
           .input = "1 + 2",
           .expected_constants_len = 2,
           .expected_constants = {1, 2},
-          .expected_instructions_len = 3,
+          .expected_instructions_len = 4,
           .expected_instructions =
               {
                   first_instruction,
                   second_instruction,
                   third_instruction,
+                  fourth_instruction,
               },
       },
   };
@@ -109,6 +112,8 @@ void test_integer_arithmetic(void) {
 
   int_array_free(&first_instruction);
   int_array_free(&second_instruction);
+  int_array_free(&third_instruction);
+  int_array_free(&fourth_instruction);
 }
 
 int main(void) {
