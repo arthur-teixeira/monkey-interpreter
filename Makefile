@@ -8,7 +8,7 @@ SRCS := $(shell find ./src ! -name '*_test.c' -type f -name '*.c')
 
 OBJS := $(patsubst $(SRCDIR)/%.$(SRCEXT),$(BINDIR)/%.o,$(SRCS))
 
-BINNAME = program
+BINNAME = monkey
 
 
 all: $(BINDIR)/$(BINNAME)
