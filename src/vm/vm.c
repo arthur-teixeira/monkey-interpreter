@@ -43,7 +43,9 @@ VMResult stack_push_constant(VM *vm, uint16_t constant_index) {
   return stack_push(vm, vm->constants.arr[constant_index]);
 }
 
-Object *stack_pop(VM *vm) { return vm->stack[--vm->sp]; }
+Object *stack_pop(VM *vm) {
+  return vm->stack[--vm->sp];
+}
 
 VMResult execute_binary_integer_operation(VM *vm, OpCode op, Number *left,
                                           Number *right) {
@@ -108,10 +110,15 @@ VMResult run_vm(VM *vm) {
     case OP_BIT_XOR:
     case OP_RSHIFT:
     case OP_LSHIFT:
-    case OP_ADD:
-      return execute_binary_operation(vm, op);
+    case OP_ADD: {
+      VMResult result = execute_binary_operation(vm, op);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_POP:
-      (void)stack_pop(vm);
+      stack_pop(vm);
       break;
     case OP_COUNT:
       assert(0 && "unreachable");

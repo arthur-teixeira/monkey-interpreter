@@ -59,7 +59,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     if (result != COMPILER_OK) {
       return result;
     }
-    emit(compiler, OP_POP, (int[]){}, 0);
+    emit_no_operands(compiler, OP_POP);
     break;
   }
   default:
