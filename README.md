@@ -37,6 +37,8 @@ $ ./bin/monkey <path-to-file>
 - [X] Turing completeness proof (rule 110)
 - [X] Interpret source files
 - [ ] Compiler
+- [ ] Compile to file
+- [ ] File disassembler
 - [ ] VM
 - [ ] Garbage collection
 - [ ] Concurrent GC
