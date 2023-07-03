@@ -68,14 +68,6 @@ Object *eval_program(Program *program, Environment *env) {
   return result;
 }
 
-Object *native_bool_to_boolean_object(bool condition) {
-  if (condition) {
-    return (Object *)&obj_true;
-  }
-
-  return (Object *)&obj_false;
-}
-
 Object *new_boolean(BooleanLiteral *bol) {
   return native_bool_to_boolean_object(bol->value);
 }

@@ -57,6 +57,22 @@ static Definition definitions[OP_COUNT] = {
         .name = "OP_BIT_XOR",
         .operand_count = 0,
     },
+    {
+      .name = "OP_TRUE",
+      .operand_count = 0,
+    },
+    {
+      .name = "OP_FALSE",
+      .operand_count = 0,
+    },
+    {
+      .name = "OP_EQ",
+      .operand_count = 0,
+    },
+    {
+      .name = "OP_NOT_EQ",
+      .operand_count = 0,
+    }
 };
 
 Definition *lookup(OpCode opcode) {

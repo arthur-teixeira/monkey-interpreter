@@ -1,5 +1,6 @@
 #include "vm.h"
 #include "../big_endian/big_endian.h"
+#include "../object/constants.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,9 +44,7 @@ VMResult stack_push_constant(VM *vm, uint16_t constant_index) {
   return stack_push(vm, vm->constants.arr[constant_index]);
 }
 
-Object *stack_pop(VM *vm) {
-  return vm->stack[--vm->sp];
-}
+Object *stack_pop(VM *vm) { return vm->stack[--vm->sp]; }
 
 VMResult execute_binary_integer_operation(VM *vm, OpCode op, Number *left,
                                           Number *right) {
@@ -85,8 +84,45 @@ VMResult execute_binary_operation(VM *vm, OpCode op) {
   return VM_UNSUPPORTED_OPERATION;
 }
 
+VMResult execute_number_comparison(VM *vm, OpCode op, Number *left,
+                                   Number *right) {
+  switch (op) {
+  case OP_EQ:
+    return stack_push(
+        vm, native_bool_to_boolean_object(left->value == right->value));
+  case OP_NOT_EQ:
+    return stack_push(
+        vm, native_bool_to_boolean_object(left->value != right->value));
+  case OP_GREATER:
+    return stack_push(
+        vm, native_bool_to_boolean_object(left->value > right->value));
+  default:
+    return VM_UNSUPPORTED_OPERATION;
+  }
+}
+
+VMResult execute_comparison(VM *vm, OpCode op) {
+  Object *right = stack_pop(vm);
+  Object *left = stack_pop(vm);
+  if (right->type == NUMBER_OBJ && left->type == NUMBER_OBJ) {
+    return execute_number_comparison(vm, op, (Number *)left, (Number *)right);
+  }
+
+  switch (op) {
+  case OP_EQ:
+    return stack_push(vm, native_bool_to_boolean_object(right == left));
+  case OP_NOT_EQ:
+    return stack_push(vm, native_bool_to_boolean_object(right != left));
+  default:
+    break;
+  }
+
+  return VM_UNSUPPORTED_OPERATION;
+}
+
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
+    VMResult result;
     OpCode op = vm->instructions.arr[ip];
 
     switch (op) {
@@ -94,7 +130,7 @@ VMResult run_vm(VM *vm) {
       uint16_t constant_index =
           big_endian_read_uint16(&vm->instructions, ip + 1);
 
-      VMResult result = stack_push_constant(vm, constant_index);
+      result = stack_push_constant(vm, constant_index);
       if (result != VM_OK) {
         return result;
       }
@@ -110,15 +146,34 @@ VMResult run_vm(VM *vm) {
     case OP_BIT_XOR:
     case OP_RSHIFT:
     case OP_LSHIFT:
-    case OP_ADD: {
-      VMResult result = execute_binary_operation(vm, op);
+    case OP_ADD:
+      result = execute_binary_operation(vm, op);
       if (result != VM_OK) {
         return result;
       }
       break;
-    }
     case OP_POP:
       stack_pop(vm);
+      break;
+    case OP_TRUE:
+      result = stack_push(vm, (Object *)&obj_true);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    case OP_FALSE:
+      result = stack_push(vm, (Object *)&obj_false);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    case OP_GREATER:
+    case OP_EQ:
+    case OP_NOT_EQ:
+      result = execute_comparison(vm, op);
+      if (result != VM_OK) {
+        return result;
+      }
       break;
     case OP_COUNT:
       assert(0 && "unreachable");

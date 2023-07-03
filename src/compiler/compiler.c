@@ -3,6 +3,7 @@
 #include "../object/object.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 Compiler *new_compiler() {
   Compiler *compiler = malloc(sizeof(Compiler));
@@ -94,6 +95,9 @@ static CompilerResult compile_operand(Compiler *compiler, char *operand) {
   case '%':
     emit_no_operands(compiler, OP_MOD);
     return COMPILER_OK;
+  case '>':
+    emit_no_operands(compiler, OP_GREATER);
+    return COMPILER_OK;
   }
 
   if (strncmp(operand, "<<", 2) == 0) {
@@ -104,14 +108,36 @@ static CompilerResult compile_operand(Compiler *compiler, char *operand) {
     emit(compiler, OP_RSHIFT, (int[]){}, 0);
     return COMPILER_OK;
   }
+  if (strncmp(operand, "==", 2) == 0) {
+    emit_no_operands(compiler, OP_EQ);
+    return COMPILER_OK;
+  }
+  if (strncmp(operand, "!=", 2) == 0) {
+    emit_no_operands(compiler, OP_NOT_EQ);
+    return COMPILER_OK;
+  }
 
   return COMPILER_UNKNOWN_OPERATOR;
 }
 
 CompilerResult compile_infix_expression(Compiler *compiler,
                                         InfixExpression *expr) {
-
   CompilerResult result;
+  if (strcmp(expr->operator, "<") == 0) {
+    result = compile_expression(compiler, expr->right);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+
+    result = compile_expression(compiler, expr->left);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+
+    emit_no_operands(compiler, OP_GREATER);
+    return COMPILER_OK;
+  }
+
   result = compile_expression(compiler, ((InfixExpression *)expr)->left);
   if (result != COMPILER_OK) {
     return result;
@@ -135,6 +161,14 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;
   }
+  case BOOL_EXPR: {
+    if (((BooleanLiteral *)expr)->value) {
+      emit_no_operands(compiler, OP_TRUE);
+    } else {
+      emit_no_operands(compiler, OP_FALSE);
+    }
+    break;
+  }
   default:
     assert(0 && "not implemented");
   }
@@ -154,7 +188,7 @@ Bytecode bytecode(Compiler *compiler) {
 void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
   switch (error) {
   case COMPILER_UNKNOWN_OPERATOR:
-    snprintf(buf, bufsize, "unknown operator\n");
+    snprintf(buf, bufsize, "unknown operator");
     break;
   case COMPILER_OK:
     break;

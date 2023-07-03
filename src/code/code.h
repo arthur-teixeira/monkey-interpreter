@@ -23,6 +23,11 @@ typedef enum {
     OP_BIT_OR,
     OP_BIT_AND,
     OP_BIT_XOR,
+    OP_TRUE,
+    OP_FALSE,
+    OP_EQ,
+    OP_NOT_EQ,
+    OP_GREATER,
     OP_COUNT,
 } OpCode;
 

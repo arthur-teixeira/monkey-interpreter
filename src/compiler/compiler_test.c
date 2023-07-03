@@ -72,8 +72,10 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
     Program *program = parse(test.input);
     Compiler *compiler = new_compiler();
     int8_t result = compile_program(compiler, program);
-    if (result < 0) {
-      TEST_FAIL_MESSAGE("compiler error");
+    if (result != COMPILER_OK) {
+      char msg[100];
+      compiler_error(result, msg, 100);
+      TEST_FAIL_MESSAGE(msg);
     }
 
     Bytecode code = bytecode(compiler);
@@ -228,8 +230,105 @@ void test_integer_arithmetic(void) {
   run_compiler_tests(tests, ARRAY_LEN(tests));
 }
 
+void test_boolean_expressions(void) {
+  compilerTestCase tests[] = {
+    {
+      .input = "true",
+      .expected_constants_len = 0,
+      .expected_instructions_len = 2,
+      .expected_instructions = {
+        make_instruction(OP_TRUE, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "false",
+      .expected_constants_len = 0,
+      .expected_instructions_len = 2,
+      .expected_instructions = {
+        make_instruction(OP_FALSE, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "1 > 2",
+      .expected_constants_len = 2,
+      .expected_constants = {1, 2},
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){0}, 1),
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_GREATER, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "1 < 2",
+      .expected_constants_len = 2,
+      .expected_constants = {2, 1},
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){0}, 1),
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_GREATER, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "1 == 2",
+      .expected_constants_len = 2,
+      .expected_constants = {1, 2},
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){0}, 1),
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_EQ, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "1 != 2",
+      .expected_constants_len = 2,
+      .expected_constants = {1, 2},
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){0}, 1),
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_NOT_EQ, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "true == false",
+      .expected_constants_len = 0,
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_TRUE, (int[]){}, 0),
+        make_instruction(OP_FALSE, (int[]){}, 0),
+        make_instruction(OP_EQ, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+    {
+      .input = "true != false",
+      .expected_constants_len = 0,
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_TRUE, (int[]){}, 0),
+        make_instruction(OP_FALSE, (int[]){}, 0),
+        make_instruction(OP_NOT_EQ, (int[]){}, 0),
+        make_instruction(OP_POP, (int[]){}, 0),
+      },
+    },
+
+  };
+
+  run_compiler_tests(tests, ARRAY_LEN(tests));
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
+  RUN_TEST(test_boolean_expressions);
   return UNITY_END();
 }

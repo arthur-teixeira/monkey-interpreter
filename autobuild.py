@@ -46,7 +46,7 @@ recompile()
 
 
 def get_new_process():
-    return subprocess.Popen(['./bin/program']) if not TESTING else None
+    return subprocess.Popen(['./bin/monkey']) if not TESTING else None
 
 
 def restart_process(process):
