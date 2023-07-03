@@ -18,6 +18,7 @@ typedef enum {
     VM_OK,
     VM_STACK_OVERFLOW,
     VM_UNSUPPORTED_OPERATION,
+    VM_UNSUPPORTED_TYPE_FOR_OPERATION,
 } VMResult;
 
 VM *new_vm(Bytecode);

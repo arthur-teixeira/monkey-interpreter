@@ -28,6 +28,8 @@ typedef enum {
     OP_EQ,
     OP_NOT_EQ,
     OP_GREATER,
+    OP_MINUS,
+    OP_BANG,
     OP_COUNT,
 } OpCode;
 

@@ -69,7 +69,24 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
   return COMPILER_OK;
 }
 
-static CompilerResult compile_operand(Compiler *compiler, char *operand) {
+static CompilerResult compile_infix_operand(Compiler *compiler, char *operand) {
+  if (strncmp(operand, "<<", 2) == 0) {
+    emit(compiler, OP_LSHIFT, (int[]){}, 0);
+    return COMPILER_OK;
+  }
+  if (strncmp(operand, ">>", 2) == 0) {
+    emit(compiler, OP_RSHIFT, (int[]){}, 0);
+    return COMPILER_OK;
+  }
+  if (strncmp(operand, "==", 2) == 0) {
+    emit_no_operands(compiler, OP_EQ);
+    return COMPILER_OK;
+  }
+  if (strncmp(operand, "!=", 2) == 0) {
+    emit_no_operands(compiler, OP_NOT_EQ);
+    return COMPILER_OK;
+  }
+
   switch (operand[0]) {
   case '+':
     emit_no_operands(compiler, OP_ADD);
@@ -97,23 +114,6 @@ static CompilerResult compile_operand(Compiler *compiler, char *operand) {
     return COMPILER_OK;
   case '>':
     emit_no_operands(compiler, OP_GREATER);
-    return COMPILER_OK;
-  }
-
-  if (strncmp(operand, "<<", 2) == 0) {
-    emit(compiler, OP_LSHIFT, (int[]){}, 0);
-    return COMPILER_OK;
-  }
-  if (strncmp(operand, ">>", 2) == 0) {
-    emit(compiler, OP_RSHIFT, (int[]){}, 0);
-    return COMPILER_OK;
-  }
-  if (strncmp(operand, "==", 2) == 0) {
-    emit_no_operands(compiler, OP_EQ);
-    return COMPILER_OK;
-  }
-  if (strncmp(operand, "!=", 2) == 0) {
-    emit_no_operands(compiler, OP_NOT_EQ);
     return COMPILER_OK;
   }
 
@@ -148,13 +148,39 @@ CompilerResult compile_infix_expression(Compiler *compiler,
     return result;
   }
 
-  return compile_operand(compiler, ((InfixExpression *)expr)->operator);
+  return compile_infix_operand(compiler, ((InfixExpression *)expr)->operator);
+}
+
+CompilerResult compile_prefix_operand(Compiler *compiler, char *operand) {
+  switch (operand[0]) {
+  case '!':
+    emit_no_operands(compiler, OP_BANG);
+    return COMPILER_OK;
+  case '-':
+    emit_no_operands(compiler, OP_MINUS);
+    return COMPILER_OK;
+  }
+
+  return COMPILER_UNKNOWN_OPERATOR;
+}
+
+CompilerResult compile_prefix_expression(Compiler *compiler,
+    PrefixExpression *expr) {
+
+  CompilerResult result = compile_expression(compiler, expr->right);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  return compile_prefix_operand(compiler, expr->operator);
 }
 
 CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   switch (expr->type) {
   case INFIX_EXPR:
     return compile_infix_expression(compiler, (InfixExpression *)expr);
+  case PREFIX_EXPR:
+    return compile_prefix_expression(compiler, (PrefixExpression *)expr);
   case INT_EXPR: {
     Object *num = new_number(((NumberLiteral *)expr)->value);
     size_t new_constant_pos = add_constant(compiler, num);
@@ -170,7 +196,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     break;
   }
   default:
-    assert(0 && "not implemented");
+    return COMPILER_UNKNOWN_OPERATOR;
   }
 
   return COMPILER_OK;

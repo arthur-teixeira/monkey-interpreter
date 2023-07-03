@@ -2,6 +2,7 @@
 #include "../big_endian/big_endian.h"
 #include "../object/constants.h"
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -120,6 +121,31 @@ VMResult execute_comparison(VM *vm, OpCode op) {
   return VM_UNSUPPORTED_OPERATION;
 }
 
+VMResult execute_bang_operator(VM *vm) {
+  Object *operand = stack_pop(vm);
+
+  if (operand == (Object *)&obj_true) {
+    return stack_push(vm, (Object *)&obj_false);
+  }
+
+  if (operand == (Object *)&obj_false) {
+    return stack_push(vm, (Object *)&obj_true);
+  }
+
+  return stack_push(vm, (Object *)&obj_false);
+}
+
+VMResult execute_minus_operator(VM *vm) {
+  Object *operand = stack_pop(vm);
+
+  if (operand->type != NUMBER_OBJ) {
+    return VM_UNSUPPORTED_TYPE_FOR_OPERATION;
+  }
+
+  double value = -((Number *)operand)->value;
+  return stack_push(vm, new_number(value));
+}
+
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
     VMResult result;
@@ -175,6 +201,18 @@ VMResult run_vm(VM *vm) {
         return result;
       }
       break;
+    case OP_BANG:
+      result = execute_bang_operator(vm);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    case OP_MINUS:
+      result = execute_minus_operator(vm);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
     case OP_COUNT:
       assert(0 && "unreachable");
     }
@@ -194,6 +232,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_UNSUPPORTED_OPERATION:
     snprintf(buf, bufsize, "Unsupported operation");
+    return;
+  case VM_UNSUPPORTED_TYPE_FOR_OPERATION:
+    snprintf(buf, bufsize, "Unsupported type for operation");
     return;
   }
 }

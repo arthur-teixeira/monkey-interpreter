@@ -15,24 +15,18 @@ typedef enum {
 } vmTestCaseType;
 
 typedef struct {
-  vmTestCaseType type;
   char *input;
   bool expected;
 } vmBooleanTestCase;
 
 typedef struct {
-  vmTestCaseType type;
   char *input;
   int64_t expected;
 } vmIntTestCase;
 
-typedef struct {
-  vmTestCaseType type;
-} vmTestCase;
-
-Program *parse(vmTestCase *test) {
+Program *parse(void *test, vmTestCaseType type) {
   char *input;
-  switch (test->type) {
+  switch (type) {
   case VM_TEST_INTEGER:
     input = ((vmIntTestCase *)test)->input;
     break;
@@ -57,8 +51,8 @@ void test_boolean_object(bool expected, Object *actual) {
   TEST_ASSERT_EQUAL(expected, ((Boolean *)actual)->value);
 }
 
-void test_expected_object(vmTestCase *expected, Object *actual) {
-  switch (expected->type) {
+void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
+  switch (type) {
   case VM_TEST_INTEGER:
     test_integer_object(((vmIntTestCase *)expected)->expected, actual);
     break;
@@ -68,24 +62,28 @@ void test_expected_object(vmTestCase *expected, Object *actual) {
   }
 }
 
-void run_vm_tests(void *tests, size_t test_size, size_t tests_count) {
-  for (size_t i = 0; i < tests_count; i += test_size) {
-    vmTestCase *test = tests + (i * test_size);
-    Program *program = parse(test);
+void run_vm_tests(void *tests, size_t test_size, size_t tests_count, vmTestCaseType type) {
+  for (size_t i = 0; i < tests_count; i++) {
+    void *test = tests + (i * test_size);
+    Program *program = parse(test, type);
     Compiler *compiler = new_compiler();
     CompilerResult result = compile_program(compiler, program);
     if (result != COMPILER_OK) {
-      TEST_FAIL_MESSAGE("Compiler error");
+      char msg[100];
+      compiler_error(result, msg, 100);
+      TEST_FAIL_MESSAGE(msg);
     }
 
     VM *vm = new_vm(bytecode(compiler));
     VMResult vm_result = run_vm(vm);
     if (vm_result != VM_OK) {
-      TEST_FAIL_MESSAGE("Compiler error");
+      char msg[100];
+      vm_error(vm_result, msg, 100);
+      TEST_FAIL_MESSAGE(msg);
     }
 
     Object *top = vm_last_popped_stack_elem(vm);
-    test_expected_object(test, top);
+    test_expected_object(test, top, type);
 
     free_program(program);
     free_compiler(compiler);
@@ -95,54 +93,64 @@ void run_vm_tests(void *tests, size_t test_size, size_t tests_count) {
 
 void test_integer_arithmetic(void) {
   vmIntTestCase tests[] = {
-      {VM_TEST_INTEGER, "1", 1},
-      {VM_TEST_INTEGER, "2", 2},
-      {VM_TEST_INTEGER, "1 + 2", 3},
-      {VM_TEST_INTEGER, "1 - 2", -1},
-      {VM_TEST_INTEGER, "1 * 2", 2},
-      {VM_TEST_INTEGER, "4 / 2", 2},
-      {VM_TEST_INTEGER, "50 / 2 * 2 + 10 - 5", 55},
-      {VM_TEST_INTEGER, "5 + 5 + 5 + 5 - 10", 10},
-      {VM_TEST_INTEGER, "2 * 2 * 2 * 2 * 2", 32},
-      {VM_TEST_INTEGER, "5 * 2 + 10", 20},
-      {VM_TEST_INTEGER, "5 + 2 * 10", 25},
-      {VM_TEST_INTEGER, "5 * (2 + 10)", 60},
-      {VM_TEST_INTEGER, "4 | 1", 5},
-      {VM_TEST_INTEGER, "2 & 1", 0},
-      {VM_TEST_INTEGER, "2 ^ 1", 3},
-      {VM_TEST_INTEGER, "2 << 1", 4},
-      {VM_TEST_INTEGER, "2 >> 1", 1},
-      {VM_TEST_INTEGER, "3 % 2", 1},
-      {VM_TEST_INTEGER, "3 % 3", 0},
+      {"1", 1},
+      {"2", 2},
+      {"1 + 2", 3},
+      {"1 - 2", -1},
+      {"1 * 2", 2},
+      {"4 / 2", 2},
+      {"50 / 2 * 2 + 10 - 5", 55},
+      {"5 + 5 + 5 + 5 - 10", 10},
+      {"2 * 2 * 2 * 2 * 2", 32},
+      {"5 * 2 + 10", 20},
+      {"5 + 2 * 10", 25},
+      {"5 * (2 + 10)", 60},
+      {"4 | 1", 5},
+      {"2 & 1", 0},
+      {"2 ^ 1", 3},
+      {"2 << 1", 4},
+      {"2 >> 1", 1},
+      {"3 % 2", 1},
+      {"3 % 3", 0},
+      {"-5", -5},
+      {"-10", -10},
+      {"-50 + 100 + -50", 0},
+      {"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
   };
 
-  run_vm_tests(tests, sizeof(vmIntTestCase), ARRAY_LEN(tests));
+  run_vm_tests(tests, sizeof(vmIntTestCase), ARRAY_LEN(tests), VM_TEST_INTEGER);
 }
 
 void test_boolean_expressions(void) {
   vmBooleanTestCase tests[] = {
-      {VM_TEST_BOOLEAN, "true", true},
-      {VM_TEST_BOOLEAN, "false", false},
-      {VM_TEST_BOOLEAN, "1 < 2", true},
-      {VM_TEST_BOOLEAN, "1 > 2", false},
-      {VM_TEST_BOOLEAN, "1 < 1", false},
-      {VM_TEST_BOOLEAN, "1 > 1", false},
-      {VM_TEST_BOOLEAN, "1 == 1", true},
-      {VM_TEST_BOOLEAN, "1 != 1", false},
-      {VM_TEST_BOOLEAN, "1 == 2", false},
-      {VM_TEST_BOOLEAN, "1 != 2", true},
-      {VM_TEST_BOOLEAN, "true == true", true},
-      {VM_TEST_BOOLEAN, "false == false", true},
-      {VM_TEST_BOOLEAN, "true == false", false},
-      {VM_TEST_BOOLEAN, "true != false", true},
-      {VM_TEST_BOOLEAN, "false != true", true},
-      {VM_TEST_BOOLEAN, "(1 < 2) == true", true},
-      {VM_TEST_BOOLEAN, "(1 < 2) == false", false},
-      {VM_TEST_BOOLEAN, "(1 > 2) == true", false},
-      {VM_TEST_BOOLEAN, "(1 > 2) == false", true},
+      {"true", true},
+      {"false", false},
+      {"1 < 2", true},
+      {"1 > 2", false},
+      {"1 < 1", false},
+      {"1 > 1", false},
+      {"1 == 1", true},
+      {"1 != 1", false},
+      {"1 == 2", false},
+      {"1 != 2", true},
+      {"true == true", true},
+      {"false == false", true},
+      {"true == false", false},
+      {"true != false", true},
+      {"false != true", true},
+      {"(1 < 2) == true", true},
+      {"(1 < 2) == false", false},
+      {"(1 > 2) == true", false},
+      {"(1 > 2) == false", true},
+      {"!true", false},
+      {"!false", true},
+      {"!5", false},
+      {"!!true", true},
+      {"!!false", false},
+      {"!!5", true},
   };
 
-  run_vm_tests(tests, sizeof(vmBooleanTestCase), ARRAY_LEN(tests));
+  run_vm_tests(tests, sizeof(vmBooleanTestCase), ARRAY_LEN(tests), VM_TEST_BOOLEAN);
 }
 
 int main(void) {

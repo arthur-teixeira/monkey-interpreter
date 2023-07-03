@@ -225,103 +225,135 @@ void test_integer_arithmetic(void) {
                           make_instruction(OP_POP, (int[]){}, 0),
                       },
               },
+              {
+                  .input = "-1",
+                  .expected_constants_len = 1,
+                  .expected_constants = {1},
+                  .expected_instructions_len = 3,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_MINUS, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
           };
 
   run_compiler_tests(tests, ARRAY_LEN(tests));
 }
 
 void test_boolean_expressions(void) {
-  compilerTestCase tests[] = {
-    {
-      .input = "true",
-      .expected_constants_len = 0,
-      .expected_instructions_len = 2,
-      .expected_instructions = {
-        make_instruction(OP_TRUE, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "false",
-      .expected_constants_len = 0,
-      .expected_instructions_len = 2,
-      .expected_instructions = {
-        make_instruction(OP_FALSE, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "1 > 2",
-      .expected_constants_len = 2,
-      .expected_constants = {1, 2},
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_CONSTANT, (int[]){0}, 1),
-        make_instruction(OP_CONSTANT, (int[]){1}, 1),
-        make_instruction(OP_GREATER, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "1 < 2",
-      .expected_constants_len = 2,
-      .expected_constants = {2, 1},
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_CONSTANT, (int[]){0}, 1),
-        make_instruction(OP_CONSTANT, (int[]){1}, 1),
-        make_instruction(OP_GREATER, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "1 == 2",
-      .expected_constants_len = 2,
-      .expected_constants = {1, 2},
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_CONSTANT, (int[]){0}, 1),
-        make_instruction(OP_CONSTANT, (int[]){1}, 1),
-        make_instruction(OP_EQ, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "1 != 2",
-      .expected_constants_len = 2,
-      .expected_constants = {1, 2},
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_CONSTANT, (int[]){0}, 1),
-        make_instruction(OP_CONSTANT, (int[]){1}, 1),
-        make_instruction(OP_NOT_EQ, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "true == false",
-      .expected_constants_len = 0,
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_TRUE, (int[]){}, 0),
-        make_instruction(OP_FALSE, (int[]){}, 0),
-        make_instruction(OP_EQ, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-    {
-      .input = "true != false",
-      .expected_constants_len = 0,
-      .expected_instructions_len = 4,
-      .expected_instructions = {
-        make_instruction(OP_TRUE, (int[]){}, 0),
-        make_instruction(OP_FALSE, (int[]){}, 0),
-        make_instruction(OP_NOT_EQ, (int[]){}, 0),
-        make_instruction(OP_POP, (int[]){}, 0),
-      },
-    },
-
-  };
+  compilerTestCase
+      tests[] =
+          {
+              {
+                  .input = "true",
+                  .expected_constants_len = 0,
+                  .expected_instructions_len = 2,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_TRUE, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "false",
+                  .expected_constants_len = 0,
+                  .expected_instructions_len = 2,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_FALSE, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "1 > 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_GREATER, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "1 < 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {2, 1},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_GREATER, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "1 == 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_EQ, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "1 != 2",
+                  .expected_constants_len = 2,
+                  .expected_constants = {1, 2},
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                          make_instruction(OP_NOT_EQ, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "true == false",
+                  .expected_constants_len = 0,
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_TRUE, (int[]){}, 0),
+                          make_instruction(OP_FALSE, (int[]){}, 0),
+                          make_instruction(OP_EQ, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "true != false",
+                  .expected_constants_len = 0,
+                  .expected_instructions_len = 4,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_TRUE, (int[]){}, 0),
+                          make_instruction(OP_FALSE, (int[]){}, 0),
+                          make_instruction(OP_NOT_EQ, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+              {
+                  .input = "!true",
+                  .expected_constants_len = 0,
+                  .expected_instructions_len = 3,
+                  .expected_instructions =
+                      {
+                          make_instruction(OP_TRUE, (int[]){}, 0),
+                          make_instruction(OP_BANG, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                      },
+              },
+          };
 
   run_compiler_tests(tests, ARRAY_LEN(tests));
 }

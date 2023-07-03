@@ -13,66 +13,23 @@ static Definition definitions[OP_COUNT] = {
         .operand_count = 1,
         .operand_widths = {2},
     },
-    {
-        .name = "OP_ADD",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_POP",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_SUB",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_MUL",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_DIV",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_LSHIFT",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_RSHIFT",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_MOD",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_BIT_OR",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_BIT_AND",
-        .operand_count = 0,
-    },
-    {
-        .name = "OP_BIT_XOR",
-        .operand_count = 0,
-    },
-    {
-      .name = "OP_TRUE",
-      .operand_count = 0,
-    },
-    {
-      .name = "OP_FALSE",
-      .operand_count = 0,
-    },
-    {
-      .name = "OP_EQ",
-      .operand_count = 0,
-    },
-    {
-      .name = "OP_NOT_EQ",
-      .operand_count = 0,
-    }
+    {"OP_ADD"},
+    {"OP_POP"},
+    {"OP_SUB"},
+    {"OP_MUL"},
+    {"OP_DIV"},
+    {"OP_LSHIFT"},
+    {"OP_RSHIFT"},
+    {"OP_MOD"},
+    {"OP_BIT_OR"},
+    {"OP_BIT_AND"},
+    {"OP_BIT_XOR"},
+    {"OP_TRUE"},
+    {"OP_FALSE"},
+    {"OP_EQ"},
+    {"OP_NOT_EQ"},
+    {"OP_MINUS"},
+    {"OP_BANG"},
 };
 
 Definition *lookup(OpCode opcode) {
