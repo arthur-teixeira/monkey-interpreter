@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../object/constants.h"
 
 void free_object(Object *obj) {
   if (obj->type != BOOLEAN_OBJ) {
@@ -66,20 +67,6 @@ Object *eval_program(Program *program, Environment *env) {
 
   return result;
 }
-
-static Boolean obj_true = {
-    .type = BOOLEAN_OBJ,
-    .value = true,
-};
-
-static Boolean obj_false = {
-    .type = BOOLEAN_OBJ,
-    .value = false,
-};
-
-static Null obj_null = {
-    .type = NULL_OBJ,
-};
 
 Object *native_bool_to_boolean_object(bool condition) {
   if (condition) {

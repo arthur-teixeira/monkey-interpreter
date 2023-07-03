@@ -6,10 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-static Object obj_null = {
-    .type = NULL_OBJ,
-};
+#include "../../object/constants.h"
 
 Object *check_args_len(const DynamicArray *args, size_t expected) {
   if (args->len != expected) {
@@ -81,7 +78,7 @@ Object *first(DynamicArray args) {
   Array *arr = (Array *)arg;
 
   if (arr->elements.len < 1) {
-    return &obj_null;
+    return (Object *)&obj_null;
   }
 
   return arr->elements.arr[0];
@@ -102,7 +99,7 @@ Object *last(DynamicArray args) {
 
   Array *arr = (Array *)arg;
   if (arr->elements.len < 1) {
-    return &obj_null;
+    return (Object *)&obj_null;
   }
 
   return arr->elements.arr[arr->elements.len - 1];
