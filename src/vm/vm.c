@@ -214,6 +214,7 @@ VMResult run_vm(VM *vm) {
       }
       break;
     case OP_COUNT:
+    default:
       assert(0 && "unreachable");
     }
   }

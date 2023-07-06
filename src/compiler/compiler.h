@@ -7,11 +7,19 @@
 typedef enum {
     COMPILER_OK,
     COMPILER_UNKNOWN_OPERATOR,
+    COMPILER_UNKNOWN_STATEMENT,
 } CompilerResult;
+
+typedef struct {
+  OpCode op;
+  size_t position;
+} EmmittedInstruction;
 
 typedef struct {
     Instructions instructions;
     DynamicArray constants; // Object*[]
+    EmmittedInstruction last_instruction;
+    EmmittedInstruction previous_instruction;
 } Compiler;
 
 Compiler *new_compiler();

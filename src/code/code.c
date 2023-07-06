@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_LEN 100
 
@@ -30,6 +31,16 @@ static Definition definitions[OP_COUNT] = {
     {"OP_NOT_EQ"},
     {"OP_MINUS"},
     {"OP_BANG"},
+    {
+      .name = "OP_JMP_IF_FALSE",
+      .operand_count = 1,
+      .operand_widths = {2},
+    },
+    {
+      .name = "OP_JMP",
+      .operand_count = 1,
+      .operand_widths = {2},
+    },
 };
 
 Definition *lookup(OpCode opcode) {

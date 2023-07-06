@@ -7,7 +7,7 @@
 
 #define OPERAND_WIDTHS 4
 
-typedef IntArray Instruction; // IntArray<Opcode_t>
+typedef IntArray Instruction;
 typedef IntArray Instructions;
 
 typedef enum {
@@ -30,6 +30,8 @@ typedef enum {
     OP_GREATER,
     OP_MINUS,
     OP_BANG,
+    OP_JMP_IF_FALSE,
+    OP_JMP,
     OP_COUNT,
 } OpCode;
 

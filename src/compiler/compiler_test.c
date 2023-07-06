@@ -38,13 +38,39 @@ Instructions concat_instructions(size_t instructions_count,
   return out;
 }
 
+void print_instructions(const Instructions *concatted,
+                        const Instructions *actual) {
+  ResizableBuffer expected_buf;
+  init_resizable_buffer(&expected_buf, 50);
+  instructions_to_string(&expected_buf, concatted);
+  printf("EXPECTED:\n%s\n--------------------\n", expected_buf.buf);
+  ResizableBuffer actual_buf;
+  init_resizable_buffer(&actual_buf, 50);
+  instructions_to_string(&actual_buf, actual);
+  printf("ACTUAL:\n%s\n----------------------\n", actual_buf.buf);
+
+  free(expected_buf.buf);
+  free(actual_buf.buf);
+}
+
 void test_instructions(size_t instructions_count, Instruction expected[],
                        Instructions actual) {
   Instructions concatted = concat_instructions(instructions_count, expected);
-  TEST_ASSERT_EQUAL(concatted.len, actual.len);
+  if (concatted.len != actual.len) {
+    print_instructions(&concatted, &actual);
+    char msg[100];
+    sprintf(msg, "expected instructions length %ld, got %ld", concatted.len,
+            actual.len);
+    TEST_FAIL_MESSAGE(msg);
+  }
 
   for (uint32_t i = 0; i < instructions_count; i++) {
-    TEST_ASSERT_EQUAL(concatted.arr[i], actual.arr[i]);
+    if (concatted.arr[i] != actual.arr[i]) {
+      print_instructions(&concatted, &actual);
+      char msg[100];
+      sprintf(msg, "wrong instruction at %d", i);
+      TEST_FAIL_MESSAGE(msg);
+    }
     int_array_free(&expected[i]);
   }
 
@@ -358,9 +384,63 @@ void test_boolean_expressions(void) {
   run_compiler_tests(tests, ARRAY_LEN(tests));
 }
 
+void test_conditionals(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "if (true) { 10 }; 3333;",
+          .expected_constants_len = 2,
+          .expected_constants = {10, 3333},
+          .expected_instructions_len = 6,
+          .expected_instructions =
+              {
+                  // 0000
+                  make_instruction(OP_TRUE, (int[]){}, 0),
+                  // 0001
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){7}, 1),
+                  // 0004
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  // 0007
+                  make_instruction(OP_POP, (int[]){}, 0),
+                  // 0008
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  // 0011
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "if (true) { 10 } else { 20 }; 3333;",
+          .expected_constants_len = 3,
+          .expected_constants = {10, 20, 3333},
+          .expected_instructions_len = 8,
+          .expected_instructions =
+              {
+                  // 0000
+                  make_instruction(OP_TRUE, (int[]){}, 0),
+                  // 0001
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){10}, 1),
+                  // 0004
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  // 0007
+                  make_instruction(OP_JMP, (int[]){13}, 1),
+                  // 0010
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  // 0013
+                  make_instruction(OP_POP, (int[]){}, 0),
+                  // 0014
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  // 0017
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  run_compiler_tests(tests, ARRAY_LEN(tests));
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
+  RUN_TEST(test_conditionals);
   return UNITY_END();
 }

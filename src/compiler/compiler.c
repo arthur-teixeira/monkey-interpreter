@@ -5,12 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define JUMP_SENTINEL 9999
+
 Compiler *new_compiler() {
   Compiler *compiler = malloc(sizeof(Compiler));
   assert(compiler != NULL);
 
   array_init(&compiler->constants, 8);
   int_array_init(&compiler->instructions, 8);
+  compiler->last_instruction = (EmmittedInstruction){};
+  compiler->previous_instruction = (EmmittedInstruction){};
+
   return compiler;
 }
 
@@ -29,10 +34,20 @@ size_t add_instruction(Compiler *compiler, Instruction ins) {
   return new_instruction_position;
 }
 
+void set_last_instruction(Compiler *compiler, OpCode op, size_t pos) {
+  EmmittedInstruction previous = compiler->last_instruction;
+  EmmittedInstruction last = (EmmittedInstruction){op, pos};
+
+  compiler->previous_instruction = previous;
+  compiler->last_instruction = last;
+}
+
 size_t emit(Compiler *compiler, OpCode op, int *operands,
             size_t operand_count) {
   Instruction ins = make_instruction(op, operands, operand_count);
   size_t position = add_instruction(compiler, ins);
+
+  set_last_instruction(compiler, op, position);
 
   int_array_free(&ins);
   return position;
@@ -40,6 +55,29 @@ size_t emit(Compiler *compiler, OpCode op, int *operands,
 
 size_t emit_no_operands(Compiler *compiler, OpCode op) {
   return emit(compiler, op, (int[]){}, 0);
+}
+
+bool last_instruction_is(Compiler *compiler, OpCode op) {
+  return compiler->last_instruction.op == op;
+}
+
+void remove_last_pop(Compiler *compiler) {
+  compiler->instructions.len -= 1;
+  compiler->last_instruction = compiler->previous_instruction;
+}
+
+void replace_instruction(Compiler *compiler, size_t pos, Instruction ins) {
+  for (size_t i = 0; i < ins.len; i++) {
+    compiler->instructions.arr[pos + i] = ins.arr[i];
+  }
+}
+
+void change_operand(Compiler *compiler, size_t opPos, size_t operand) {
+  OpCode op = compiler->instructions.arr[opPos];
+  Instruction new_instruction = make_instruction(op, (int[]){operand}, 1);
+
+  replace_instruction(compiler, opPos, new_instruction);
+  int_array_free(&new_instruction);
 }
 
 CompilerResult compile_program(Compiler *compiler, Program *program) {
@@ -165,7 +203,7 @@ CompilerResult compile_prefix_operand(Compiler *compiler, char *operand) {
 }
 
 CompilerResult compile_prefix_expression(Compiler *compiler,
-    PrefixExpression *expr) {
+                                         PrefixExpression *expr) {
 
   CompilerResult result = compile_expression(compiler, expr->right);
   if (result != COMPILER_OK) {
@@ -173,6 +211,42 @@ CompilerResult compile_prefix_expression(Compiler *compiler,
   }
 
   return compile_prefix_operand(compiler, expr->operator);
+}
+
+CompilerResult compile_block_statement(Compiler *compiler,
+                                       BlockStatement *stmt) {
+  for (size_t i = 0; i < stmt->statements.len; i++) {
+    CompilerResult result =
+        compile_statement(compiler, stmt->statements.arr[i]);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+  }
+
+  return COMPILER_OK;
+}
+
+CompilerResult compile_if_expression(Compiler *compiler, IfExpression *expr) {
+  CompilerResult result = compile_expression(compiler, expr->condition);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+  size_t jump_instruction_pos =
+      emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
+
+  result = compile_block_statement(compiler, expr->consequence);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  if (last_instruction_is(compiler, OP_POP)) {
+    remove_last_pop(compiler);
+  }
+
+  size_t after_consequence_pos = compiler->instructions.len;
+  change_operand(compiler, jump_instruction_pos, after_consequence_pos);
+
+  return COMPILER_OK;
 }
 
 CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
@@ -195,6 +269,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     }
     break;
   }
+  case IF_EXPR:
+    return compile_if_expression(compiler, (IfExpression *)expr);
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }
@@ -215,6 +291,9 @@ void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
   switch (error) {
   case COMPILER_UNKNOWN_OPERATOR:
     snprintf(buf, bufsize, "unknown operator");
+    break;
+  case COMPILER_UNKNOWN_STATEMENT:
+    snprintf(buf, bufsize, "unknown statement");
     break;
   case COMPILER_OK:
     break;
