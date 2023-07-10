@@ -33,6 +33,8 @@ typedef enum {
     OP_JMP_IF_FALSE,
     OP_JMP,
     OP_NULL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL,
     OP_COUNT,
 } OpCode;
 

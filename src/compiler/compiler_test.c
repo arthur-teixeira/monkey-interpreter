@@ -442,10 +442,59 @@ void test_conditionals(void) {
   run_compiler_tests(tests, ARRAY_LEN(tests));
 }
 
+void test_global_let_statements(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "let one = 1; let two = 2;",
+          .expected_constants_len = 2,
+          .expected_constants = {1, 2},
+          .expected_instructions_len = 4,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+              },
+      },
+      {
+          .input = "let one = 1; one;",
+          .expected_constants_len = 1,
+          .expected_constants = {1},
+          .expected_instructions_len = 4,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "let one = 1; let two = one; two;",
+          .expected_constants_len = 1,
+          .expected_constants = {1},
+          .expected_instructions_len = 6,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  run_compiler_tests(tests, ARRAY_LEN(tests));
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_conditionals);
+  RUN_TEST(test_global_let_statements);
   return UNITY_END();
 }

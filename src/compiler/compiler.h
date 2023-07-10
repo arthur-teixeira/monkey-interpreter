@@ -3,6 +3,7 @@
 
 #include "../code/code.h"
 #include "../ast/ast.h"
+#include "symbol_table.h"
 
 typedef enum {
     COMPILER_OK,
@@ -18,6 +19,7 @@ typedef struct {
 typedef struct {
     Instructions instructions;
     DynamicArray constants; // Object*[]
+    SymbolTable *symbol_table;
     EmmittedInstruction last_instruction;
     EmmittedInstruction previous_instruction;
 } Compiler;

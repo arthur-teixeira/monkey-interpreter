@@ -33,16 +33,26 @@ static Definition definitions[OP_COUNT] = {
     {"OP_MINUS"},
     {"OP_BANG"},
     {
-      .name = "OP_JMP_IF_FALSE",
-      .operand_count = 1,
-      .operand_widths = {2},
+        .name = "OP_JMP_IF_FALSE",
+        .operand_count = 1,
+        .operand_widths = {2},
     },
     {
-      .name = "OP_JMP",
-      .operand_count = 1,
-      .operand_widths = {2},
+        .name = "OP_JMP",
+        .operand_count = 1,
+        .operand_widths = {2},
     },
     {"OP_NULL"},
+    {
+        .name = "OP_GET_GLOBAL",
+        .operand_count = 1,
+        .operand_widths = {2},
+    },
+    {
+        .name = "OP_SET_GLOBAL",
+        .operand_count = 1,
+        .operand_widths = {2},
+    },
 };
 
 Definition *lookup(OpCode opcode) {
@@ -88,8 +98,8 @@ void format_instruction(char buf[MAX_LEN], const Definition *def,
 
   switch (def->operand_count) {
   case 0:
-      sprintf(buf, "%s", def->name);
-      return;
+    sprintf(buf, "%s", def->name);
+    return;
   case 1:
     sprintf(buf, "%s %d", def->name, operands->arr[0]);
     return;

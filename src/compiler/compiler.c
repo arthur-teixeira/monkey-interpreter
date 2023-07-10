@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "../ast/ast.h"
 #include "../object/object.h"
+#include "symbol_table.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,11 +16,15 @@ Compiler *new_compiler() {
   int_array_init(&compiler->instructions, 8);
   compiler->last_instruction = (EmmittedInstruction){};
   compiler->previous_instruction = (EmmittedInstruction){};
+  compiler->symbol_table = new_symbol_table();
 
   return compiler;
 }
 
-void free_compiler(Compiler *compiler) { free(compiler); }
+void free_compiler(Compiler *compiler) {
+  free_symbol_table(compiler->symbol_table);
+  free(compiler);
+}
 
 size_t add_constant(Compiler *compiler, Object *obj) {
   array_append(&compiler->constants, obj);
@@ -99,6 +104,13 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
       return result;
     }
     emit_no_operands(compiler, OP_POP);
+    break;
+  }
+  case LET_STATEMENT: {
+    CompilerResult result = compile_expression(compiler, stmt->expression);
+    if (result != COMPILER_OK) {
+      return result;
+    }
     break;
   }
   default:
