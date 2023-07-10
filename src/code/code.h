@@ -32,6 +32,7 @@ typedef enum {
     OP_BANG,
     OP_JMP_IF_FALSE,
     OP_JMP,
+    OP_NULL,
     OP_COUNT,
 } OpCode;
 

@@ -9,9 +9,13 @@
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
+#define VM_RUN_TESTS(tests, type)                                                 \
+  run_vm_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type);
+
 typedef enum {
   VM_TEST_INTEGER,
   VM_TEST_BOOLEAN,
+  VM_TEST_NULL,
 } vmTestCaseType;
 
 typedef struct {
@@ -24,6 +28,10 @@ typedef struct {
   int64_t expected;
 } vmIntTestCase;
 
+typedef struct {
+  char *input;
+} vmNullTestCase;
+
 Program *parse(void *test, vmTestCaseType type) {
   char *input;
   switch (type) {
@@ -33,7 +41,11 @@ Program *parse(void *test, vmTestCaseType type) {
   case VM_TEST_BOOLEAN:
     input = ((vmBooleanTestCase *)test)->input;
     break;
+  case VM_TEST_NULL:
+    input = ((vmNullTestCase *)test)->input;
+    break;
   }
+
   Lexer *l = new_lexer(input);
   Parser *p = new_parser(l);
   Program *program = parse_program(p);
@@ -59,15 +71,20 @@ void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
   case VM_TEST_BOOLEAN:
     test_boolean_object(((vmBooleanTestCase *)expected)->expected, actual);
     break;
+  case VM_TEST_NULL:
+    TEST_ASSERT_EQUAL(NULL_OBJ, actual->type);
+    break;
   }
 }
 
-void run_vm_tests(void *tests, size_t test_size, size_t tests_count, vmTestCaseType type) {
+void run_vm_tests(void *tests, size_t test_size, size_t tests_count,
+                  vmTestCaseType type) {
   for (size_t i = 0; i < tests_count; i++) {
     void *test = tests + (i * test_size);
     Program *program = parse(test, type);
     Compiler *compiler = new_compiler();
     CompilerResult result = compile_program(compiler, program);
+
     if (result != COMPILER_OK) {
       char msg[100];
       compiler_error(result, msg, 100);
@@ -118,7 +135,7 @@ void test_integer_arithmetic(void) {
       {"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
   };
 
-  run_vm_tests(tests, sizeof(vmIntTestCase), ARRAY_LEN(tests), VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
 }
 
 void test_boolean_expressions(void) {
@@ -150,12 +167,41 @@ void test_boolean_expressions(void) {
       {"!!5", true},
   };
 
-  run_vm_tests(tests, sizeof(vmBooleanTestCase), ARRAY_LEN(tests), VM_TEST_BOOLEAN);
+  VM_RUN_TESTS(tests, VM_TEST_BOOLEAN);
+}
+
+void test_conditionals(void) {
+  vmIntTestCase tests[] = {
+      {"if (true) { 10 }", 10},
+      {"if (true) { 10 } else { 20 }", 10},
+      {"if (false) { 10 } else { 20 } ", 20},
+      {"if (1) { 10 }", 10},
+      {"if (1 < 2) { 10 }", 10},
+      {"if (1 < 2) { 10 } else { 20 }", 10},
+      {"if (1 > 2) { 10 } else { 20 }", 20},
+      {"if ((if (false) { 10 })) { 10 } else { 20 }", 20}
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+
+  vmNullTestCase null_tests[] = {
+      {"if (false) { 10; }"},
+      {"if (1 > 2) { 10; }"},
+  };
+
+  VM_RUN_TESTS(null_tests, VM_TEST_NULL);
+
+  vmBooleanTestCase bool_tests[] = {
+    {"!(if (false) { 10; })", true},
+  };
+
+  VM_RUN_TESTS(bool_tests, VM_TEST_BOOLEAN);
 }
 
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
+  RUN_TEST(test_conditionals);
   return UNITY_END();
 }

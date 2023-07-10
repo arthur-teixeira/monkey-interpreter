@@ -132,6 +132,10 @@ VMResult execute_bang_operator(VM *vm) {
     return stack_push(vm, (Object *)&obj_true);
   }
 
+  if (operand == (Object *)&obj_null) {
+    return stack_push(vm, (Object *)&obj_true);
+  }
+
   return stack_push(vm, (Object *)&obj_false);
 }
 
@@ -144,6 +148,18 @@ VMResult execute_minus_operator(VM *vm) {
 
   double value = -((Number *)operand)->value;
   return stack_push(vm, new_number(value));
+}
+
+static bool is_truthy(Object *obj) {
+  if (obj->type == BOOLEAN_OBJ) {
+    return ((Boolean *)obj)->value;
+  }
+
+  if (obj->type == NULL_OBJ) {
+    return false;
+  }
+
+  return true;
 }
 
 VMResult run_vm(VM *vm) {
@@ -213,8 +229,28 @@ VMResult run_vm(VM *vm) {
         return result;
       }
       break;
+    case OP_JMP: {
+      uint16_t pos = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip = pos - 1;
+      break;
+    }
+    case OP_JMP_IF_FALSE: {
+      uint16_t pos = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip += 2; // skip the operand
+
+      Object *condition = stack_pop(vm);
+      if (!is_truthy(condition)) {
+        ip = pos - 1;
+      }
+      break;
+    }
+    case OP_NULL:
+      result = stack_push(vm, (Object *)&obj_null);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
     case OP_COUNT:
-    default:
       assert(0 && "unreachable");
     }
   }

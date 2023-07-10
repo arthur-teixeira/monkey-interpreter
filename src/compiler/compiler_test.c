@@ -71,6 +71,7 @@ void test_instructions(size_t instructions_count, Instruction expected[],
       sprintf(msg, "wrong instruction at %d", i);
       TEST_FAIL_MESSAGE(msg);
     }
+
     int_array_free(&expected[i]);
   }
 
@@ -390,20 +391,24 @@ void test_conditionals(void) {
           .input = "if (true) { 10 }; 3333;",
           .expected_constants_len = 2,
           .expected_constants = {10, 3333},
-          .expected_instructions_len = 6,
+          .expected_instructions_len = 8,
           .expected_instructions =
               {
                   // 0000
                   make_instruction(OP_TRUE, (int[]){}, 0),
                   // 0001
-                  make_instruction(OP_JMP_IF_FALSE, (int[]){7}, 1),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){10}, 1),
                   // 0004
                   make_instruction(OP_CONSTANT, (int[]){0}, 1),
                   // 0007
-                  make_instruction(OP_POP, (int[]){}, 0),
-                  // 0008
-                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_JMP, (int[]){11}, 1),
+                  // 0010
+                  make_instruction(OP_NULL, (int[]){}, 0),
                   // 0011
+                  make_instruction(OP_POP, (int[]){}, 0),
+                  // 0012
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  // 0015
                   make_instruction(OP_POP, (int[]){}, 0),
               },
       },

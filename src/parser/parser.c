@@ -383,6 +383,7 @@ Expression *parse_if_expression(Parser *p){
   IfExpression *expr = malloc(sizeof(IfExpression));
   assert(expr != NULL);
   expr->type = IF_EXPR;
+  expr->alternative = NULL;
 
   parser_next_token(p);
   expr->condition = parse_expression(p, LOWEST);

@@ -29,6 +29,7 @@ static Definition definitions[OP_COUNT] = {
     {"OP_FALSE"},
     {"OP_EQ"},
     {"OP_NOT_EQ"},
+    {"OP_GREATER"},
     {"OP_MINUS"},
     {"OP_BANG"},
     {
@@ -41,6 +42,7 @@ static Definition definitions[OP_COUNT] = {
       .operand_count = 1,
       .operand_widths = {2},
     },
+    {"OP_NULL"},
 };
 
 Definition *lookup(OpCode opcode) {

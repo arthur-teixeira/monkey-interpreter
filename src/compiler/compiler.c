@@ -231,7 +231,8 @@ CompilerResult compile_if_expression(Compiler *compiler, IfExpression *expr) {
   if (result != COMPILER_OK) {
     return result;
   }
-  size_t jump_instruction_pos =
+
+  size_t jmp_if_false_pos =
       emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
 
   result = compile_block_statement(compiler, expr->consequence);
@@ -242,9 +243,26 @@ CompilerResult compile_if_expression(Compiler *compiler, IfExpression *expr) {
   if (last_instruction_is(compiler, OP_POP)) {
     remove_last_pop(compiler);
   }
+  size_t jmp_pos = emit(compiler, OP_JMP, (int[]){JUMP_SENTINEL}, 1);
 
   size_t after_consequence_pos = compiler->instructions.len;
-  change_operand(compiler, jump_instruction_pos, after_consequence_pos);
+  change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
+
+  if (expr->alternative) {
+    result = compile_block_statement(compiler, expr->alternative);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+
+    if (last_instruction_is(compiler, OP_POP)) {
+      remove_last_pop(compiler);
+    }
+  } else {
+    emit_no_operands(compiler, OP_NULL);
+  }
+
+  size_t after_alternative_pos = compiler->instructions.len;
+  change_operand(compiler, jmp_pos, after_alternative_pos);
 
   return COMPILER_OK;
 }
