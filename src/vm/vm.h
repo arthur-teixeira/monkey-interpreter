@@ -5,6 +5,8 @@
 #include "../compiler/compiler.h"
 #include "../code/code.h"
 
+
+#define GLOBALS_SIZE 65536
 #define STACK_SIZE 2048
 
 typedef struct {
@@ -12,6 +14,7 @@ typedef struct {
     Instructions instructions;
     Object* stack[STACK_SIZE];
     size_t sp; // points to the next value
+    Object* globals[GLOBALS_SIZE];
 } VM;
 
 typedef enum {

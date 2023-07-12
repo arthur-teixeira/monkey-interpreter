@@ -198,10 +198,21 @@ void test_conditionals(void) {
   VM_RUN_TESTS(bool_tests, VM_TEST_BOOLEAN);
 }
 
+void test_global_let_statements(void) {
+  vmIntTestCase tests[] = {
+    {"let one = 1; one", 1},
+    {"let one = 1; let two = 2; one + two", 3},
+    {"let one = 1; let two = one + one; one + two", 3},
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_conditionals);
+  RUN_TEST(test_global_let_statements);
   return UNITY_END();
 }

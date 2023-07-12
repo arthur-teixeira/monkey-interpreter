@@ -14,6 +14,7 @@ VM *new_vm(Bytecode bytecode) {
   vm->constants = bytecode.constants;
   memset(vm->stack, 0, sizeof(vm->stack));
   vm->sp = 0;
+  memset(vm->globals, 0, sizeof(vm->globals));
 
   return vm;
 }
@@ -250,6 +251,21 @@ VMResult run_vm(VM *vm) {
         return result;
       }
       break;
+    case OP_SET_GLOBAL: {
+      uint16_t global_index = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip += 2;
+      vm->globals[global_index] = stack_pop(vm);
+      break;
+    }
+    case OP_GET_GLOBAL: {
+      uint16_t global_index = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip += 2;
+      VMResult result = stack_push(vm, vm->globals[global_index]);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }
