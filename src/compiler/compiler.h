@@ -9,6 +9,7 @@ typedef enum {
     COMPILER_OK,
     COMPILER_UNKNOWN_OPERATOR,
     COMPILER_UNKNOWN_STATEMENT,
+    COMPILER_UNKNOWN_IDENTIFIER,
 } CompilerResult;
 
 typedef struct {

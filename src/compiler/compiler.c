@@ -111,6 +111,10 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     if (result != COMPILER_OK) {
       return result;
     }
+
+    const Symbol *symbol =
+        symbol_define(compiler->symbol_table, stmt->name->value);
+    emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
     break;
   }
   default:
@@ -301,6 +305,14 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   }
   case IF_EXPR:
     return compile_if_expression(compiler, (IfExpression *)expr);
+  case IDENT_EXPR: {
+    const Symbol *symbol = symbol_resolve(compiler->symbol_table, ((Identifier *)expr)->value);
+    if (!symbol) {
+      return COMPILER_UNKNOWN_IDENTIFIER;
+    }
+    emit(compiler, OP_GET_GLOBAL, (int[]){symbol->index}, 1);
+    break;
+  }
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }
@@ -318,12 +330,16 @@ Bytecode bytecode(Compiler *compiler) {
 }
 
 void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
+  // TODO: save error message in compiler with more info
   switch (error) {
   case COMPILER_UNKNOWN_OPERATOR:
     snprintf(buf, bufsize, "unknown operator");
     break;
   case COMPILER_UNKNOWN_STATEMENT:
     snprintf(buf, bufsize, "unknown statement");
+    break;
+  case COMPILER_UNKNOWN_IDENTIFIER:
+    snprintf(buf, bufsize, "unknown identifier");
     break;
   case COMPILER_OK:
     break;
