@@ -54,6 +54,11 @@ void start_repl(ReplMode mode) {
   InputBuffer *input_buf = new_input_buffer();
   Environment *env = new_environment();
 
+  DynamicArray constants;
+  array_init(&constants, 10);
+  Object *globals[GLOBALS_SIZE];
+  SymbolTable *symbol_table = new_symbol_table();
+
   printf("Hello from Monkey!\n");
   while (true) {
     printf(PROMPT);
@@ -80,7 +85,7 @@ void start_repl(ReplMode mode) {
       interpret(&buf, program, env);
       break;
     case REPL_COMPILE: {
-      Compiler *compiler = new_compiler();
+      Compiler *compiler = new_compiler_with_state(symbol_table, &constants);
       CompilerResult compiler_result = compile_program(compiler, program);
       if (compiler_result != COMPILER_OK) {
         char err[100];
@@ -89,7 +94,9 @@ void start_repl(ReplMode mode) {
         continue;
       }
 
-      VM *vm = new_vm(bytecode(compiler));
+      constants = *compiler->constants;
+
+      VM *vm = new_vm_with_state(bytecode(compiler), globals);
       VMResult vm_result = run_vm(vm);
       if (vm_result != VM_OK) {
         char err[100];
@@ -98,11 +105,13 @@ void start_repl(ReplMode mode) {
         continue;
       }
 
+      memcpy(globals, vm->globals, sizeof(Object *) * GLOBALS_SIZE);
+
       Object *top = vm_last_popped_stack_elem(vm);
       inspect_object(&buf, top);
       printf("%s\n", buf.buf);
-      free_compiler(compiler);
-      free_vm(vm);
+      free(compiler);
+      free(vm);
     }
     }
 

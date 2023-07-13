@@ -12,11 +12,28 @@ Compiler *new_compiler() {
   Compiler *compiler = malloc(sizeof(Compiler));
   assert(compiler != NULL);
 
-  array_init(&compiler->constants, 8);
+  compiler->constants = malloc(sizeof(DynamicArray));
+  assert(compiler->constants != NULL);
+  array_init(compiler->constants, 8);
+
   int_array_init(&compiler->instructions, 8);
   compiler->last_instruction = (EmmittedInstruction){};
   compiler->previous_instruction = (EmmittedInstruction){};
   compiler->symbol_table = new_symbol_table();
+
+  return compiler;
+}
+
+Compiler *new_compiler_with_state(SymbolTable *symbol_table,
+                                  DynamicArray *constants) {
+  Compiler *compiler = malloc(sizeof(Compiler));
+  assert(compiler != NULL);
+
+  int_array_init(&compiler->instructions, 8);
+  compiler->last_instruction = (EmmittedInstruction){};
+  compiler->previous_instruction = (EmmittedInstruction){};
+  compiler->constants = constants;
+  compiler->symbol_table = symbol_table;
 
   return compiler;
 }
@@ -27,8 +44,8 @@ void free_compiler(Compiler *compiler) {
 }
 
 size_t add_constant(Compiler *compiler, Object *obj) {
-  array_append(&compiler->constants, obj);
-  return compiler->constants.len - 1;
+  array_append(compiler->constants, obj);
+  return compiler->constants->len - 1;
 }
 
 size_t add_instruction(Compiler *compiler, Instruction ins) {
@@ -114,6 +131,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
 
     const Symbol *symbol =
         symbol_define(compiler->symbol_table, stmt->name->value);
+
     emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
     break;
   }
@@ -306,7 +324,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   case IF_EXPR:
     return compile_if_expression(compiler, (IfExpression *)expr);
   case IDENT_EXPR: {
-    const Symbol *symbol = symbol_resolve(compiler->symbol_table, ((Identifier *)expr)->value);
+    const Symbol *symbol =
+        symbol_resolve(compiler->symbol_table, ((Identifier *)expr)->value);
     if (!symbol) {
       return COMPILER_UNKNOWN_IDENTIFIER;
     }
@@ -322,7 +341,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
 
 Bytecode bytecode(Compiler *compiler) {
   Bytecode bytecode = {
-      .constants = compiler->constants,
+      .constants = *compiler->constants,
       .instructions = compiler->instructions,
   };
 

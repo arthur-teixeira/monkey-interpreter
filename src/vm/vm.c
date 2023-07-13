@@ -19,6 +19,12 @@ VM *new_vm(Bytecode bytecode) {
   return vm;
 }
 
+VM *new_vm_with_state(Bytecode bytecode, Object *globals[GLOBALS_SIZE]) {
+  VM *vm = new_vm(bytecode);
+  memcpy(vm->globals, globals, sizeof(Object *) * GLOBALS_SIZE);
+  return vm;
+}
+
 void free_vm(VM *vm) {
   array_free(&vm->constants);
   int_array_free(&vm->instructions);

@@ -19,13 +19,14 @@ typedef struct {
 
 typedef struct {
     Instructions instructions;
-    DynamicArray constants; // Object*[]
+    DynamicArray *constants; // Object*[]
     SymbolTable *symbol_table;
     EmmittedInstruction last_instruction;
     EmmittedInstruction previous_instruction;
 } Compiler;
 
 Compiler *new_compiler();
+Compiler *new_compiler_with_state(SymbolTable *, DynamicArray *);
 
 CompilerResult compile_program(Compiler *, Program *);
 CompilerResult compile_statement(Compiler *, Statement *);
