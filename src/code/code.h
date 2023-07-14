@@ -35,6 +35,7 @@ typedef enum {
     OP_NULL,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
+    OP_ARRAY,
     OP_COUNT,
 } OpCode;
 

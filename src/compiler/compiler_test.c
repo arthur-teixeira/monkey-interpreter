@@ -3,8 +3,8 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "compiler.h"
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -557,21 +557,73 @@ void test_string_expressions(void) {
               },
       },
       {
-        .input = "\"mon\" + \"key\"",
-        .expected_constants_len = 2,
-        .expected_constants = {"mon", "key"},
-        .expected_instructions_len = 4,
+          .input = "\"mon\" + \"key\"",
+          .expected_constants_len = 2,
+          .expected_constants = {"mon", "key"},
+          .expected_instructions_len = 4,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_STRING);
+}
+
+void test_array_literals(void) {
+  compilerIntTestCase tests[] = {
+      {
+          .input = "[]",
+          .expected_constants_len = 0,
+          .expected_constants = {},
+          .expected_instructions_len = 2,
+          .expected_instructions =
+              {
+                  make_instruction(OP_ARRAY, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "[1, 2, 3]",
+          .expected_constants_len = 3,
+          .expected_constants = {1, 2, 3},
+          .expected_instructions_len = 5,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_ARRAY, (int[]){3}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+        .input = "[1 + 2, 3 - 4, 5 * 6]",
+        .expected_constants_len = 6,
+        .expected_constants = {1, 2, 3, 4, 5, 6},
+        .expected_instructions_len = 11,
         .expected_instructions =
             {
                 make_instruction(OP_CONSTANT, (int[]){0}, 1),
                 make_instruction(OP_CONSTANT, (int[]){1}, 1),
                 make_instruction(OP_ADD, (int[]){}, 0),
+                make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                make_instruction(OP_SUB, (int[]){}, 0),
+                make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                make_instruction(OP_CONSTANT, (int[]){5}, 1),
+                make_instruction(OP_MUL, (int[]){}, 0),
+                make_instruction(OP_ARRAY, (int[]){3}, 1),
                 make_instruction(OP_POP, (int[]){}, 0),
             },
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_STRING);
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
 }
 
 int main(void) {
@@ -581,5 +633,6 @@ int main(void) {
   RUN_TEST(test_conditionals);
   RUN_TEST(test_global_let_statements);
   RUN_TEST(test_string_expressions);
+  RUN_TEST(test_array_literals);
   return UNITY_END();
 }

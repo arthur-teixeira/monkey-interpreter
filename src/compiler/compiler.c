@@ -339,6 +339,18 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;
   }
+  case ARRAY_EXPR: {
+    ArrayLiteral *arr_lit = (ArrayLiteral *)expr;
+    for (size_t i = 0; i < arr_lit->elements->len; i++) {
+      CompilerResult result =
+          compile_expression(compiler, arr_lit->elements->arr[i]);
+      if (result != COMPILER_OK) {
+        return result;
+      }
+    }
+    emit(compiler, OP_ARRAY, (int[]){arr_lit->elements->len}, 1);
+    break;
+  }
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }

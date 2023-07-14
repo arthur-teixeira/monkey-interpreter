@@ -53,6 +53,11 @@ static Definition definitions[OP_COUNT] = {
         .operand_count = 1,
         .operand_widths = {2},
     },
+    {
+        .name = "OP_ARRAY",
+        .operand_count = 1,
+        .operand_widths = {2},
+    },
 };
 
 Definition *lookup(OpCode opcode) {
