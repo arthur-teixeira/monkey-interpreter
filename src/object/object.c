@@ -193,3 +193,18 @@ Object *new_string(char *value, size_t len) {
 
   return (Object *)str;
 }
+
+Object *new_concatted_string(String *left, String *right) {
+  String *new_string = malloc(sizeof(String));
+  assert(new_string != NULL);
+
+  new_string->type = STRING_OBJ;
+  new_string->len = left->len + right->len;
+
+  new_string->value = malloc(new_string->len + 1);
+
+  strlcpy(new_string->value, left->value, new_string->len + 1);
+  strncat(new_string->value, right->value, new_string->len + 1);
+
+  return (Object *)new_string;
+}

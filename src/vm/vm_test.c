@@ -16,6 +16,7 @@ typedef enum {
   VM_TEST_INTEGER,
   VM_TEST_BOOLEAN,
   VM_TEST_NULL,
+  VM_TEST_STRING,
 } vmTestCaseType;
 
 typedef struct {
@@ -32,6 +33,11 @@ typedef struct {
   char *input;
 } vmNullTestCase;
 
+typedef struct {
+  char *input;
+  char *expected;
+} vmStringTestCase;
+
 Program *parse(void *test, vmTestCaseType type) {
   char *input;
   switch (type) {
@@ -43,6 +49,9 @@ Program *parse(void *test, vmTestCaseType type) {
     break;
   case VM_TEST_NULL:
     input = ((vmNullTestCase *)test)->input;
+    break;
+  case VM_TEST_STRING:
+    input = ((vmStringTestCase *)test)->input;
     break;
   }
 
@@ -63,6 +72,11 @@ void test_boolean_object(bool expected, Object *actual) {
   TEST_ASSERT_EQUAL(expected, ((Boolean *)actual)->value);
 }
 
+void test_string_object(char *expected, Object *actual) {
+  TEST_ASSERT_EQUAL(STRING_OBJ, actual->type);
+  TEST_ASSERT_EQUAL_STRING(expected, ((String *)actual)->value);
+}
+
 void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
   switch (type) {
   case VM_TEST_INTEGER:
@@ -73,6 +87,9 @@ void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
     break;
   case VM_TEST_NULL:
     TEST_ASSERT_EQUAL(NULL_OBJ, actual->type);
+    break;
+  case VM_TEST_STRING:
+    test_string_object(((vmStringTestCase *)expected)->expected, actual);
     break;
   }
 }
@@ -208,11 +225,22 @@ void test_global_let_statements(void) {
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
 }
 
+void test_string_expressions(void) {
+  vmStringTestCase tests[] = {
+    {"\"monkey\"", "monkey"},
+    {"\"mon\" + \"key\"", "monkey"},
+    {"\"mon\" + \"key\" + \"banana\"", "monkeybanana"},
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_STRING);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_conditionals);
   RUN_TEST(test_global_let_statements);
+  RUN_TEST(test_string_expressions);
   return UNITY_END();
 }

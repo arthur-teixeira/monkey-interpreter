@@ -221,18 +221,7 @@ Object *eval_string_infix_expression(Object *left, char *operator,
   String *left_str = (String *)left;
   String *right_str = (String *)right;
 
-  String *new_string = malloc(sizeof(String));
-  assert(new_string != NULL);
-
-  new_string->type = STRING_OBJ;
-  new_string->len = left_str->len + right_str->len;
-
-  new_string->value = malloc(new_string->len + 1);
-
-  strlcpy(new_string->value, left_str->value, new_string->len + 1);
-  strncat(new_string->value, right_str->value, new_string->len + 1);
-
-  return (Object *)new_string;
+  return new_concatted_string(left_str, right_str);
 }
 
 Object *eval_prefix_expression(PrefixExpression *expr, Environment *env) {

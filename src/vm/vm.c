@@ -82,12 +82,28 @@ VMResult execute_binary_integer_operation(VM *vm, OpCode op, Number *left,
   }
 }
 
+VMResult execute_binary_string_operation(VM *vm, OpCode op, String *left,
+                                         String *right) {
+  switch (op) {
+  case OP_ADD: {
+    return stack_push(vm, new_concatted_string(left, right));
+  }
+  default:
+    return VM_UNSUPPORTED_OPERATION;
+  }
+}
+
 VMResult execute_binary_operation(VM *vm, OpCode op) {
   Object *right = stack_pop(vm);
   Object *left = stack_pop(vm);
   if (right->type == NUMBER_OBJ && left->type == NUMBER_OBJ) {
     return execute_binary_integer_operation(vm, op, (Number *)left,
                                             (Number *)right);
+  }
+
+  if (right->type == STRING_OBJ && left->type == STRING_OBJ) {
+    return execute_binary_string_operation(vm, op, (String *)left,
+                                           (String *)right);
   }
   return VM_UNSUPPORTED_OPERATION;
 }
