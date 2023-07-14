@@ -185,6 +185,18 @@ static bool is_truthy(Object *obj) {
   return true;
 }
 
+Object *vm_build_array(VM *vm, size_t start, size_t end) {
+  Array *arr = malloc(sizeof(Array));
+  assert(arr != NULL);
+  array_init(&arr->elements, end - start);
+
+  for (size_t i = start; i < end; i++) {
+    array_append(&arr->elements, vm->stack[i]);
+  }
+
+  return (Object *)arr;
+}
+
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
     VMResult result;
@@ -283,6 +295,19 @@ VMResult run_vm(VM *vm) {
       uint16_t global_index = big_endian_read_uint16(&vm->instructions, ip + 1);
       ip += 2;
       VMResult result = stack_push(vm, vm->globals[global_index]);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
+    case OP_ARRAY: {
+      uint16_t num_elements = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip += 2;
+
+      Object *array = vm_build_array(vm, vm->sp - num_elements, vm->sp);
+      vm->sp = vm->sp - num_elements;
+
+      VMResult result = stack_push(vm, array);
       if (result != VM_OK) {
         return result;
       }

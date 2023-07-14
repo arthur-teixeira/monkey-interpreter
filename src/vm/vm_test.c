@@ -17,6 +17,7 @@ typedef enum {
   VM_TEST_BOOLEAN,
   VM_TEST_NULL,
   VM_TEST_STRING,
+  VM_TEST_ARRAY,
 } vmTestCaseType;
 
 typedef struct {
@@ -38,6 +39,12 @@ typedef struct {
   char *expected;
 } vmStringTestCase;
 
+typedef struct {
+  char *input;
+  int64_t expected[100];
+  size_t expected_len;
+} vmArrayTestCase;
+
 Program *parse(void *test, vmTestCaseType type) {
   char *input;
   switch (type) {
@@ -52,6 +59,9 @@ Program *parse(void *test, vmTestCaseType type) {
     break;
   case VM_TEST_STRING:
     input = ((vmStringTestCase *)test)->input;
+    break;
+  case VM_TEST_ARRAY:
+    input = ((vmArrayTestCase *)test)->input;
     break;
   }
 
@@ -91,6 +101,14 @@ void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
   case VM_TEST_STRING:
     test_string_object(((vmStringTestCase *)expected)->expected, actual);
     break;
+  case VM_TEST_ARRAY: {
+    vmArrayTestCase *test = (vmArrayTestCase *)expected;
+    TEST_ASSERT_EQUAL_INT64(test->expected_len, ((Array *)actual)->elements.len);
+    for (size_t i = 0; i < test->expected_len; i++) {
+      test_integer_object(test->expected[i], ((Array *)actual)->elements.arr[i]);
+    }
+    break;
+  }
   }
 }
 
@@ -235,6 +253,16 @@ void test_string_expressions(void) {
   VM_RUN_TESTS(tests, VM_TEST_STRING);
 }
 
+void test_array_literals(void) {
+  vmArrayTestCase tests[] = {
+    {"[]", {}, 0},
+    {"[1, 2, 3]", {1, 2, 3}, 3},
+    {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}, 3},
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_ARRAY);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -242,5 +270,6 @@ int main(void) {
   RUN_TEST(test_conditionals);
   RUN_TEST(test_global_let_statements);
   RUN_TEST(test_string_expressions);
+  RUN_TEST(test_array_literals);
   return UNITY_END();
 }
