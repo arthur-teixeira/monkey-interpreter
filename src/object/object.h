@@ -93,5 +93,6 @@ typedef struct {
 size_t sizeof_object(Object *);
 
 Object *new_number(double);
+Object *new_string(char *, size_t);
 
 #endif

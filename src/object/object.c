@@ -182,3 +182,14 @@ Object *new_number(double value) {
 
   return (Object *)int_obj;
 }
+
+Object *new_string(char *value, size_t len) {
+  String *str = malloc(sizeof(String));
+  assert(str != NULL && "error allocating memory for string");
+
+  str->type = STRING_OBJ;
+  str->len = len;
+  str->value = strdup(value);
+
+  return (Object *)str;
+}

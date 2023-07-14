@@ -77,14 +77,7 @@ Object *inverted_boolean(Boolean *bol) {
 }
 
 Object *eval_string_expression(StringLiteral *expr) {
-  String *str = malloc(sizeof(String));
-  assert(str != NULL && "error allocating memory for string");
-
-  str->type = STRING_OBJ;
-  str->len = expr->len;
-  str->value = strdup(expr->value);
-
-  return (Object *)str;
+  return new_string(expr->value, expr->len);
 }
 
 Object *cast_int_to_boolean(Number *intt) {

@@ -332,6 +332,13 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit(compiler, OP_GET_GLOBAL, (int[]){symbol->index}, 1);
     break;
   }
+  case STRING_EXPR: {
+    StringLiteral *str_lit = (StringLiteral *)expr;
+    Object *str = new_string(str_lit->value, str_lit->len);
+    size_t new_constant_pos = add_constant(compiler, str);
+    emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
+    break;
+  }
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }

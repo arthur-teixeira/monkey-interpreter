@@ -3,9 +3,18 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "compiler.h"
+#include <stdio.h>
 #include <stdint.h>
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
+
+#define RUN_COMPILER_TESTS(tests, type)                                        \
+  run_compiler_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type)
+
+typedef enum {
+  COMPILER_TEST_INT,
+  COMPILER_TEST_STRING,
+} CompilerTestType;
 
 typedef struct {
   char *input;
@@ -13,9 +22,27 @@ typedef struct {
   size_t expected_constants[100];
   size_t expected_instructions_len;
   Instruction expected_instructions[100];
-} compilerTestCase;
+} compilerIntTestCase;
 
-Program *parse(char *input) {
+typedef struct {
+  char *input;
+  size_t expected_constants_len;
+  char *expected_constants[100];
+  size_t expected_instructions_len;
+  Instruction expected_instructions[100];
+} compilerStringTestCase;
+
+Program *parse(void *test, CompilerTestType type) {
+  char *input;
+  switch (type) {
+  case COMPILER_TEST_INT:
+    input = ((compilerIntTestCase *)test)->input;
+    break;
+  case COMPILER_TEST_STRING:
+    input = ((compilerStringTestCase *)test)->input;
+    break;
+  }
+
   Lexer *l = new_lexer(input);
   Parser *p = new_parser(l);
   Program *program = parse_program(p);
@@ -83,8 +110,8 @@ void test_integer_object(int expected, Object *actual) {
   TEST_ASSERT_EQUAL(expected, ((Number *)actual)->value);
 }
 
-void test_constants(size_t constants_count, size_t expected[],
-                    DynamicArray actual) {
+void test_integer_constants(size_t constants_count, size_t expected[],
+                            DynamicArray actual) {
   TEST_ASSERT_EQUAL(constants_count, actual.len);
 
   for (uint32_t i = 0; i < constants_count; i++) {
@@ -92,11 +119,22 @@ void test_constants(size_t constants_count, size_t expected[],
   }
 }
 
-void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
-  for (uint32_t i = 0; i < test_count; i++) {
-    compilerTestCase test = tests[i];
+void test_string_constants(size_t constants_count, char *expected[],
+                           DynamicArray actual) {
+  TEST_ASSERT_EQUAL(constants_count, actual.len);
 
-    Program *program = parse(test.input);
+  for (uint32_t i = 0; i < constants_count; i++) {
+    TEST_ASSERT_EQUAL(STRING_OBJ, ((String *)actual.arr[i])->type);
+    TEST_ASSERT_EQUAL_STRING(expected[i], ((String *)actual.arr[i])->value);
+  }
+}
+
+void run_compiler_tests(void *tests, size_t test_size, size_t test_count,
+                        CompilerTestType type) {
+  for (uint32_t i = 0; i < test_count; i++) {
+    void *test = tests + (i * test_size);
+
+    Program *program = parse(test, type);
     Compiler *compiler = new_compiler();
     int8_t result = compile_program(compiler, program);
     if (result != COMPILER_OK) {
@@ -107,11 +145,26 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 
     Bytecode code = bytecode(compiler);
 
-    test_instructions(test.expected_instructions_len,
-                      test.expected_instructions, code.instructions);
+    switch (type) {
+    case COMPILER_TEST_INT: {
+      compilerIntTestCase *int_test = (compilerIntTestCase *)test;
+      test_instructions(int_test->expected_instructions_len,
+                        int_test->expected_instructions, code.instructions);
 
-    test_constants(test.expected_constants_len, test.expected_constants,
-                   code.constants);
+      test_integer_constants(int_test->expected_constants_len,
+                             int_test->expected_constants, code.constants);
+      break;
+    }
+    case COMPILER_TEST_STRING: {
+      compilerStringTestCase *str_test = (compilerStringTestCase *)test;
+      test_instructions(str_test->expected_instructions_len,
+                        str_test->expected_instructions, code.instructions);
+
+      test_string_constants(str_test->expected_constants_len,
+                            str_test->expected_constants, code.constants);
+      break;
+    }
+    }
 
     free_program(program);
     free_compiler(compiler);
@@ -119,7 +172,7 @@ void run_compiler_tests(compilerTestCase tests[], size_t test_count) {
 }
 
 void test_integer_arithmetic(void) {
-  compilerTestCase
+  compilerIntTestCase
       tests[] =
           {
               {
@@ -266,11 +319,11 @@ void test_integer_arithmetic(void) {
               },
           };
 
-  run_compiler_tests(tests, ARRAY_LEN(tests));
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
 }
 
 void test_boolean_expressions(void) {
-  compilerTestCase
+  compilerIntTestCase
       tests[] =
           {
               {
@@ -382,11 +435,11 @@ void test_boolean_expressions(void) {
               },
           };
 
-  run_compiler_tests(tests, ARRAY_LEN(tests));
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
 }
 
 void test_conditionals(void) {
-  compilerTestCase tests[] = {
+  compilerIntTestCase tests[] = {
       {
           .input = "if (true) { 10 }; 3333;",
           .expected_constants_len = 2,
@@ -439,11 +492,11 @@ void test_conditionals(void) {
       },
   };
 
-  run_compiler_tests(tests, ARRAY_LEN(tests));
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
 }
 
 void test_global_let_statements(void) {
-  compilerTestCase tests[] = {
+  compilerIntTestCase tests[] = {
       {
           .input = "let one = 1; let two = 2;",
           .expected_constants_len = 2,
@@ -487,7 +540,38 @@ void test_global_let_statements(void) {
       },
   };
 
-  run_compiler_tests(tests, ARRAY_LEN(tests));
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+}
+
+void test_string_expressions(void) {
+  compilerStringTestCase tests[] = {
+      {
+          .input = "\"monkey\"",
+          .expected_constants_len = 1,
+          .expected_constants = {"monkey"},
+          .expected_instructions_len = 2,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+        .input = "\"mon\" + \"key\"",
+        .expected_constants_len = 2,
+        .expected_constants = {"mon", "key"},
+        .expected_instructions_len = 4,
+        .expected_instructions =
+            {
+                make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                make_instruction(OP_ADD, (int[]){}, 0),
+                make_instruction(OP_POP, (int[]){}, 0),
+            },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_STRING);
 }
 
 int main(void) {
@@ -496,5 +580,6 @@ int main(void) {
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_conditionals);
   RUN_TEST(test_global_let_statements);
+  RUN_TEST(test_string_expressions);
   return UNITY_END();
 }
