@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "../crc/crc.h"
 #include "../dyn_array/dyn_array.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
@@ -375,7 +376,7 @@ BlockStatement *parse_block_statement(Parser *p) {
   return block;
 }
 
-Expression *parse_if_expression(Parser *p){
+Expression *parse_if_expression(Parser *p) {
   if (!expect_peek(p, LPAREN)) {
     return NULL;
   }
@@ -418,7 +419,7 @@ Expression *parse_if_expression(Parser *p){
   expr->alternative = parse_block_statement(p);
 
   return (Expression *)expr;
-} 
+}
 
 DynamicArray parse_function_parameters(Parser *p) {
   DynamicArray parameters;
@@ -455,7 +456,7 @@ Expression *parse_function_literal(Parser *p) {
   }
 
   FunctionLiteral *fn = malloc(sizeof(FunctionLiteral));
-  assert(fn != NULL); 
+  assert(fn != NULL);
 
   fn->token = p->cur_token;
   fn->type = FN_EXPR;
@@ -475,7 +476,7 @@ Expression *parse_function_literal(Parser *p) {
 
   fn->body = parse_block_statement(p);
   return (Expression *)fn;
-} 
+}
 
 Expression *parse_string_literal(Parser *p) {
   StringLiteral *str = malloc(sizeof(StringLiteral));
@@ -487,7 +488,7 @@ Expression *parse_string_literal(Parser *p) {
   str->type = STRING_EXPR;
 
   return (Expression *)str;
-} 
+}
 
 Expression *parse_array_literal(Parser *p) {
   ArrayLiteral *arr = malloc(sizeof(ArrayLiteral));
@@ -520,14 +521,68 @@ Expression *parse_array_literal(Parser *p) {
   return (Expression *)arr;
 }
 
+uint32_t parser_hashmap_hasher(uint32_t seed, const void *key,
+                               hashmap_uint32_t key_len) {
+  switch (((Expression *)key)->type) {
+  case INT_EXPR: {
+    long key_value = ((NumberLiteral *)key)->value;
+    return (key_value & 0x482D) ^ 0x762A;
+  }
+  case STRING_EXPR: {
+    char *str = ((StringLiteral *)key)->value;
+    return crc32((unsigned char *)str, strlen(str), 10);
+  }
+  case BOOL_EXPR: {
+    return ((BooleanLiteral *)key)->value;
+  }
+  default:
+    return ((Expression *)key)->type;
+  }
+}
+
+int parser_hash_comparer(const void *a, hashmap_uint32_t a_len,
+                          const void *b, hashmap_uint32_t b_len) {
+  if (a_len != b_len) {
+    return false;
+  }
+
+  Expression *a_expr = (Expression *)a;
+  Expression *b_expr = (Expression *)b;
+
+  if (a_expr->type != b_expr->type) {
+    return false;
+  }
+
+  switch (a_expr->type) {
+  case INT_EXPR: {
+    return ((NumberLiteral *)a_expr)->value == ((NumberLiteral *)b_expr)->value;
+  }
+  case STRING_EXPR: {
+    return strcmp(((StringLiteral *)a_expr)->value,
+                  ((StringLiteral *)b_expr)->value) == 0;
+  }
+  case BOOL_EXPR: {
+    return ((BooleanLiteral *)a_expr)->value == ((BooleanLiteral *)b_expr)->value;
+  }
+  default:
+    return false;
+  }
+}
+
 Expression *parse_hash_literal(Parser *p) {
   HashLiteral *hash = malloc(sizeof(HashLiteral));
   assert(hash != NULL && "Error allocating memory for hash");
 
+  hashmap_create_options_t options = {
+      .initial_capacity = 5,
+      .hasher = parser_hashmap_hasher,
+      .comparer = parser_hash_comparer,
+  };
+
   hash->len = 0;
   hash->token = p->cur_token;
   hash->type = HASH_EXPR;
-  hashmap_create(5, &hash->pairs);
+  hashmap_create_ex(options, &hash->pairs);
 
   while (!peek_token_is(p, RBRACE)) {
     parser_next_token(p);
@@ -566,7 +621,7 @@ Expression *parse_while_loop(Parser *p) {
   if (should_alter_loop_state) {
     INSIDE_LOOP = true;
   }
-  
+
   WhileLoop *loop = malloc(sizeof(WhileLoop));
   assert(loop != NULL && "Error allocating memory for while loop");
 
@@ -671,10 +726,10 @@ Expression *parse_for_loop(Parser *p) {
 
 Expression *parse_infix_expression(Parser *p, Expression *left) {
   InfixExpression *infix_expr = malloc(sizeof(InfixExpression));
-  assert(infix_expr != NULL); 
+  assert(infix_expr != NULL);
 
   infix_expr->type = INFIX_EXPR;
-  infix_expr->operator = strdup(p->cur_token.literal);
+  infix_expr->operator= strdup(p->cur_token.literal);
   infix_expr->token = p->cur_token;
 
   uint32_t precedence = cur_precedence(p);
@@ -688,7 +743,6 @@ Expression *parse_infix_expression(Parser *p, Expression *left) {
 
 void parse_call_arguments(CallExpression *expr, Parser *p) {
   array_init(&expr->arguments, 5);
-
 
   if (peek_token_is(p, RPAREN)) {
     parser_next_token(p);
