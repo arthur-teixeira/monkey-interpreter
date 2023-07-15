@@ -197,6 +197,33 @@ Object *vm_build_array(VM *vm, size_t start, size_t end) {
   return (Object *)arr;
 }
 
+Object *vm_build_hash(VM *vm, size_t start, size_t end) {
+  Hash *hash = malloc(sizeof(Hash));
+  assert(hash != NULL);
+  hashmap_create(end - start, &hash->pairs);
+
+  for (size_t i = start; i < end; i += 2) {
+    Object *key = vm->stack[i];
+    Object *value = vm->stack[i + 1];
+
+    HashPair *pair = malloc(sizeof(HashPair));
+    assert(pair != NULL);
+    pair->key = key;
+    pair->value = value;
+    int32_t hash_key = get_hash_key(key);
+    if (hash_key < 0) {
+      return NULL;
+    }
+    int32_t *hash_key_in_heap = malloc(sizeof(int32_t));
+    assert(hash_key_in_heap != NULL);
+    *hash_key_in_heap = hash_key;
+
+    hashmap_put(&hash->pairs, hash_key_in_heap, sizeof(int32_t), pair);
+  }
+
+  return (Object *)hash;
+}
+
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
     VMResult result;
@@ -313,6 +340,22 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
+    case OP_HASH: {
+      uint16_t num_elements = big_endian_read_uint16(&vm->instructions, ip + 1);
+      ip += 2;
+
+      Object *hash = vm_build_hash(vm, vm->sp - num_elements, vm->sp);
+      if (!hash) {
+        return VM_UNHASHABLE_OBJECT;
+      }
+
+      vm->sp = vm->sp - num_elements;
+      VMResult result = stack_push(vm, hash);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }
@@ -335,6 +378,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_UNSUPPORTED_TYPE_FOR_OPERATION:
     snprintf(buf, bufsize, "Unsupported type for operation");
+    return;
+  case VM_UNHASHABLE_OBJECT:
+    snprintf(buf, bufsize, "Unhashable object");
     return;
   }
 }
