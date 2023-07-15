@@ -310,8 +310,7 @@ int compile_hash_pair(void *const ctx, struct hashmap_element_s *const pair) {
   HashCompilerContext *const context = ctx;
   Expression *key = (Expression *)pair->key;
 
-  CompilerResult result =
-      compile_expression(context->compiler, key);
+  CompilerResult result = compile_expression(context->compiler, key);
   if (result != COMPILER_OK) {
     context->result = result;
     return 1;
@@ -396,6 +395,20 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   }
   case HASH_EXPR:
     return compile_hash_expression(compiler, (HashLiteral *)expr);
+  case INDEX_EXPR: {
+    IndexExpression *index_expr = (IndexExpression *)expr;
+    CompilerResult result = compile_expression(compiler, index_expr->left);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+    result = compile_expression(compiler, index_expr->index);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+
+    emit_no_operands(compiler, OP_INDEX);
+    break;
+  }
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }
@@ -423,6 +436,9 @@ void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
     break;
   case COMPILER_UNKNOWN_IDENTIFIER:
     snprintf(buf, bufsize, "unknown identifier");
+    break;
+  case COMPILER_UNINDEXABLE_TYPE:
+    snprintf(buf, bufsize, "unknown type");
     break;
   case COMPILER_OK:
     break;

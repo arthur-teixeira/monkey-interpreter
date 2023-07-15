@@ -660,6 +660,48 @@ void test_hash_literals(void) {
   RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
 }
 
+void test_index_expressions(void) {
+  compilerIntTestCase tests[] = {
+    {
+      .input = "[1, 2, 3][1 + 1]",
+      .expected_constants_len = 5,
+      .expected_constants = {1, 2, 3, 1, 1},
+      .expected_instructions_len = 9,
+      .expected_instructions =
+          {
+              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+              make_instruction(OP_CONSTANT, (int[]){2}, 1),
+              make_instruction(OP_ARRAY, (int[]){3}, 1),
+              make_instruction(OP_CONSTANT, (int[]){3}, 1),
+              make_instruction(OP_CONSTANT, (int[]){4}, 1),
+              make_instruction(OP_ADD, (int[]){}, 0),
+              make_instruction(OP_INDEX, (int[]){}, 0),
+              make_instruction(OP_POP, (int[]){}, 0),
+          },
+    },
+    {
+      .input = "{1: 2}[2 - 1]",
+      .expected_constants_len = 4,
+      .expected_constants = {1, 2, 2, 1},
+      .expected_instructions_len = 8,
+      .expected_instructions =
+          {
+              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+              make_instruction(OP_HASH, (int[]){2}, 1),
+              make_instruction(OP_CONSTANT, (int[]){2}, 1),
+              make_instruction(OP_CONSTANT, (int[]){3}, 1),
+              make_instruction(OP_SUB, (int[]){}, 0),
+              make_instruction(OP_INDEX, (int[]){}, 0),
+              make_instruction(OP_POP, (int[]){}, 0),
+          },
+    },
+  };
+
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -669,5 +711,6 @@ int main(void) {
   RUN_TEST(test_string_expressions);
   RUN_TEST(test_array_literals);
   RUN_TEST(test_hash_literals);
+  RUN_TEST(test_index_expressions);
   return UNITY_END();
 }

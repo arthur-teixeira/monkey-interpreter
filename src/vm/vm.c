@@ -224,6 +224,43 @@ Object *vm_build_hash(VM *vm, size_t start, size_t end) {
   return (Object *)hash;
 }
 
+VMResult execute_array_index(VM *vm, Array *left, Number *index) {
+  size_t i = index->value;
+  size_t max_index = left->elements.len - 1;
+
+  if (i < 0 || i > max_index) {
+    return stack_push(vm, (Object *)&obj_null);
+  }
+
+  return stack_push(vm, left->elements.arr[i]);
+}
+
+VMResult execute_hash_index(VM *vm, Hash *hash, Object *index) {
+  int32_t hask_key = get_hash_key(index);
+  if (hask_key < 0) {
+    return VM_UNHASHABLE_OBJECT;
+  }
+
+  HashPair *pair = hashmap_get(&hash->pairs, &hask_key, sizeof(int32_t));
+  if (!pair) {
+    return stack_push(vm, (Object *)&obj_null);
+  }
+
+  return stack_push(vm, pair->value);
+}
+
+VMResult execute_index_expression(VM *vm, Object *left, Object *index) {
+  if (left->type == ARRAY_OBJ && index->type == NUMBER_OBJ) {
+    return execute_array_index(vm, (Array *)left, (Number *)index);
+  }
+
+  if (left->type == HASH_OBJ) {
+    return execute_hash_index(vm, (Hash *)left, index);
+  }
+
+  return VM_UNINDEXABLE_OBJECT;
+}
+
 VMResult run_vm(VM *vm) {
   for (size_t ip = 0; ip < vm->instructions.len; ip++) {
     VMResult result;
@@ -356,6 +393,17 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
+    case OP_INDEX: {
+      Object *index = stack_pop(vm);
+      Object *left = stack_pop(vm);
+
+      VMResult result = execute_index_expression(vm, left, index);
+
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }
@@ -381,6 +429,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_UNHASHABLE_OBJECT:
     snprintf(buf, bufsize, "Unhashable object");
+    return;
+  case VM_UNINDEXABLE_OBJECT:
+    snprintf(buf, bufsize, "Unindexable object");
     return;
   }
 }

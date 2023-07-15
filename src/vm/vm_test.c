@@ -6,11 +6,14 @@
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "vm.h"
+#include "../object/constants.h"
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #define VM_RUN_TESTS(tests, type)                                                 \
   run_vm_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type);
+
+#define EXPECTED_NULL_SENTINEL 98534921
 
 typedef enum {
   VM_TEST_INTEGER,
@@ -73,6 +76,11 @@ Program *parse(void *test, vmTestCaseType type) {
 }
 
 void test_integer_object(double expected, Object *actual) {
+  if (expected == EXPECTED_NULL_SENTINEL) {
+    TEST_ASSERT_EQUAL_PTR(&obj_null, actual);
+    return;
+  }
+
   TEST_ASSERT_EQUAL(NUMBER_OBJ, actual->type);
   TEST_ASSERT_EQUAL_INT64(expected, ((Number *)actual)->value);
 }
@@ -261,6 +269,23 @@ void test_array_literals(void) {
   };
 
   VM_RUN_TESTS(tests, VM_TEST_ARRAY);
+}
+
+void test_index_expressions(void) {
+  vmIntTestCase tests[] = { 
+    {"[1, 2, 3][1]", 2},
+    {"[1, 2, 3][0 + 2]", 3},
+    {"[[1, 1, 1]][0][0]", 1},
+    {"[][0]", -1},
+    {"[1, 2, 3][99]", EXPECTED_NULL_SENTINEL},
+    {"[1][-1]", EXPECTED_NULL_SENTINEL},
+    {"{1: 1, 2: 2}[1]", 1},
+    {"{1: 1, 2: 2}[2]", 2},
+    {"{1: 1}[0]", EXPECTED_NULL_SENTINEL},
+    {"{}[0]", EXPECTED_NULL_SENTINEL},
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
 }
 
 int main(void) {
