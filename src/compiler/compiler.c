@@ -301,6 +301,49 @@ CompilerResult compile_if_expression(Compiler *compiler, IfExpression *expr) {
   return COMPILER_OK;
 }
 
+typedef struct {
+  Compiler *compiler;
+  CompilerResult result;
+} HashCompilerContext;
+
+int compile_hash_pair(void *const ctx, struct hashmap_element_s *const pair) {
+  HashCompilerContext *const context = ctx;
+  Expression *key = (Expression *)pair->key;
+
+  CompilerResult result =
+      compile_expression(context->compiler, key);
+  if (result != COMPILER_OK) {
+    context->result = result;
+    return 1;
+  }
+
+  Expression *data = pair->data;
+  result = compile_expression(context->compiler, data);
+  if (result != COMPILER_OK) {
+    context->result = result;
+    return 1;
+  }
+
+  return 0;
+}
+
+CompilerResult compile_hash_expression(Compiler *compiler, HashLiteral *expr) {
+  HashLiteral *hash_lit = (HashLiteral *)expr;
+  HashCompilerContext context = {
+      .compiler = compiler,
+      .result = COMPILER_OK,
+  };
+
+  hashmap_iterate_pairs(&expr->pairs, &compile_hash_pair, &context);
+  if (context.result != COMPILER_OK) {
+    return context.result;
+  }
+
+  emit(compiler, OP_HASH, (int[]){hash_lit->len * 2}, 1);
+
+  return context.result;
+}
+
 CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   switch (expr->type) {
   case INFIX_EXPR:
@@ -351,6 +394,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit(compiler, OP_ARRAY, (int[]){arr_lit->elements->len}, 1);
     break;
   }
+  case HASH_EXPR:
+    return compile_hash_expression(compiler, (HashLiteral *)expr);
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }

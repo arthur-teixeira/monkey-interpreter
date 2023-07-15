@@ -602,22 +602,56 @@ void test_array_literals(void) {
               },
       },
       {
-        .input = "[1 + 2, 3 - 4, 5 * 6]",
+          .input = "[1 + 2, 3 - 4, 5 * 6]",
+          .expected_constants_len = 6,
+          .expected_constants = {1, 2, 3, 4, 5, 6},
+          .expected_instructions_len = 11,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                  make_instruction(OP_SUB, (int[]){}, 0),
+                  make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){5}, 1),
+                  make_instruction(OP_MUL, (int[]){}, 0),
+                  make_instruction(OP_ARRAY, (int[]){3}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+}
+
+void test_hash_literals(void) {
+  compilerIntTestCase tests[] = {
+      {
+          .input = "{}",
+          .expected_constants_len = 0,
+          .expected_instructions_len = 2,
+          .expected_instructions =
+              {
+                  make_instruction(OP_HASH, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+        .input = "{1: 2, 3: 4, 5: 6}",
         .expected_constants_len = 6,
         .expected_constants = {1, 2, 3, 4, 5, 6},
-        .expected_instructions_len = 11,
+        .expected_instructions_len = 8,
         .expected_instructions =
             {
                 make_instruction(OP_CONSTANT, (int[]){0}, 1),
                 make_instruction(OP_CONSTANT, (int[]){1}, 1),
-                make_instruction(OP_ADD, (int[]){}, 0),
                 make_instruction(OP_CONSTANT, (int[]){2}, 1),
                 make_instruction(OP_CONSTANT, (int[]){3}, 1),
-                make_instruction(OP_SUB, (int[]){}, 0),
                 make_instruction(OP_CONSTANT, (int[]){4}, 1),
                 make_instruction(OP_CONSTANT, (int[]){5}, 1),
-                make_instruction(OP_MUL, (int[]){}, 0),
-                make_instruction(OP_ARRAY, (int[]){3}, 1),
+                make_instruction(OP_HASH, (int[]){6}, 1),
                 make_instruction(OP_POP, (int[]){}, 0),
             },
       },
@@ -634,5 +668,6 @@ int main(void) {
   RUN_TEST(test_global_let_statements);
   RUN_TEST(test_string_expressions);
   RUN_TEST(test_array_literals);
+  RUN_TEST(test_hash_literals);
   return UNITY_END();
 }

@@ -127,6 +127,7 @@ Token new_token(TokenType type, char literal) {
   buf[0] = literal;
   buf[1] = '\0';
 
+  memset(tok.literal, 0, 100);
   strlcpy(tok.literal, buf, sizeof(tok.literal));
 
   return tok;
