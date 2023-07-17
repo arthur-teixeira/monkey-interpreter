@@ -8,42 +8,18 @@
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
-#define RUN_COMPILER_TESTS(tests, type)                                        \
-  run_compiler_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type)
-
-typedef enum {
-  COMPILER_TEST_INT,
-  COMPILER_TEST_STRING,
-} CompilerTestType;
+#define RUN_COMPILER_TESTS(tests) run_compiler_tests(tests, ARRAY_LEN(tests))
 
 typedef struct {
   char *input;
   size_t expected_constants_len;
-  size_t expected_constants[100];
+  Object *expected_constants[100];
   size_t expected_instructions_len;
   Instruction expected_instructions[100];
-} compilerIntTestCase;
+} compilerTestCase;
 
-typedef struct {
-  char *input;
-  size_t expected_constants_len;
-  char *expected_constants[100];
-  size_t expected_instructions_len;
-  Instruction expected_instructions[100];
-} compilerStringTestCase;
-
-Program *parse(void *test, CompilerTestType type) {
-  char *input;
-  switch (type) {
-  case COMPILER_TEST_INT:
-    input = ((compilerIntTestCase *)test)->input;
-    break;
-  case COMPILER_TEST_STRING:
-    input = ((compilerStringTestCase *)test)->input;
-    break;
-  }
-
-  Lexer *l = new_lexer(input);
+Program *parse(compilerTestCase *test) {
+  Lexer *l = new_lexer(test->input);
   Parser *p = new_parser(l);
   Program *program = parse_program(p);
   free_parser(p);
@@ -105,36 +81,23 @@ void test_instructions(size_t instructions_count, Instruction expected[],
   int_array_free(&concatted);
 }
 
-void test_integer_object(int expected, Object *actual) {
+void test_integer_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, actual->type);
-  TEST_ASSERT_EQUAL(expected, ((Number *)actual)->value);
+  TEST_ASSERT_EQUAL(NUMBER_OBJ, expected->type);
+  TEST_ASSERT_EQUAL(((Number *)expected)->value, ((Number *)actual)->value);
 }
 
-void test_integer_constants(size_t constants_count, size_t expected[],
-                            DynamicArray actual) {
-  TEST_ASSERT_EQUAL(constants_count, actual.len);
-
-  for (uint32_t i = 0; i < constants_count; i++) {
-    test_integer_object(expected[i], actual.arr[i]);
-  }
+void test_string_object(Object *expected, Object *actual) {
+  TEST_ASSERT_EQUAL(STRING_OBJ, actual->type);
+  TEST_ASSERT_EQUAL_STRING(((String *)expected)->value,
+                           ((String *)actual)->value);
 }
 
-void test_string_constants(size_t constants_count, char *expected[],
-                           DynamicArray actual) {
-  TEST_ASSERT_EQUAL(constants_count, actual.len);
-
-  for (uint32_t i = 0; i < constants_count; i++) {
-    TEST_ASSERT_EQUAL(STRING_OBJ, ((String *)actual.arr[i])->type);
-    TEST_ASSERT_EQUAL_STRING(expected[i], ((String *)actual.arr[i])->value);
-  }
-}
-
-void run_compiler_tests(void *tests, size_t test_size, size_t test_count,
-                        CompilerTestType type) {
+void run_compiler_tests(compilerTestCase *test_cases, size_t test_count) {
   for (uint32_t i = 0; i < test_count; i++) {
-    void *test = tests + (i * test_size);
+    compilerTestCase test = test_cases[i];
 
-    Program *program = parse(test, type);
+    Program *program = parse(&test);
     Compiler *compiler = new_compiler();
     int8_t result = compile_program(compiler, program);
     if (result != COMPILER_OK) {
@@ -145,25 +108,23 @@ void run_compiler_tests(void *tests, size_t test_size, size_t test_count,
 
     Bytecode code = bytecode(compiler);
 
-    switch (type) {
-    case COMPILER_TEST_INT: {
-      compilerIntTestCase *int_test = (compilerIntTestCase *)test;
-      test_instructions(int_test->expected_instructions_len,
-                        int_test->expected_instructions, code.instructions);
+    test_instructions(test.expected_instructions_len,
+                      test.expected_instructions, code.instructions);
 
-      test_integer_constants(int_test->expected_constants_len,
-                             int_test->expected_constants, code.constants);
-      break;
-    }
-    case COMPILER_TEST_STRING: {
-      compilerStringTestCase *str_test = (compilerStringTestCase *)test;
-      test_instructions(str_test->expected_instructions_len,
-                        str_test->expected_instructions, code.instructions);
+    for (size_t j = 0; j < test.expected_constants_len; j++) {
+      Object *constant = code.constants.arr[j];
+      switch (constant->type) {
+      case NUMBER_OBJ:
+        test_integer_object(test.expected_constants[j], constant);
+        break;
+      case STRING_OBJ:
+        test_string_object(test.expected_constants[j], constant);
+        break;
+      default:
+        TEST_FAIL_MESSAGE("unreachable");
+      }
 
-      test_string_constants(str_test->expected_constants_len,
-                            str_test->expected_constants, code.constants);
-      break;
-    }
+      free(test.expected_constants[j]);
     }
 
     free_program(program);
@@ -172,13 +133,17 @@ void run_compiler_tests(void *tests, size_t test_size, size_t test_count,
 }
 
 void test_integer_arithmetic(void) {
-  compilerIntTestCase
+  compilerTestCase
       tests[] =
           {
               {
                   .input = "1 + 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -191,7 +156,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "1 - 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -204,7 +173,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "1 * 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -217,7 +190,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 / 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -230,7 +207,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 << 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -243,7 +224,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 >> 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -256,7 +241,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 % 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -269,7 +258,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 | 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -282,7 +275,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 & 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -295,7 +292,11 @@ void test_integer_arithmetic(void) {
               {
                   .input = "2 ^ 1",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -308,7 +309,10 @@ void test_integer_arithmetic(void) {
               {
                   .input = "-1",
                   .expected_constants_len = 1,
-                  .expected_constants = {1},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                      },
                   .expected_instructions_len = 3,
                   .expected_instructions =
                       {
@@ -319,11 +323,11 @@ void test_integer_arithmetic(void) {
               },
           };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_boolean_expressions(void) {
-  compilerIntTestCase
+  compilerTestCase
       tests[] =
           {
               {
@@ -349,7 +353,11 @@ void test_boolean_expressions(void) {
               {
                   .input = "1 > 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -362,7 +370,11 @@ void test_boolean_expressions(void) {
               {
                   .input = "1 < 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {2, 1},
+                  .expected_constants =
+                      {
+                          new_number(2),
+                          new_number(1),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -375,7 +387,11 @@ void test_boolean_expressions(void) {
               {
                   .input = "1 == 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -388,7 +404,11 @@ void test_boolean_expressions(void) {
               {
                   .input = "1 != 2",
                   .expected_constants_len = 2,
-                  .expected_constants = {1, 2},
+                  .expected_constants =
+                      {
+                          new_number(1),
+                          new_number(2),
+                      },
                   .expected_instructions_len = 4,
                   .expected_instructions =
                       {
@@ -435,15 +455,19 @@ void test_boolean_expressions(void) {
               },
           };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_conditionals(void) {
-  compilerIntTestCase tests[] = {
+  compilerTestCase tests[] = {
       {
           .input = "if (true) { 10 }; 3333;",
           .expected_constants_len = 2,
-          .expected_constants = {10, 3333},
+          .expected_constants =
+              {
+                  new_number(10),
+                  new_number(3333),
+              },
           .expected_instructions_len = 8,
           .expected_instructions =
               {
@@ -468,7 +492,12 @@ void test_conditionals(void) {
       {
           .input = "if (true) { 10 } else { 20 }; 3333;",
           .expected_constants_len = 3,
-          .expected_constants = {10, 20, 3333},
+          .expected_constants =
+              {
+                  new_number(10),
+                  new_number(20),
+                  new_number(3333),
+              },
           .expected_instructions_len = 8,
           .expected_instructions =
               {
@@ -492,15 +521,19 @@ void test_conditionals(void) {
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_global_let_statements(void) {
-  compilerIntTestCase tests[] = {
+  compilerTestCase tests[] = {
       {
           .input = "let one = 1; let two = 2;",
           .expected_constants_len = 2,
-          .expected_constants = {1, 2},
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_number(2),
+              },
           .expected_instructions_len = 4,
           .expected_instructions =
               {
@@ -513,7 +546,10 @@ void test_global_let_statements(void) {
       {
           .input = "let one = 1; one;",
           .expected_constants_len = 1,
-          .expected_constants = {1},
+          .expected_constants =
+              {
+                  new_number(1),
+              },
           .expected_instructions_len = 4,
           .expected_instructions =
               {
@@ -526,7 +562,10 @@ void test_global_let_statements(void) {
       {
           .input = "let one = 1; let two = one; two;",
           .expected_constants_len = 1,
-          .expected_constants = {1},
+          .expected_constants =
+              {
+                  new_number(1),
+              },
           .expected_instructions_len = 6,
           .expected_instructions =
               {
@@ -540,15 +579,18 @@ void test_global_let_statements(void) {
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_string_expressions(void) {
-  compilerStringTestCase tests[] = {
+  compilerTestCase tests[] = {
       {
           .input = "\"monkey\"",
           .expected_constants_len = 1,
-          .expected_constants = {"monkey"},
+          .expected_constants =
+              {
+                  new_string("monkey", strlen("monkey")),
+              },
           .expected_instructions_len = 2,
           .expected_instructions =
               {
@@ -559,7 +601,11 @@ void test_string_expressions(void) {
       {
           .input = "\"mon\" + \"key\"",
           .expected_constants_len = 2,
-          .expected_constants = {"mon", "key"},
+          .expected_constants =
+              {
+                  new_string("mon", strlen("mon")),
+                  new_string("key", strlen("key")),
+              },
           .expected_instructions_len = 4,
           .expected_instructions =
               {
@@ -571,11 +617,11 @@ void test_string_expressions(void) {
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_STRING);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_array_literals(void) {
-  compilerIntTestCase tests[] = {
+  compilerTestCase tests[] = {
       {
           .input = "[]",
           .expected_constants_len = 0,
@@ -590,7 +636,12 @@ void test_array_literals(void) {
       {
           .input = "[1, 2, 3]",
           .expected_constants_len = 3,
-          .expected_constants = {1, 2, 3},
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_number(2),
+                  new_number(3),
+              },
           .expected_instructions_len = 5,
           .expected_instructions =
               {
@@ -604,7 +655,14 @@ void test_array_literals(void) {
       {
           .input = "[1 + 2, 3 - 4, 5 * 6]",
           .expected_constants_len = 6,
-          .expected_constants = {1, 2, 3, 4, 5, 6},
+          .expected_constants = {
+                  new_number(1),
+                  new_number(2),
+                  new_number(3),
+                  new_number(4),
+                  new_number(5),
+                  new_number(6),
+              },
           .expected_instructions_len = 11,
           .expected_instructions =
               {
@@ -623,11 +681,11 @@ void test_array_literals(void) {
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_hash_literals(void) {
-  compilerIntTestCase tests[] = {
+  compilerTestCase tests[] = {
       {
           .input = "{}",
           .expected_constants_len = 0,
@@ -639,68 +697,88 @@ void test_hash_literals(void) {
               },
       },
       {
-        .input = "{1: 2, 3: 4, 5: 6}",
-        .expected_constants_len = 6,
-        .expected_constants = {1, 2, 3, 4, 5, 6},
-        .expected_instructions_len = 8,
-        .expected_instructions =
-            {
-                make_instruction(OP_CONSTANT, (int[]){0}, 1),
-                make_instruction(OP_CONSTANT, (int[]){1}, 1),
-                make_instruction(OP_CONSTANT, (int[]){2}, 1),
-                make_instruction(OP_CONSTANT, (int[]){3}, 1),
-                make_instruction(OP_CONSTANT, (int[]){4}, 1),
-                make_instruction(OP_CONSTANT, (int[]){5}, 1),
-                make_instruction(OP_HASH, (int[]){6}, 1),
-                make_instruction(OP_POP, (int[]){}, 0),
-            },
+          .input = "{1: 2, 3: 4, 5: 6}",
+          .expected_constants_len = 6,
+          .expected_constants = {
+                  new_number(1),
+                  new_number(2),
+                  new_number(3),
+                  new_number(4),
+                  new_number(5),
+                  new_number(6),
+              },
+          .expected_instructions_len = 8,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){5}, 1),
+                  make_instruction(OP_HASH, (int[]){6}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
       },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
 
 void test_index_expressions(void) {
-  compilerIntTestCase tests[] = {
-    {
-      .input = "[1, 2, 3][1 + 1]",
-      .expected_constants_len = 5,
-      .expected_constants = {1, 2, 3, 1, 1},
-      .expected_instructions_len = 9,
-      .expected_instructions =
-          {
-              make_instruction(OP_CONSTANT, (int[]){0}, 1),
-              make_instruction(OP_CONSTANT, (int[]){1}, 1),
-              make_instruction(OP_CONSTANT, (int[]){2}, 1),
-              make_instruction(OP_ARRAY, (int[]){3}, 1),
-              make_instruction(OP_CONSTANT, (int[]){3}, 1),
-              make_instruction(OP_CONSTANT, (int[]){4}, 1),
-              make_instruction(OP_ADD, (int[]){}, 0),
-              make_instruction(OP_INDEX, (int[]){}, 0),
-              make_instruction(OP_POP, (int[]){}, 0),
-          },
-    },
-    {
-      .input = "{1: 2}[2 - 1]",
-      .expected_constants_len = 4,
-      .expected_constants = {1, 2, 2, 1},
-      .expected_instructions_len = 8,
-      .expected_instructions =
-          {
-              make_instruction(OP_CONSTANT, (int[]){0}, 1),
-              make_instruction(OP_CONSTANT, (int[]){1}, 1),
-              make_instruction(OP_HASH, (int[]){2}, 1),
-              make_instruction(OP_CONSTANT, (int[]){2}, 1),
-              make_instruction(OP_CONSTANT, (int[]){3}, 1),
-              make_instruction(OP_SUB, (int[]){}, 0),
-              make_instruction(OP_INDEX, (int[]){}, 0),
-              make_instruction(OP_POP, (int[]){}, 0),
-          },
-    },
+  compilerTestCase tests[] = {
+      {
+          .input = "[1, 2, 3][1 + 1]",
+          .expected_constants_len = 5,
+          .expected_constants = {
+                  new_number(1),
+                  new_number(2),
+                  new_number(3),
+                  new_number(1),
+                  new_number(1),
+              },
+          .expected_instructions_len = 9,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_ARRAY, (int[]){3}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_INDEX, (int[]){}, 0),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "{1: 2}[2 - 1]",
+          .expected_constants_len = 4,
+          .expected_constants = {
+                  new_number(1),
+                  new_number(2),
+                  new_number(2),
+                  new_number(1),
+              },
+          .expected_instructions_len = 8,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_HASH, (int[]){2}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                  make_instruction(OP_SUB, (int[]){}, 0),
+                  make_instruction(OP_INDEX, (int[]){}, 0),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
   };
 
-  RUN_COMPILER_TESTS(tests, COMPILER_TEST_INT);
+  RUN_COMPILER_TESTS(tests);
 }
+
+void test_functions(void) {}
 
 int main(void) {
   UNITY_BEGIN();
