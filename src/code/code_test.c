@@ -58,20 +58,6 @@ void test_make(void) {
     int_array_free(&op_constant_instructions);
 }
 
-Instructions concat_instructions(size_t instruction_count, Instruction instructions[]) {
-    Instructions result;
-    int_array_init(&result, instruction_count);
-
-    for (size_t i = 0; i < instruction_count; i++) {
-        Instruction ins = instructions[i];
-        for (size_t j = 0; j < ins.len; j++) {
-            int_array_append(&result, ins.arr[j]);
-        }
-    }
-
-    return result;
-}
-
 void test_instructions_string(void) {
     Instruction instructions[] = {
         make_instruction(OP_ADD, (int[]){}, 0),

@@ -64,7 +64,9 @@ static Definition definitions[OP_COUNT] = {
         .operand_widths = {2},
     },
     {"OP_INDEX"},
-
+    {"OP_CALL"},
+    {"OP_RETURN_VALUE"},
+    {"OP_RETURN"},
 };
 
 Definition *lookup(OpCode opcode) {
@@ -98,6 +100,20 @@ Instruction make_instruction(OpCode op_code, int *operands,
   }
 
   return instruction;
+}
+
+Instructions concat_instructions(size_t count, Instruction *instructions) {
+  Instructions out;
+  int_array_init(&out, count);
+
+  for (uint32_t i = 0; i < count; i++) {
+    Instruction ins = instructions[i];
+    for (uint32_t j = 0; j < ins.len; j++) {
+      int_array_append(&out, ins.arr[j]);
+    }
+  }
+
+  return out;
 }
 
 void format_instruction(char buf[MAX_LEN], const Definition *def,

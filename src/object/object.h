@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "../code/code.h"
 #include "../environment/environment.h"
 #include "../parser/parser.h"
 #include <stdbool.h>
@@ -18,6 +19,7 @@ typedef enum {
   HASH_OBJ,
   CONTINUE_OBJ,
   BREAK_OBJ,
+  COMPILED_FUNCTION_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -89,6 +91,14 @@ typedef struct {
   ObjectType type; // HASH_OBJ
   hashmap_t pairs;
 } Hash;
+
+typedef struct {
+  ObjectType type; // COMPILED_FUNCTION_OBJ
+  Instructions instructions;
+} CompiledFunction;
+
+Object *new_compiled_function(Instructions *);
+Object *new_concatted_compiled_function(Instructions *, size_t);
 
 size_t sizeof_object(Object *);
 

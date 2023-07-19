@@ -91,6 +91,11 @@ void inspect_hash_object(ResizableBuffer *buf, Hash *hash) {
   append_to_buf(buf, "}");
 }
 
+void inspect_compiled_function_object(ResizableBuffer *buf,
+                                      CompiledFunction *fn) {
+  append_to_buf(buf, "CompiledFunction");
+}
+
 void inspect_object(ResizableBuffer *buf, Object *obj) {
   switch (obj->type) {
   case NUMBER_OBJ:
@@ -113,6 +118,8 @@ void inspect_object(ResizableBuffer *buf, Object *obj) {
     return inspect_array_object(buf, (Array *)obj);
   case HASH_OBJ:
     return inspect_hash_object(buf, (Hash *)obj);
+  case COMPILED_FUNCTION_OBJ:
+    return inspect_compiled_function_object(buf, (CompiledFunction *)obj);
   default:
     return; // break and continue object are sentinel values
   }
@@ -165,6 +172,8 @@ size_t sizeof_object(Object *obj) {
     return sizeof(Array);
   case HASH_OBJ:
     return sizeof(Hash);
+  case COMPILED_FUNCTION_OBJ:
+    return sizeof(CompiledFunction);
   case CONTINUE_OBJ:
   case BREAK_OBJ:
     return sizeof(Object);
@@ -207,4 +216,24 @@ Object *new_concatted_string(String *left, String *right) {
   strncat(new_string->value, right->value, new_string->len + 1);
 
   return (Object *)new_string;
+}
+
+Object *new_compiled_function(Instructions *instructions) {
+  CompiledFunction *fn = malloc(sizeof(CompiledFunction));
+  assert(fn != NULL);
+  fn->type = COMPILED_FUNCTION_OBJ;
+
+  fn->instructions = *instructions;
+
+  return (Object *)fn;
+}
+
+Object *new_concatted_compiled_function(Instructions *instructions,
+                                        size_t instructions_count) {
+  CompiledFunction *fn = malloc(sizeof(CompiledFunction));
+  assert(fn != NULL);
+
+  fn->instructions = concat_instructions(instructions_count, instructions);
+
+  return (Object *)fn;
 }

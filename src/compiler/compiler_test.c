@@ -26,21 +26,6 @@ Program *parse(compilerTestCase *test) {
   return program;
 }
 
-Instructions concat_instructions(size_t instructions_count,
-                                 Instruction instructions[]) {
-  Instructions out;
-  int_array_init(&out, instructions_count);
-
-  for (uint32_t i = 0; i < instructions_count; i++) {
-    Instruction ins = instructions[i];
-    for (uint32_t j = 0; j < ins.len; j++) {
-      int_array_append(&out, ins.arr[j]);
-    }
-  }
-
-  return out;
-}
-
 void print_instructions(const Instructions *concatted,
                         const Instructions *actual) {
   ResizableBuffer expected_buf;
@@ -50,14 +35,24 @@ void print_instructions(const Instructions *concatted,
   ResizableBuffer actual_buf;
   init_resizable_buffer(&actual_buf, 50);
   instructions_to_string(&actual_buf, actual);
-  printf("ACTUAL:\n%s\n----------------------\n", actual_buf.buf);
+  printf("ACTUAL:\n%s\n--------------------\n", actual_buf.buf);
 
   free(expected_buf.buf);
   free(actual_buf.buf);
 }
 
-void test_instructions(size_t instructions_count, Instruction expected[],
-                       Instructions actual) {
+void test_instructions(Instructions *expected, Instructions *actual) {
+  for (uint32_t i = 0; i < expected->len; i++) {
+    if (expected->arr[i] != actual->arr[i]) {
+      print_instructions(expected, actual);
+      char msg[100];
+      sprintf(msg, "wrong instruction at %d", i);
+      TEST_FAIL_MESSAGE(msg);
+    }
+  }
+}
+void concat_and_test_instructions(size_t instructions_count,
+                                  Instruction expected[], Instructions actual) {
   Instructions concatted = concat_instructions(instructions_count, expected);
   if (concatted.len != actual.len) {
     print_instructions(&concatted, &actual);
@@ -67,23 +62,12 @@ void test_instructions(size_t instructions_count, Instruction expected[],
     TEST_FAIL_MESSAGE(msg);
   }
 
-  for (uint32_t i = 0; i < instructions_count; i++) {
-    if (concatted.arr[i] != actual.arr[i]) {
-      print_instructions(&concatted, &actual);
-      char msg[100];
-      sprintf(msg, "wrong instruction at %d", i);
-      TEST_FAIL_MESSAGE(msg);
-    }
-
-    int_array_free(&expected[i]);
-  }
-
+  test_instructions(&concatted, &actual);
   int_array_free(&concatted);
 }
 
 void test_integer_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, actual->type);
-  TEST_ASSERT_EQUAL(NUMBER_OBJ, expected->type);
   TEST_ASSERT_EQUAL(((Number *)expected)->value, ((Number *)actual)->value);
 }
 
@@ -91,6 +75,35 @@ void test_string_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(STRING_OBJ, actual->type);
   TEST_ASSERT_EQUAL_STRING(((String *)expected)->value,
                            ((String *)actual)->value);
+}
+
+void test_compiled_function(Object *expected, Object *actual) {
+  CompiledFunction *expected_fn = (CompiledFunction *)expected;
+  CompiledFunction *actual_fn = (CompiledFunction *)actual;
+
+  test_instructions(&expected_fn->instructions, &actual_fn->instructions);
+  int_array_free(&expected_fn->instructions);
+}
+
+void test_constants(compilerTestCase test, Bytecode code) {
+  for (size_t i = 0; i < test.expected_constants_len; i++) {
+    Object *constant = code.constants.arr[i];
+    switch (constant->type) {
+    case NUMBER_OBJ:
+      test_integer_object(test.expected_constants[i], constant);
+      break;
+    case STRING_OBJ:
+      test_string_object(test.expected_constants[i], constant);
+      break;
+    case COMPILED_FUNCTION_OBJ:
+      test_compiled_function(test.expected_constants[i], constant);
+      break;
+    default:
+      TEST_FAIL_MESSAGE("unreachable");
+    }
+
+    free(test.expected_constants[i]);
+  }
 }
 
 void run_compiler_tests(compilerTestCase *test_cases, size_t test_count) {
@@ -108,24 +121,10 @@ void run_compiler_tests(compilerTestCase *test_cases, size_t test_count) {
 
     Bytecode code = bytecode(compiler);
 
-    test_instructions(test.expected_instructions_len,
-                      test.expected_instructions, code.instructions);
+    concat_and_test_instructions(test.expected_instructions_len,
+                                 test.expected_instructions, code.instructions);
 
-    for (size_t j = 0; j < test.expected_constants_len; j++) {
-      Object *constant = code.constants.arr[j];
-      switch (constant->type) {
-      case NUMBER_OBJ:
-        test_integer_object(test.expected_constants[j], constant);
-        break;
-      case STRING_OBJ:
-        test_string_object(test.expected_constants[j], constant);
-        break;
-      default:
-        TEST_FAIL_MESSAGE("unreachable");
-      }
-
-      free(test.expected_constants[j]);
-    }
+    test_constants(test, code);
 
     free_program(program);
     free_compiler(compiler);
@@ -655,7 +654,8 @@ void test_array_literals(void) {
       {
           .input = "[1 + 2, 3 - 4, 5 * 6]",
           .expected_constants_len = 6,
-          .expected_constants = {
+          .expected_constants =
+              {
                   new_number(1),
                   new_number(2),
                   new_number(3),
@@ -699,7 +699,8 @@ void test_hash_literals(void) {
       {
           .input = "{1: 2, 3: 4, 5: 6}",
           .expected_constants_len = 6,
-          .expected_constants = {
+          .expected_constants =
+              {
                   new_number(1),
                   new_number(2),
                   new_number(3),
@@ -730,7 +731,8 @@ void test_index_expressions(void) {
       {
           .input = "[1, 2, 3][1 + 1]",
           .expected_constants_len = 5,
-          .expected_constants = {
+          .expected_constants =
+              {
                   new_number(1),
                   new_number(2),
                   new_number(3),
@@ -754,7 +756,8 @@ void test_index_expressions(void) {
       {
           .input = "{1: 2}[2 - 1]",
           .expected_constants_len = 4,
-          .expected_constants = {
+          .expected_constants =
+              {
                   new_number(1),
                   new_number(2),
                   new_number(2),
@@ -778,7 +781,137 @@ void test_index_expressions(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
-void test_functions(void) {}
+void test_functions(void) {
+  compilerTestCase tests[] =
+      {
+          {
+              .input = "fn() { return 5 + 10 }",
+              .expected_constants_len = 3,
+              .expected_constants =
+                  {
+                      new_number(5),
+                      new_number(10),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          4),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "fn() { 5 + 10 }",
+              .expected_constants_len = 3,
+              .expected_constants =
+                  {
+                      new_number(5),
+                      new_number(10),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          4),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "fn() { 1; 2 }",
+              .expected_constants_len = 3,
+              .expected_constants =
+                  {
+                      new_number(1),
+                      new_number(2),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                              make_instruction(OP_POP, (int[]){}, 0),
+                              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          4),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "fn() { }",
+              .expected_constants_len = 1,
+              .expected_constants =
+                  {
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          1),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+      };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
+size_t emit(Compiler *, OpCode, int *, size_t);
+
+void test_compiler_scopes(void) {
+  Compiler *compiler = new_compiler();
+  TEST_ASSERT_EQUAL(0, compiler->scope_index);
+  emit(compiler, OP_MUL, (int[]){}, 0);
+
+  enter_compiler_scope(compiler);
+  TEST_ASSERT_EQUAL(1, compiler->scope_index);
+
+  emit(compiler, OP_SUB, (int[]){}, 0);
+
+  TEST_ASSERT_EQUAL(1,
+                    compiler->scopes[compiler->scope_index].instructions.len);
+
+  EmmittedInstruction last_instruction =
+      compiler->scopes[compiler->scope_index].last_instruction;
+  TEST_ASSERT_EQUAL(OP_SUB, last_instruction.op);
+
+  leave_compiler_scope(compiler);
+  TEST_ASSERT_EQUAL(0, compiler->scope_index);
+
+  emit(compiler, OP_ADD, (int[]){}, 0);
+
+  TEST_ASSERT_EQUAL(2,
+                    compiler->scopes[compiler->scope_index].instructions.len);
+
+  last_instruction = compiler->scopes[compiler->scope_index].last_instruction;
+  TEST_ASSERT_EQUAL(OP_ADD, last_instruction.op);
+
+  EmmittedInstruction previous_instructions =
+      compiler->scopes[compiler->scope_index].previous_instruction;
+  TEST_ASSERT_EQUAL(OP_MUL, previous_instructions.op);
+
+  free_compiler(compiler);
+}
 
 int main(void) {
   UNITY_BEGIN();
@@ -790,5 +923,7 @@ int main(void) {
   RUN_TEST(test_array_literals);
   RUN_TEST(test_hash_literals);
   RUN_TEST(test_index_expressions);
+  RUN_TEST(test_functions);
+  RUN_TEST(test_compiler_scopes);
   return UNITY_END();
 }
