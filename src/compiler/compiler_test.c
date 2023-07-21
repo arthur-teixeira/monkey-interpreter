@@ -913,6 +913,53 @@ void test_compiler_scopes(void) {
   free_compiler(compiler);
 }
 
+void test_function_calls(void) {
+  compilerTestCase tests[] = {
+    {
+      .input = "fn() { 24 }();",
+      .expected_constants_len = 2,
+      .expected_constants = {
+        new_number(24),
+        new_concatted_compiled_function(
+          (Instruction[]){
+            make_instruction(OP_CONSTANT, (int[]){0}, 1),
+            make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+          },
+          2),
+      },
+      .expected_instructions_len = 4,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_CALL, (int []){}, 0),
+        make_instruction(OP_POP, (int []){}, 0),
+      },
+    },
+    {
+      .input = "let noArg = fn() { 24 }; noArg();",
+      .expected_constants_len = 2,
+      .expected_constants = {
+        new_number(24),
+        new_concatted_compiled_function(
+          (Instruction[]){
+            make_instruction(OP_CONSTANT, (int[]){0}, 1),
+            make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+          },
+          2),
+      },
+      .expected_instructions_len = 5,
+      .expected_instructions = {
+        make_instruction(OP_CONSTANT, (int[]){1}, 1),
+        make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+        make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+        make_instruction(OP_CALL, (int []){}, 0),
+        make_instruction(OP_POP, (int []){}, 0),
+      },
+    },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -925,5 +972,6 @@ int main(void) {
   RUN_TEST(test_index_expressions);
   RUN_TEST(test_functions);
   RUN_TEST(test_compiler_scopes);
+  RUN_TEST(test_function_calls);
   return UNITY_END();
 }

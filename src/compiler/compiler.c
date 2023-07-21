@@ -447,19 +447,32 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     }
 
     if (last_instruction_is(compiler, OP_POP)) {
-      Instruction new_instruction = make_instruction(OP_RETURN_VALUE, (int[]){}, 0);
-      replace_instruction(compiler, compiler_current_scope(compiler)->last_instruction.position, new_instruction);
+      Instruction new_instruction =
+          make_instruction(OP_RETURN_VALUE, (int[]){}, 0);
+      replace_instruction(
+          compiler, compiler_current_scope(compiler)->last_instruction.position,
+          new_instruction);
     }
 
     if (!last_instruction_is(compiler, OP_RETURN_VALUE)) {
       emit_no_operands(compiler, OP_RETURN_VALUE);
     }
-    
+
     Instructions *instructions = leave_compiler_scope(compiler);
 
     Object *compiled_fn = new_compiled_function(instructions);
     size_t new_constant_pos = add_constant(compiler, compiled_fn);
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
+    break;
+  }
+  case CALL_EXPR: {
+    CallExpression *call = (CallExpression *)expr;
+    CompilerResult result = compile_expression(compiler, call->function);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+
+    emit_no_operands(compiler, OP_CALL);
     break;
   }
   default:
