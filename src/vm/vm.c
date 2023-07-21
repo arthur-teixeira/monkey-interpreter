@@ -7,14 +7,21 @@
 #include <stdlib.h>
 
 VM *new_vm(Bytecode bytecode) {
+  CompiledFunction *main_fn =
+      (CompiledFunction *)new_compiled_function(&bytecode.instructions);
+
+  Frame main_frame = new_frame(main_fn);
   VM *vm = malloc(sizeof(VM));
   assert(vm != NULL);
 
-  vm->instructions = bytecode.instructions;
-  vm->constants = bytecode.constants;
-  memset(vm->stack, 0, sizeof(vm->stack));
-  vm->sp = 0;
   memset(vm->globals, 0, sizeof(vm->globals));
+  memset(vm->frames, 0, sizeof(vm->frames));
+  memset(vm->stack, 0, sizeof(vm->stack));
+
+  vm->constants = bytecode.constants;
+  vm->sp = 0;
+  vm->frames[0] = main_frame;
+  vm->frames_index = 1;
 
   return vm;
 }
@@ -27,9 +34,16 @@ VM *new_vm_with_state(Bytecode bytecode, Object *globals[GLOBALS_SIZE]) {
 
 void free_vm(VM *vm) {
   array_free(&vm->constants);
-  int_array_free(&vm->instructions);
   free(vm);
 }
+
+Frame *current_frame(VM *vm) {
+  return &vm->frames[vm->frames_index - 1];
+}
+
+void push_frame(VM *vm, Frame frame) { vm->frames[vm->frames_index++] = frame; }
+
+Frame pop_frame(VM *vm) { return vm->frames[--vm->frames_index]; }
 
 Object *stack_top(VM *vm) {
   if (vm->sp == 0) {
@@ -262,20 +276,28 @@ VMResult execute_index_expression(VM *vm, Object *left, Object *index) {
 }
 
 VMResult run_vm(VM *vm) {
-  for (size_t ip = 0; ip < vm->instructions.len; ip++) {
+  size_t ip;
+  const Instructions *ins;
+  OpCode op;
+
+  while (current_frame(vm)->ip < (int64_t)frame_instructions(current_frame(vm))->len - 1) {
+    current_frame(vm)->ip++;
+    ip = current_frame(vm)->ip;
+    ins = frame_instructions(current_frame(vm));
+    op = ins->arr[ip];
+
     VMResult result;
-    OpCode op = vm->instructions.arr[ip];
 
     switch (op) {
     case OP_CONSTANT: {
       uint16_t constant_index =
-          big_endian_read_uint16(&vm->instructions, ip + 1);
+          big_endian_read_uint16(ins, ip + 1);
 
       result = stack_push_constant(vm, constant_index);
       if (result != VM_OK) {
         return result;
       }
-      ip += 2;
+      current_frame(vm)->ip += 2;
       break;
     }
     case OP_MUL:
@@ -329,17 +351,17 @@ VMResult run_vm(VM *vm) {
       }
       break;
     case OP_JMP: {
-      uint16_t pos = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip = pos - 1;
+      uint16_t pos = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip = pos - 1;
       break;
     }
     case OP_JMP_IF_FALSE: {
-      uint16_t pos = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip += 2; // skip the operand
+      uint16_t pos = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip += 2; // skip the operand
 
       Object *condition = stack_pop(vm);
       if (!is_truthy(condition)) {
-        ip = pos - 1;
+        current_frame(vm)->ip = pos - 1;
       }
       break;
     }
@@ -350,14 +372,14 @@ VMResult run_vm(VM *vm) {
       }
       break;
     case OP_SET_GLOBAL: {
-      uint16_t global_index = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip += 2;
+      uint16_t global_index = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip += 2;
       vm->globals[global_index] = stack_pop(vm);
       break;
     }
     case OP_GET_GLOBAL: {
-      uint16_t global_index = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip += 2;
+      uint16_t global_index = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip += 2;
       VMResult result = stack_push(vm, vm->globals[global_index]);
       if (result != VM_OK) {
         return result;
@@ -365,8 +387,8 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_ARRAY: {
-      uint16_t num_elements = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip += 2;
+      uint16_t num_elements = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip += 2;
 
       Object *array = vm_build_array(vm, vm->sp - num_elements, vm->sp);
       vm->sp = vm->sp - num_elements;
@@ -378,8 +400,8 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_HASH: {
-      uint16_t num_elements = big_endian_read_uint16(&vm->instructions, ip + 1);
-      ip += 2;
+      uint16_t num_elements = big_endian_read_uint16(ins, ip + 1);
+      current_frame(vm)->ip += 2;
 
       Object *hash = vm_build_hash(vm, vm->sp - num_elements, vm->sp);
       if (!hash) {
