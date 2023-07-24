@@ -67,6 +67,16 @@ static Definition definitions[OP_COUNT] = {
     {"OP_CALL"},
     {"OP_RETURN_VALUE"},
     {"OP_RETURN"},
+    {
+      .name = "OP_GET_LOCAL",
+      .operand_count = 1,
+      .operand_widths = {1},
+    },
+    {
+      .name = "OP_SET_LOCAL",
+      .operand_count = 1,
+      .operand_widths = {1},
+    },
 };
 
 Definition *lookup(OpCode opcode) {
@@ -93,6 +103,9 @@ Instruction make_instruction(OpCode op_code, int *operands,
 
   for (size_t i = 0; i < operand_count; i++) {
     switch (def->operand_widths[i]) {
+    case 1:
+      int_array_append(&instruction, (uint8_t)operands[i]);
+      break;
     case 2:
       big_endian_push_uint16(&instruction, operands[i]);
       break;
@@ -174,6 +187,9 @@ IntArray read_operands(Definition *def, const Instruction *instructions,
     switch (def->operand_widths[i]) {
     case 2:
       int_array_append(&operands, big_endian_read_uint16(instructions, offset));
+      break;
+    case 1:
+      int_array_append(&operands, instructions->arr[offset]);
       break;
     }
 

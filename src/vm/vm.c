@@ -37,9 +37,7 @@ void free_vm(VM *vm) {
   free(vm);
 }
 
-Frame *current_frame(VM *vm) {
-  return &vm->frames[vm->frames_index - 1];
-}
+Frame *current_frame(VM *vm) { return &vm->frames[vm->frames_index - 1]; }
 
 void push_frame(VM *vm, Frame frame) { vm->frames[vm->frames_index++] = frame; }
 
@@ -280,7 +278,8 @@ VMResult run_vm(VM *vm) {
   const Instructions *ins;
   OpCode op;
 
-  while (current_frame(vm)->ip < (int64_t)frame_instructions(current_frame(vm))->len - 1) {
+  while (current_frame(vm)->ip <
+         (int64_t)frame_instructions(current_frame(vm))->len - 1) {
     current_frame(vm)->ip++;
     ip = current_frame(vm)->ip;
     ins = frame_instructions(current_frame(vm));
@@ -290,8 +289,7 @@ VMResult run_vm(VM *vm) {
 
     switch (op) {
     case OP_CONSTANT: {
-      uint16_t constant_index =
-          big_endian_read_uint16(ins, ip + 1);
+      uint16_t constant_index = big_endian_read_uint16(ins, ip + 1);
 
       result = stack_push_constant(vm, constant_index);
       if (result != VM_OK) {
@@ -426,8 +424,36 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
-    case OP_COUNT:
+    case OP_CALL: {
+      CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1];
+      assert(fn->type == COMPILED_FUNCTION_OBJ);
+      Frame frame = new_frame(fn);
+      push_frame(vm, frame);
+      break;
+    }
+    case OP_RETURN_VALUE: {
+      Object *return_value = stack_pop(vm);
+
+      pop_frame(vm);
+      stack_pop(vm);
+      VMResult result = stack_push(vm, return_value);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
+    case OP_RETURN: {
+      pop_frame(vm);
+      stack_pop(vm);
+
+      VMResult result = stack_push(vm, (Object *)&obj_null);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     default:
+    case OP_COUNT:
       assert(0 && "unreachable");
     }
   }

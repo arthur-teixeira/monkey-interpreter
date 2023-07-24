@@ -14,7 +14,7 @@ void test_make(void) {
        int operands[1];
        Instruction expected;
     }; 
-    struct testCase tests[2];
+    struct testCase tests[3];
 
     Instruction op_constant_instructions;
     int_array_init(&op_constant_instructions, 3);
@@ -42,6 +42,17 @@ void test_make(void) {
     
     tests[1] = op_add_test;
 
+    Instruction op_get_local_instruction;
+    int_array_init(&op_get_local_instruction, 2);
+    int_array_append(&op_get_local_instruction, OP_GET_LOCAL);
+    int_array_append(&op_get_local_instruction, 0xFF);
+
+    tests[2] = (struct testCase){
+        .op = OP_GET_LOCAL,
+        .operands = {0xFF},
+        .expected = op_get_local_instruction,
+    };
+
     for (uint32_t i = 0; i < ARRAY_LEN(tests); i++) {
         struct testCase test = tests[i];
         Instruction ins = make_instruction(test.op, test.operands, 1);
@@ -63,14 +74,16 @@ void test_instructions_string(void) {
         make_instruction(OP_ADD, (int[]){}, 0),
         make_instruction(OP_CONSTANT, (int[]){2}, 1),
         make_instruction(OP_CONSTANT, (int[]){65535}, 1),
+        make_instruction(OP_GET_LOCAL, (int[]){1}, 1),
     };
 
     char *expected = ""
         "0000 OP_ADD\n"
         "0001 OP_CONSTANT 2\n"
-        "0004 OP_CONSTANT 65535\n";
+        "0004 OP_CONSTANT 65535\n"
+        "0007 OP_GET_LOCAL 1\n";
 
-    Instructions ins = concat_instructions(3, instructions);
+    Instructions ins = concat_instructions(ARRAY_LEN(instructions), instructions);
 
     ResizableBuffer buf;
     init_resizable_buffer(&buf, strlen(expected));
@@ -90,9 +103,10 @@ void test_read_operands(void) {
     
     struct testCase tests[] = {
         {OP_CONSTANT, {65535}, 2},
+        {OP_GET_LOCAL, {255}, 1},
     };
 
-    for (size_t i = 0; i < 1; i++) {
+    for (size_t i = 0; i < ARRAY_LEN(tests); i++) {
         struct testCase test = tests[i];
         Instruction ins = make_instruction(test.op, test.operands, 1);
 

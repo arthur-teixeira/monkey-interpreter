@@ -1,16 +1,16 @@
 #include "../ast/ast.h"
 #include "../compiler/compiler.h"
 #include "../lexer/lexer.h"
+#include "../object/constants.h"
 #include "../object/object.h"
 #include "../parser/parser.h"
 #include "../unity/src/unity.h"
 #include "../unity/src/unity_internals.h"
 #include "vm.h"
-#include "../object/constants.h"
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
-#define VM_RUN_TESTS(tests, type)                                                 \
+#define VM_RUN_TESTS(tests, type)                                              \
   run_vm_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type);
 
 #define EXPECTED_NULL_SENTINEL 98534921
@@ -111,9 +111,11 @@ void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
     break;
   case VM_TEST_ARRAY: {
     vmArrayTestCase *test = (vmArrayTestCase *)expected;
-    TEST_ASSERT_EQUAL_INT64(test->expected_len, ((Array *)actual)->elements.len);
+    TEST_ASSERT_EQUAL_INT64(test->expected_len,
+                            ((Array *)actual)->elements.len);
     for (size_t i = 0; i < test->expected_len; i++) {
-      test_integer_object(test->expected[i], ((Array *)actual)->elements.arr[i]);
+      test_integer_object(test->expected[i],
+                          ((Array *)actual)->elements.arr[i]);
     }
     break;
   }
@@ -222,7 +224,7 @@ void test_conditionals(void) {
       {"if (1 < 2) { 10 }", 10},
       {"if (1 < 2) { 10 } else { 20 }", 10},
       {"if (1 > 2) { 10 } else { 20 }", 20},
-      {"if ((if (false) { 10 })) { 10 } else { 20 }", 20}
+      {"if ((if (false) { 10 })) { 10 } else { 20 }", 20},
   };
 
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
@@ -235,7 +237,7 @@ void test_conditionals(void) {
   VM_RUN_TESTS(null_tests, VM_TEST_NULL);
 
   vmBooleanTestCase bool_tests[] = {
-    {"!(if (false) { 10; })", true},
+      {"!(if (false) { 10; })", true},
   };
 
   VM_RUN_TESTS(bool_tests, VM_TEST_BOOLEAN);
@@ -243,9 +245,9 @@ void test_conditionals(void) {
 
 void test_global_let_statements(void) {
   vmIntTestCase tests[] = {
-    {"let one = 1; one", 1},
-    {"let one = 1; let two = 2; one + two", 3},
-    {"let one = 1; let two = one + one; one + two", 3},
+      {"let one = 1; one", 1},
+      {"let one = 1; let two = 2; one + two", 3},
+      {"let one = 1; let two = one + one; one + two", 3},
   };
 
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
@@ -253,9 +255,9 @@ void test_global_let_statements(void) {
 
 void test_string_expressions(void) {
   vmStringTestCase tests[] = {
-    {"\"monkey\"", "monkey"},
-    {"\"mon\" + \"key\"", "monkey"},
-    {"\"mon\" + \"key\" + \"banana\"", "monkeybanana"},
+      {"\"monkey\"", "monkey"},
+      {"\"mon\" + \"key\"", "monkey"},
+      {"\"mon\" + \"key\" + \"banana\"", "monkeybanana"},
   };
 
   VM_RUN_TESTS(tests, VM_TEST_STRING);
@@ -263,29 +265,85 @@ void test_string_expressions(void) {
 
 void test_array_literals(void) {
   vmArrayTestCase tests[] = {
-    {"[]", {}, 0},
-    {"[1, 2, 3]", {1, 2, 3}, 3},
-    {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}, 3},
+      {"[]", {}, 0},
+      {"[1, 2, 3]", {1, 2, 3}, 3},
+      {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}, 3},
   };
 
   VM_RUN_TESTS(tests, VM_TEST_ARRAY);
 }
 
 void test_index_expressions(void) {
-  vmIntTestCase tests[] = { 
-    {"[1, 2, 3][1]", 2},
-    {"[1, 2, 3][0 + 2]", 3},
-    {"[[1, 1, 1]][0][0]", 1},
-    {"[][0]", -1},
-    {"[1, 2, 3][99]", EXPECTED_NULL_SENTINEL},
-    {"[1][-1]", EXPECTED_NULL_SENTINEL},
-    {"{1: 1, 2: 2}[1]", 1},
-    {"{1: 1, 2: 2}[2]", 2},
-    {"{1: 1}[0]", EXPECTED_NULL_SENTINEL},
-    {"{}[0]", EXPECTED_NULL_SENTINEL},
+  vmIntTestCase tests[] = {
+      {"[1, 2, 3][1]", 2},
+      {"[1, 2, 3][0 + 2]", 3},
+      {"[[1, 1, 1]][0][0]", 1},
+      {"[][0]", -1},
+      {"[1, 2, 3][99]", EXPECTED_NULL_SENTINEL},
+      {"[1][-1]", EXPECTED_NULL_SENTINEL},
+      {"{1: 1, 2: 2}[1]", 1},
+      {"{1: 1, 2: 2}[2]", 2},
+      {"{1: 1}[0]", EXPECTED_NULL_SENTINEL},
+      {"{}[0]", EXPECTED_NULL_SENTINEL},
   };
 
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
+void test_calling_functions(void) {
+  vmIntTestCase tests[] = {
+      {
+          .input = "let fivePlusTen = fn() { 5 + 10; }; fivePlusTen();",
+          .expected = 15,
+      },
+      {
+          .input = "let one = fn() { 1; };"
+                   "let two = fn() { 2; };"
+                   "one() + two()",
+          .expected = 3,
+      },
+      {
+          .input = "let a = fn() { 1 };"
+                   "let b = fn() { a() + 1 };"
+                   "let c = fn() { b() + 1 };"
+                   "c(); ",
+          .expected = 3,
+      },
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER)
+}
+
+void test_functions_with_return_statement(void) {
+  vmIntTestCase tests[] = {
+      {
+          .input = "let earlyExit = fn() { return 99; 100; };"
+                   "earlyExit();",
+          .expected = 99,
+      },
+      {
+          .input = "let earlyExit = fn() { return 99; return 100; };"
+                   "earlyExit();",
+          .expected = 99,
+      },
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
+void test_functions_without_return_value(void) {
+  vmNullTestCase tests[] = {
+      {
+          .input = "let noReturn = fn() { }; noReturn();",
+      },
+      {
+          .input = "let noReturn = fn() { };"
+                   "let noReturnTwo = fn() { noReturn(); };"
+                   "noReturn(); noReturnTwo();",
+      },
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_NULL);
 }
 
 int main(void) {
@@ -296,5 +354,8 @@ int main(void) {
   RUN_TEST(test_global_let_statements);
   RUN_TEST(test_string_expressions);
   RUN_TEST(test_array_literals);
+  RUN_TEST(test_calling_functions);
+  RUN_TEST(test_functions_with_return_statement);
+  RUN_TEST(test_functions_without_return_value);
   return UNITY_END();
 }

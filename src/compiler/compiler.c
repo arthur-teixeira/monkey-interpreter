@@ -455,7 +455,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     }
 
     if (!last_instruction_is(compiler, OP_RETURN_VALUE)) {
-      emit_no_operands(compiler, OP_RETURN_VALUE);
+      emit_no_operands(compiler, OP_RETURN);
     }
 
     Instructions *instructions = leave_compiler_scope(compiler);

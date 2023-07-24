@@ -6,6 +6,7 @@
 typedef char *SymbolScope;
 
 extern SymbolScope GLOBAL_SCOPE; 
+extern SymbolScope LOCAL_SCOPE;
 
 typedef struct { 
   char *name;
@@ -13,12 +14,14 @@ typedef struct {
   size_t index;
 } Symbol;
 
-typedef struct {
+typedef struct symbol_table_s {
   hashmap_t store;
   size_t num_definitions;
+  struct symbol_table_s *outer;
 } SymbolTable;
 
 SymbolTable *new_symbol_table(void);
+SymbolTable *new_enclosed_symbol_table(SymbolTable *);
 
 const Symbol *symbol_define(SymbolTable *, char *);
 const Symbol *symbol_resolve(SymbolTable *, char *);
