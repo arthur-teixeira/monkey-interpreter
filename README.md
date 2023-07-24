@@ -40,5 +40,6 @@ $ ./bin/monkey <path-to-file>
 - [ ] Compile to file
 - [ ] File disassembler
 - [ ] VM
+- [ ] Convert objects to tagged unions
 - [ ] Garbage collection
 - [ ] Concurrent GC
