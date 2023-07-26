@@ -489,7 +489,14 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
       return result;
     }
 
-    emit_no_operands(compiler, OP_CALL);
+    for (size_t i = 0; i < call->arguments.len; i++) {
+      CompilerResult result = compile_expression(compiler, call->arguments.arr[i]);
+      if (result != COMPILER_OK) {
+        return result;
+      }
+    }
+
+    emit(compiler, OP_CALL, (int[]){call->arguments.len}, 1);
     break;
   }
   default:

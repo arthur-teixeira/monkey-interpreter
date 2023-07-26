@@ -446,6 +446,7 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_CALL: {
+      current_frame(vm)->ip++;
       CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1];
       assert(fn->type == COMPILED_FUNCTION_OBJ);
       Frame frame = new_frame(fn, vm->sp);

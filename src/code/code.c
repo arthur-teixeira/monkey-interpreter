@@ -64,7 +64,11 @@ static Definition definitions[OP_COUNT] = {
         .operand_widths = {2},
     },
     {"OP_INDEX"},
-    {"OP_CALL"},
+    {
+      .name = "OP_CALL",
+      .operand_count = 1,
+      .operand_widths = {1},
+    },
     {"OP_RETURN_VALUE"},
     {"OP_RETURN"},
     {
