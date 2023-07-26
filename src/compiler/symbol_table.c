@@ -1,9 +1,6 @@
 #include "symbol_table.h"
 #include <assert.h>
 
-SymbolScope GLOBAL_SCOPE = "GLOBAL";
-SymbolScope LOCAL_SCOPE = "LOCAL";
-
 SymbolTable *new_symbol_table(void) {
   SymbolTable *table = malloc(sizeof(SymbolTable));
   assert(table != NULL);
@@ -26,9 +23,9 @@ const Symbol *symbol_define(SymbolTable *table, char *name) {
   symbol->name = name;
   symbol->index = table->num_definitions;
   if (!table->outer) {
-    symbol->scope = GLOBAL_SCOPE;
+    symbol->scope = SYMBOL_GLOBAL_SCOPE;
   } else {
-    symbol->scope = LOCAL_SCOPE;
+    symbol->scope = SYMBOL_LOCAL_SCOPE;
   }
 
   hashmap_put(&table->store, name, strlen(name), symbol);

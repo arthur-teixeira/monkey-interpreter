@@ -57,6 +57,10 @@ Compiler *new_compiler_with_state(SymbolTable *symbol_table,
 }
 
 void free_compiler(Compiler *compiler) {
+  while (compiler->scope_index > 0) {
+    leave_compiler_scope(compiler);
+  }
+
   free_symbol_table(compiler->symbol_table);
   free(compiler);
 }
@@ -152,7 +156,12 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     const Symbol *symbol =
         symbol_define(compiler->symbol_table, stmt->name->value);
 
-    emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
+    if (symbol->scope == SYMBOL_GLOBAL_SCOPE) {
+      emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
+    } else {
+      emit(compiler, OP_SET_LOCAL, (int[]){symbol->index}, 1);
+    }
+
     break;
   }
   case RETURN_STATEMENT: {
@@ -400,7 +409,13 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     if (!symbol) {
       return COMPILER_UNKNOWN_IDENTIFIER;
     }
-    emit(compiler, OP_GET_GLOBAL, (int[]){symbol->index}, 1);
+
+    if (symbol->scope == SYMBOL_GLOBAL_SCOPE) {
+      emit(compiler, OP_GET_GLOBAL, (int[]){symbol->index}, 1);
+    } else {
+      emit(compiler, OP_GET_LOCAL, (int[]){symbol->index}, 1);
+    }
+
     break;
   }
   case STRING_EXPR: {
@@ -513,11 +528,16 @@ void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
 
 void enter_compiler_scope(Compiler *c) {
   c->scopes[++c->scope_index] = new_compilation_scope();
+  c->symbol_table = new_enclosed_symbol_table(c->symbol_table);
 }
 
 Instructions *leave_compiler_scope(Compiler *c) {
   Instructions *instructions = compiler_current_instructions(c);
   c->scope_index--;
+
+  SymbolTable *temp = c->symbol_table;
+  c->symbol_table = c->symbol_table->outer;
+  free_symbol_table(temp);
 
   return instructions;
 }

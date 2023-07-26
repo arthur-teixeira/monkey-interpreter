@@ -5,17 +5,17 @@
 
 void test_symbol(const Symbol *expected, const Symbol *actual) {
   TEST_ASSERT_EQUAL_STRING(expected->name, actual->name);
-  TEST_ASSERT_EQUAL_STRING(expected->scope, actual->scope);
+  TEST_ASSERT_EQUAL(expected->scope, actual->scope);
   TEST_ASSERT_EQUAL_INT(expected->index, actual->index);
 }
 
 void test_define(void) {
-  Symbol expected_a = {"a", GLOBAL_SCOPE, 0};
-  Symbol expected_b = {"b", GLOBAL_SCOPE, 1};
-  Symbol expected_c = {"c", LOCAL_SCOPE, 0};
-  Symbol expected_d = {"d", LOCAL_SCOPE, 1};
-  Symbol expected_e = {"e", LOCAL_SCOPE, 0};
-  Symbol expected_f = {"f", LOCAL_SCOPE, 1};
+  Symbol expected_a = {"a", SYMBOL_GLOBAL_SCOPE, 0};
+  Symbol expected_b = {"b", SYMBOL_GLOBAL_SCOPE, 1};
+  Symbol expected_c = {"c", SYMBOL_LOCAL_SCOPE, 0};
+  Symbol expected_d = {"d", SYMBOL_LOCAL_SCOPE, 1};
+  Symbol expected_e = {"e", SYMBOL_LOCAL_SCOPE, 0};
+  Symbol expected_f = {"f", SYMBOL_LOCAL_SCOPE, 1};
 
   SymbolTable *global = new_symbol_table();
 
@@ -49,13 +49,13 @@ void test_define(void) {
 void test_resolve_global(void) {
   Symbol expected_a = {
       .name = "a",
-      .scope = GLOBAL_SCOPE,
+      .scope = SYMBOL_GLOBAL_SCOPE,
       .index = 0,
   };
 
   Symbol expected_b = {
       .name = "b",
-      .scope = GLOBAL_SCOPE,
+      .scope = SYMBOL_GLOBAL_SCOPE,
       .index = 1,
   };
 
@@ -84,10 +84,10 @@ void test_resolve_local(void) {
   symbol_define(local, "d");
 
   Symbol expected[] = {
-      {"a", GLOBAL_SCOPE, 0},
-      {"b", GLOBAL_SCOPE, 1},
-      {"c", LOCAL_SCOPE, 0},
-      {"d", LOCAL_SCOPE, 1},
+      {"a", SYMBOL_GLOBAL_SCOPE, 0},
+      {"b", SYMBOL_GLOBAL_SCOPE, 1},
+      {"c", SYMBOL_LOCAL_SCOPE, 0},
+      {"d", SYMBOL_LOCAL_SCOPE, 1},
   };
 
   for (size_t i = 0; i < ARRAY_LEN(expected); i++) {
@@ -123,10 +123,10 @@ void test_resolve_nested_local(void) {
           .len = 4,
           .expected =
               (Symbol[]){
-                  {"a", GLOBAL_SCOPE, 0},
-                  {"b", GLOBAL_SCOPE, 1},
-                  {"c", LOCAL_SCOPE, 0},
-                  {"d", LOCAL_SCOPE, 1},
+                  {"a", SYMBOL_GLOBAL_SCOPE, 0},
+                  {"b", SYMBOL_GLOBAL_SCOPE, 1},
+                  {"c", SYMBOL_LOCAL_SCOPE, 0},
+                  {"d", SYMBOL_LOCAL_SCOPE, 1},
               },
       },
       {
@@ -134,10 +134,10 @@ void test_resolve_nested_local(void) {
           .len = 4,
           .expected =
               (Symbol[]){
-                  {"a", GLOBAL_SCOPE, 0},
-                  {"b", GLOBAL_SCOPE, 1},
-                  {"e", LOCAL_SCOPE, 0},
-                  {"f", LOCAL_SCOPE, 1},
+                  {"a", SYMBOL_GLOBAL_SCOPE, 0},
+                  {"b", SYMBOL_GLOBAL_SCOPE, 1},
+                  {"e", SYMBOL_LOCAL_SCOPE, 0},
+                  {"f", SYMBOL_LOCAL_SCOPE, 1},
               },
       },
   };

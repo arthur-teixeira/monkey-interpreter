@@ -3,10 +3,10 @@
 
 #include "../hashmap/hashmap.h"
 
-typedef char *SymbolScope;
-
-extern SymbolScope GLOBAL_SCOPE; 
-extern SymbolScope LOCAL_SCOPE;
+typedef enum {
+  SYMBOL_GLOBAL_SCOPE,
+  SYMBOL_LOCAL_SCOPE,
+} SymbolScope;
 
 typedef struct { 
   char *name;
