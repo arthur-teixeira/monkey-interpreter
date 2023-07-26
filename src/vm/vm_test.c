@@ -346,6 +346,47 @@ void test_functions_without_return_value(void) {
   VM_RUN_TESTS(tests, VM_TEST_NULL);
 }
 
+void test_calling_functions_with_bindings(void) {
+  vmIntTestCase tests[] = {
+    {
+      .input = "let one = fn() { let one = 1; one; }; one();",
+      .expected = 1,
+    },
+    {
+      .input = "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
+               "oneAndTwo();",
+      .expected = 3,
+    },
+    {
+      .input = "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
+        "let threeAndFour = fn() { let three = 3; let four = 4; three + four; };"
+        "oneAndTwo() + threeAndFour();",
+      .expected = 10,
+    },
+    {
+      .input = "let firstFoobar = fn() { let foobar = 50; foobar; };"
+        "let secondFoobar = fn() { let foobar = 100; foobar; };"
+        "firstFoobar() + secondFoobar();",
+      .expected = 150,
+    },
+    {
+      .input = "let globalSeed = 50;"
+        "let minusOne = fn() {"
+        "  let num = 1;"
+        "  globalSeed - num;"
+        "};"
+        "let minusTwo = fn() {"
+        "  let num = 2;"
+        "  globalSeed - num;"
+        "};"
+        "minusOne() + minusTwo();",
+      .expected = 97,
+    },
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -357,5 +398,6 @@ int main(void) {
   RUN_TEST(test_calling_functions);
   RUN_TEST(test_functions_with_return_statement);
   RUN_TEST(test_functions_without_return_value);
+  RUN_TEST(test_calling_functions_with_bindings);
   return UNITY_END();
 }

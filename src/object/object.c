@@ -218,10 +218,11 @@ Object *new_concatted_string(String *left, String *right) {
   return (Object *)new_string;
 }
 
-Object *new_compiled_function(Instructions *instructions) {
+Object *new_compiled_function(Instructions *instructions, size_t num_locals) {
   CompiledFunction *fn = malloc(sizeof(CompiledFunction));
   assert(fn != NULL);
   fn->type = COMPILED_FUNCTION_OBJ;
+  fn->num_locals = num_locals;
 
   fn->instructions = *instructions;
 
@@ -236,4 +237,10 @@ Object *new_concatted_compiled_function(Instructions *instructions,
   fn->instructions = concat_instructions(instructions_count, instructions);
 
   return (Object *)fn;
+}
+
+void free_object(Object *obj) {
+  if (obj->type != BOOLEAN_OBJ) {
+    free(obj);
+  }
 }

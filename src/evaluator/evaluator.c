@@ -8,12 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../object/constants.h"
-
-void free_object(Object *obj) {
-  if (obj->type != BOOLEAN_OBJ) {
-    free(obj);
-  }
-}
+#include "../object/object.h"
 
 Object *new_error(char *message) {
   Error *err = malloc(sizeof(Error));

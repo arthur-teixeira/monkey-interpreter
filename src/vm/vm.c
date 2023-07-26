@@ -8,9 +8,9 @@
 
 VM *new_vm(Bytecode bytecode) {
   CompiledFunction *main_fn =
-      (CompiledFunction *)new_compiled_function(&bytecode.instructions);
+      (CompiledFunction *)new_compiled_function(&bytecode.instructions, 0);
 
-  Frame main_frame = new_frame(main_fn);
+  Frame main_frame = new_frame(main_fn, 0);
   VM *vm = malloc(sizeof(VM));
   assert(vm != NULL);
 
@@ -384,6 +384,27 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
+    case OP_SET_LOCAL: {
+      uint8_t local_index = ins->arr[ip + 1];
+      current_frame(vm)->ip++;
+      Frame *frame = current_frame(vm);
+
+      vm->stack[frame->base_pointer + local_index] = stack_pop(vm);
+      break;
+    }
+    case OP_GET_LOCAL: {
+      uint8_t local_index = ins->arr[ip + 1];
+      current_frame(vm)->ip++;
+
+      Frame *frame = current_frame(vm);
+      VMResult result =
+          stack_push(vm, vm->stack[frame->base_pointer + local_index]);
+
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_ARRAY: {
       uint16_t num_elements = big_endian_read_uint16(ins, ip + 1);
       current_frame(vm)->ip += 2;
@@ -427,15 +448,22 @@ VMResult run_vm(VM *vm) {
     case OP_CALL: {
       CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1];
       assert(fn->type == COMPILED_FUNCTION_OBJ);
-      Frame frame = new_frame(fn);
+      Frame frame = new_frame(fn, vm->sp);
       push_frame(vm, frame);
+
+      vm->sp = frame.base_pointer + fn->num_locals;
       break;
     }
     case OP_RETURN_VALUE: {
       Object *return_value = stack_pop(vm);
 
-      pop_frame(vm);
-      stack_pop(vm);
+      Frame frame = pop_frame(vm);
+      for (size_t i = vm->sp; i < frame.base_pointer; i--) {
+        free_object(vm->stack[i]); // Not sure if this is correct
+                                   // Freeing the stack objects
+      }
+
+      vm->sp = frame.base_pointer - 1;
       VMResult result = stack_push(vm, return_value);
       if (result != VM_OK) {
         return result;
@@ -443,8 +471,8 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_RETURN: {
-      pop_frame(vm);
-      stack_pop(vm);
+      Frame frame = pop_frame(vm);
+      vm->sp = frame.base_pointer - 1;
 
       VMResult result = stack_push(vm, (Object *)&obj_null);
       if (result != VM_OK) {

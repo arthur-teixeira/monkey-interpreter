@@ -95,9 +95,10 @@ typedef struct {
 typedef struct {
   ObjectType type; // COMPILED_FUNCTION_OBJ
   Instructions instructions;
+  size_t num_locals;
 } CompiledFunction;
 
-Object *new_compiled_function(Instructions *);
+Object *new_compiled_function(Instructions *, size_t);
 Object *new_concatted_compiled_function(Instructions *, size_t);
 
 size_t sizeof_object(Object *);
@@ -105,5 +106,7 @@ size_t sizeof_object(Object *);
 Object *new_number(double);
 Object *new_string(char *, size_t);
 Object *new_concatted_string(String *, String *);
+
+void free_object(Object *);
 
 #endif

@@ -473,9 +473,11 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
       emit_no_operands(compiler, OP_RETURN);
     }
 
+    size_t num_locals = compiler->symbol_table->num_definitions;
+
     Instructions *instructions = leave_compiler_scope(compiler);
 
-    Object *compiled_fn = new_compiled_function(instructions);
+    Object *compiled_fn = new_compiled_function(instructions, num_locals);
     size_t new_constant_pos = add_constant(compiler, compiled_fn);
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;
