@@ -979,7 +979,7 @@ void test_function_calls(void) {
             {
                 new_concatted_compiled_function(
                     (Instruction[]){
-                        make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                        make_instruction(OP_RETURN, (int[]){}, 0),
                     },
                     1),
                 new_number(24),
@@ -1002,7 +1002,7 @@ void test_function_calls(void) {
             {
                 new_concatted_compiled_function(
                     (Instruction[]){
-                        make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                        make_instruction(OP_RETURN, (int[]){}, 0),
                     },
                     1),
                 new_number(24),
