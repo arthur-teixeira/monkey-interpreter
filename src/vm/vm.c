@@ -273,6 +273,20 @@ VMResult execute_index_expression(VM *vm, Object *left, Object *index) {
   return VM_UNINDEXABLE_OBJECT;
 }
 
+VMResult call_function(VM *vm, size_t num_args) {
+  CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1 - num_args];
+  if (fn->type != COMPILED_FUNCTION_OBJ) {
+    return VM_CALL_NON_FUNCTION;
+  }
+
+  Frame frame = new_frame(fn, vm->sp - num_args);
+  push_frame(vm, frame);
+
+  vm->sp = frame.base_pointer + fn->num_locals;
+
+  return VM_OK;
+}
+
 VMResult run_vm(VM *vm) {
   size_t ip;
   const Instructions *ins;
@@ -446,13 +460,13 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_CALL: {
+      uint8_t num_args = ins->arr[ip + 1];
       current_frame(vm)->ip++;
-      CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1];
-      assert(fn->type == COMPILED_FUNCTION_OBJ);
-      Frame frame = new_frame(fn, vm->sp);
-      push_frame(vm, frame);
 
-      vm->sp = frame.base_pointer + fn->num_locals;
+      VMResult result = call_function(vm, num_args);
+      if (result != VM_OK) {
+        return result;
+      }
       break;
     }
     case OP_RETURN_VALUE: {
@@ -510,6 +524,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_UNINDEXABLE_OBJECT:
     snprintf(buf, bufsize, "Unindexable object");
+    return;
+  case VM_CALL_NON_FUNCTION:
+    snprintf(buf, bufsize, "Calling non function");
     return;
   }
 }

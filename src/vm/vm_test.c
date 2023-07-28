@@ -387,6 +387,23 @@ void test_calling_functions_with_bindings(void) {
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
 }
 
+void test_functions_with_arguments_and_bindings(void) {
+  vmIntTestCase tests[] = {
+    {
+      .input = "let identity = fn(a) { a; };"
+        "identity(4);",
+      .expected = 4,
+    },
+    {
+      .input = "let sum = fn(a, b) { a + b; };"
+        "sum(1, 2);",
+      .expected = 3,
+    },
+  };
+
+  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -399,5 +416,6 @@ int main(void) {
   RUN_TEST(test_functions_with_return_statement);
   RUN_TEST(test_functions_without_return_value);
   RUN_TEST(test_calling_functions_with_bindings);
+  RUN_TEST(test_functions_with_arguments_and_bindings);
   return UNITY_END();
 }
