@@ -96,9 +96,10 @@ typedef struct {
   ObjectType type; // COMPILED_FUNCTION_OBJ
   Instructions instructions;
   size_t num_locals;
+  size_t num_parameters;
 } CompiledFunction;
 
-Object *new_compiled_function(Instructions *, size_t);
+Object *new_compiled_function(Instructions *, size_t, size_t);
 Object *new_concatted_compiled_function(Instructions *, size_t);
 
 size_t sizeof_object(Object *);

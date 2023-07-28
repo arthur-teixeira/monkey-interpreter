@@ -218,11 +218,12 @@ Object *new_concatted_string(String *left, String *right) {
   return (Object *)new_string;
 }
 
-Object *new_compiled_function(Instructions *instructions, size_t num_locals) {
+Object *new_compiled_function(Instructions *instructions, size_t num_locals, size_t num_parameters) {
   CompiledFunction *fn = malloc(sizeof(CompiledFunction));
   assert(fn != NULL);
   fn->type = COMPILED_FUNCTION_OBJ;
   fn->num_locals = num_locals;
+  fn->num_parameters = num_parameters;
 
   fn->instructions = *instructions;
 

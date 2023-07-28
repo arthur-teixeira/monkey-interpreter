@@ -484,7 +484,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
 
     Instructions *instructions = leave_compiler_scope(compiler);
 
-    Object *compiled_fn = new_compiled_function(instructions, num_locals);
+    Object *compiled_fn = new_compiled_function(instructions, num_locals, fn->parameters.len);
     size_t new_constant_pos = add_constant(compiler, compiled_fn);
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;

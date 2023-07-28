@@ -48,6 +48,14 @@ typedef struct {
   size_t expected_len;
 } vmArrayTestCase;
 
+Program *parse_input(char *input) {
+  Lexer *l = new_lexer(input);
+  Parser *p = new_parser(l);
+  Program *program = parse_program(p);
+  free_parser(p);
+  return program;
+}
+
 Program *parse(void *test, vmTestCaseType type) {
   char *input;
   switch (type) {
@@ -68,11 +76,7 @@ Program *parse(void *test, vmTestCaseType type) {
     break;
   }
 
-  Lexer *l = new_lexer(input);
-  Parser *p = new_parser(l);
-  Program *program = parse_program(p);
-  free_parser(p);
-  return program;
+  return parse_input(input);
 }
 
 void test_integer_object(double expected, Object *actual) {
@@ -348,40 +352,43 @@ void test_functions_without_return_value(void) {
 
 void test_calling_functions_with_bindings(void) {
   vmIntTestCase tests[] = {
-    {
-      .input = "let one = fn() { let one = 1; one; }; one();",
-      .expected = 1,
-    },
-    {
-      .input = "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
-               "oneAndTwo();",
-      .expected = 3,
-    },
-    {
-      .input = "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
-        "let threeAndFour = fn() { let three = 3; let four = 4; three + four; };"
-        "oneAndTwo() + threeAndFour();",
-      .expected = 10,
-    },
-    {
-      .input = "let firstFoobar = fn() { let foobar = 50; foobar; };"
-        "let secondFoobar = fn() { let foobar = 100; foobar; };"
-        "firstFoobar() + secondFoobar();",
-      .expected = 150,
-    },
-    {
-      .input = "let globalSeed = 50;"
-        "let minusOne = fn() {"
-        "  let num = 1;"
-        "  globalSeed - num;"
-        "};"
-        "let minusTwo = fn() {"
-        "  let num = 2;"
-        "  globalSeed - num;"
-        "};"
-        "minusOne() + minusTwo();",
-      .expected = 97,
-    },
+      {
+          .input = "let one = fn() { let one = 1; one; }; one();",
+          .expected = 1,
+      },
+      {
+          .input =
+              "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
+              "oneAndTwo();",
+          .expected = 3,
+      },
+      {
+          .input =
+              "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
+              "let threeAndFour = fn() { let three = 3; let four = 4; three + "
+              "four; };"
+              "oneAndTwo() + threeAndFour();",
+          .expected = 10,
+      },
+      {
+          .input = "let firstFoobar = fn() { let foobar = 50; foobar; };"
+                   "let secondFoobar = fn() { let foobar = 100; foobar; };"
+                   "firstFoobar() + secondFoobar();",
+          .expected = 150,
+      },
+      {
+          .input = "let globalSeed = 50;"
+                   "let minusOne = fn() {"
+                   "  let num = 1;"
+                   "  globalSeed - num;"
+                   "};"
+                   "let minusTwo = fn() {"
+                   "  let num = 2;"
+                   "  globalSeed - num;"
+                   "};"
+                   "minusOne() + minusTwo();",
+          .expected = 97,
+      },
   };
 
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
@@ -389,19 +396,95 @@ void test_calling_functions_with_bindings(void) {
 
 void test_functions_with_arguments_and_bindings(void) {
   vmIntTestCase tests[] = {
-    {
-      .input = "let identity = fn(a) { a; };"
-        "identity(4);",
-      .expected = 4,
-    },
-    {
-      .input = "let sum = fn(a, b) { a + b; };"
-        "sum(1, 2);",
-      .expected = 3,
-    },
+      {
+          .input = "let identity = fn(a) { a; };"
+                   "identity(4);",
+          .expected = 4,
+      },
+      {
+          .input = "let sum = fn(a, b) { a + b; };"
+                   "sum(1, 2);",
+          .expected = 3,
+      },
+      {
+          .input = "let sum = fn(a, b) {"
+                   "let c = a + b;"
+                   "c;"
+                   "};"
+                   "sum(1, 2);",
+          .expected = 3,
+      },
+      {
+          .input = "let sum = fn(a, b) {"
+                   "let c = a + b;"
+                   "c;"
+                   "};"
+                   "sum(1, 2) + sum(3, 4)",
+          .expected = 10,
+      },
+      {
+          .input = "let sum = fn(a, b) {"
+                   "let c = a + b;"
+                   "c;"
+                   "};"
+                   ""
+                   "let outer = fn() {"
+                   "  sum(1, 2) + sum(3, 4);"
+                   "};"
+                   "outer();",
+          .expected = 10,
+      },
+      {
+          .input = "let globalNum = 10;"
+                   "let sum = fn(a, b) {"
+                   "let c = a + b;"
+                   "c + globalNum;"
+                   "};"
+                   "let outer = fn() {"
+                   "sum(1, 2) + sum(3, 4) + globalNum;"
+                   "};"
+                   "outer() + globalNum;",
+          .expected = 50,
+      },
   };
 
   VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+}
+
+void test_calling_functions_with_wrong_arguments(void) {
+  vmStringTestCase tests[] = {
+      {
+          .input = "fn() { 1; }(1);",
+          .expected = "wrong number of arguments",
+      },
+      {
+          .input = "fn(a) { a; }();",
+          .expected = "wrong number of arguments",
+      },
+      {
+          .input = "fn(a, b) { a + b; }(1);",
+          .expected = "wrong number of arguments",
+      },
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tests); i++) {
+    Program *program = parse_input(tests[i].input);
+
+    Compiler *compiler = new_compiler();
+    CompilerResult compiler_error = compile_program(compiler, program);
+    TEST_ASSERT_EQUAL(COMPILER_OK, compiler_error);
+
+    VM *vm = new_vm(bytecode(compiler));
+    VMResult vm_result = run_vm(vm);
+
+    TEST_ASSERT_NOT_EQUAL(VM_OK, vm_result);
+
+    char msg[100];
+    memset(msg, 0, 100);
+    vm_error(vm_result, msg, 100);
+
+    TEST_ASSERT_EQUAL_STRING(tests[i].expected, msg);
+  }
 }
 
 int main(void) {
@@ -417,5 +500,6 @@ int main(void) {
   RUN_TEST(test_functions_without_return_value);
   RUN_TEST(test_calling_functions_with_bindings);
   RUN_TEST(test_functions_with_arguments_and_bindings);
+  RUN_TEST(test_calling_functions_with_wrong_arguments);
   return UNITY_END();
 }

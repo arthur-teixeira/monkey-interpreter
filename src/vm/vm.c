@@ -8,7 +8,7 @@
 
 VM *new_vm(Bytecode bytecode) {
   CompiledFunction *main_fn =
-      (CompiledFunction *)new_compiled_function(&bytecode.instructions, 0);
+      (CompiledFunction *)new_compiled_function(&bytecode.instructions, 0, 0);
 
   Frame main_frame = new_frame(main_fn, 0);
   VM *vm = malloc(sizeof(VM));
@@ -279,6 +279,10 @@ VMResult call_function(VM *vm, size_t num_args) {
     return VM_CALL_NON_FUNCTION;
   }
 
+  if (num_args != fn->num_parameters) {
+    return VM_WRONG_NUMBER_OF_ARGUMENTS;
+  }
+
   Frame frame = new_frame(fn, vm->sp - num_args);
   push_frame(vm, frame);
 
@@ -527,6 +531,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_CALL_NON_FUNCTION:
     snprintf(buf, bufsize, "Calling non function");
+    return;
+  case VM_WRONG_NUMBER_OF_ARGUMENTS:
+    snprintf(buf, bufsize, "wrong number of arguments");
     return;
   }
 }
