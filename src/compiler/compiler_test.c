@@ -927,101 +927,110 @@ void test_compiler_scopes(void) {
 }
 
 void test_function_calls(void) {
-  compilerTestCase tests[] = {
+  compilerTestCase tests[] =
       {
-          .input = "fn() { 24 }();",
-          .expected_constants_len = 2,
-          .expected_constants =
-              {
-                  new_number(24),
-                  new_concatted_compiled_function(
-                      (Instruction[]){
-                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
-                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
-                      },
-                      2),
-              },
-          .expected_instructions_len = 4,
-          .expected_instructions =
-              {
-                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
-                  make_instruction(OP_CALL, (int[]){0}, 1),
-                  make_instruction(OP_POP, (int[]){}, 0),
-              },
-      },
-      {
-          .input = "let noArg = fn() { 24 }; noArg();",
-          .expected_constants_len = 2,
-          .expected_constants =
-              {
-                  new_number(24),
-                  new_concatted_compiled_function(
-                      (Instruction[]){
-                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
-                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
-                      },
-                      2),
-              },
-          .expected_instructions_len = 5,
-          .expected_instructions =
-              {
-                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
-                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_CALL, (int[]){0}, 1),
-                  make_instruction(OP_POP, (int[]){}, 0),
-              },
-      },
-      {
-        .input = "let oneArg = fn(a) { }; oneArg(24);",
-        .expected_constants_len = 2,
-        .expected_constants =
-            {
-                new_concatted_compiled_function(
-                    (Instruction[]){
-                        make_instruction(OP_RETURN, (int[]){}, 0),
-                    },
-                    1),
-                new_number(24),
-            },
-        .expected_instructions_len = 6,
-        .expected_instructions = {
-            make_instruction(OP_CONSTANT, (int[]){0}, 1),
-            make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-            make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-            make_instruction(OP_CONSTANT, (int[]){1}, 1),
-              make_instruction(OP_CALL, (int[]){1}, 1),
-            make_instruction(OP_POP, (int[]){}, 0),
-        },
-      },
-      {
-        .input = "let manyArg = fn(a, b, c) { };"
-                  "manyArg(24, 25, 26);",
-        .expected_constants_len = 4,
-        .expected_constants =
-            {
-                new_concatted_compiled_function(
-                    (Instruction[]){
-                        make_instruction(OP_RETURN, (int[]){}, 0),
-                    },
-                    1),
-                new_number(24),
-                new_number(25),
-                new_number(26),
-            },
-        .expected_instructions_len = 8,
-        .expected_instructions = {
-            make_instruction(OP_CONSTANT, (int[]){0}, 1),
-            make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-            make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-            make_instruction(OP_CONSTANT, (int[]){1}, 1),
-            make_instruction(OP_CONSTANT, (int[]){2}, 1),
-            make_instruction(OP_CONSTANT, (int[]){3}, 1),
-            make_instruction(OP_CALL, (int[]){3}, 1),
-            make_instruction(OP_POP, (int[]){}, 0),
-        },
-      },
-  };
+          {
+              .input = "fn() { 24 }();",
+              .expected_constants_len = 2,
+              .expected_constants =
+                  {
+                      new_number(24),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          2),
+                  },
+              .expected_instructions_len = 4,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CALL, (int[]){0}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "let noArg = fn() { 24 }; noArg();",
+              .expected_constants_len = 2,
+              .expected_constants =
+                  {
+                      new_number(24),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          2),
+                  },
+              .expected_instructions_len = 5,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CALL, (int[]){0}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "let oneArg = fn(a) { a }; oneArg(24);",
+              .expected_constants_len = 2,
+              .expected_constants =
+                  {
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          2),
+                      new_number(24),
+                  },
+              .expected_instructions_len = 6,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CALL, (int[]){1}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "let manyArg = fn(a, b, c) { a; b; c; };"
+                       "manyArg(24, 25, 26);",
+              .expected_constants_len = 4,
+              .expected_constants =
+                  {
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_POP, (int[]){}, 0),
+                              make_instruction(OP_GET_LOCAL, (int[]){1}, 1),
+                              make_instruction(OP_POP, (int[]){}, 0),
+                              make_instruction(OP_GET_LOCAL, (int[]){2}, 1),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          6),
+                      new_number(24),
+                      new_number(25),
+                      new_number(26),
+                  },
+              .expected_instructions_len = 8,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                      make_instruction(OP_CALL, (int[]){3}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+      };
 
   RUN_COMPILER_TESTS(tests);
 }

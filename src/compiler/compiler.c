@@ -456,6 +456,13 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   case FN_EXPR: {
     FunctionLiteral *fn = (FunctionLiteral *)expr;
     enter_compiler_scope(compiler);
+
+    for (size_t i = 0; i < fn->parameters.len; i++) {
+      Identifier *param = fn->parameters.arr[i];
+      assert(param->type == IDENT_EXPR);
+      symbol_define(compiler->symbol_table, param->value);
+    }
+
     CompilerResult result = compile_block_statement(compiler, fn->body);
     if (result != COMPILER_OK) {
       return result;
