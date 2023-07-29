@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../object/builtins.h"
 
 #define PROMPT ">> "
 
@@ -58,6 +59,9 @@ void start_repl(ReplMode mode) {
   array_init(&constants, 10);
   Object *globals[GLOBALS_SIZE];
   SymbolTable *symbol_table = new_symbol_table();
+  for (size_t i = 0; i < builtin_definitions_len; i++) {
+    symbol_define_builtin(symbol_table, i, builtin_definitions[i].name);
+  }
 
   printf("Hello from Monkey!\n");
   while (true) {
