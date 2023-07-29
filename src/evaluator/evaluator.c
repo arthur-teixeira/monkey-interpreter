@@ -1,6 +1,5 @@
 #include "./evaluator.h"
 #include "../str_utils/str_utils.h"
-#include "./builtins/builtins.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,15 +8,7 @@
 #include <string.h>
 #include "../object/constants.h"
 #include "../object/object.h"
-
-Object *new_error(char *message) {
-  Error *err = malloc(sizeof(Error));
-  assert(err != NULL && "Error allocating memory for error");
-  err->message = strdup(message);
-  err->type = ERROR_OBJ;
-
-  return (Object *)err;
-}
+#include "../object/builtins.h"
 
 bool is_error(Object *obj) {
   if (obj != NULL) {
@@ -320,14 +311,10 @@ Object *eval_if_expression(IfExpression *expr, Environment *env) {
 }
 
 Object *eval_identifier(Identifier *ident, Environment *env) {
-  hashmap_t builtins;
-  hashmap_create(10, &builtins);
-  get_builtins(&builtins);
-  Object *builtin = hashmap_get(&builtins, ident->value, strlen(ident->value));
+  const Builtin *builtin = get_builtin_by_name(ident->value);
 
-  hashmap_destroy(&builtins);
-  if (builtin != NULL) {
-    return builtin;
+  if (builtin) {
+    return (Object *)builtin;
   }
 
   Object *val = env_get(env, ident->value);
@@ -396,9 +383,7 @@ Object *unwrap_return_value(Object *evaluated) {
 Object *apply_function(Object *fn_obj, DynamicArray args) {
   if (fn_obj->type == BUILTIN_OBJ) {
     Builtin *builtin = (Builtin *)fn_obj;
-    Object *result = builtin->fn(args);
-
-    return result;
+    return builtin->fn(args);
   }
 
   if (fn_obj->type != FUNCTION_OBJ) {

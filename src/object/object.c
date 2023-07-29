@@ -218,7 +218,8 @@ Object *new_concatted_string(String *left, String *right) {
   return (Object *)new_string;
 }
 
-Object *new_compiled_function(Instructions *instructions, size_t num_locals, size_t num_parameters) {
+Object *new_compiled_function(Instructions *instructions, size_t num_locals,
+                              size_t num_parameters) {
   CompiledFunction *fn = malloc(sizeof(CompiledFunction));
   assert(fn != NULL);
   fn->type = COMPILED_FUNCTION_OBJ;
@@ -241,7 +242,17 @@ Object *new_concatted_compiled_function(Instructions *instructions,
 }
 
 void free_object(Object *obj) {
-  if (obj->type != BOOLEAN_OBJ) {
+  if (obj->type != BOOLEAN_OBJ && obj->type != BUILTIN_OBJ &&
+      obj->type != NULL_OBJ) {
     free(obj);
   }
+}
+
+Object *new_error(char *message) {
+  Error *err = malloc(sizeof(Error));
+  assert(err != NULL && "Error allocating memory for error");
+  err->message = strdup(message);
+  err->type = ERROR_OBJ;
+
+  return (Object *)err;
 }

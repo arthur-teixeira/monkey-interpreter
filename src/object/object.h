@@ -109,5 +109,5 @@ Object *new_string(char *, size_t);
 Object *new_concatted_string(String *, String *);
 
 void free_object(Object *);
-
+Object *new_error(char *);
 #endif
