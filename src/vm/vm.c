@@ -200,6 +200,7 @@ static bool is_truthy(Object *obj) {
 Object *vm_build_array(VM *vm, size_t start, size_t end) {
   Array *arr = malloc(sizeof(Array));
   assert(arr != NULL);
+  arr->type = ARRAY_OBJ;
   array_init(&arr->elements, end - start);
 
   for (size_t i = start; i < end; i++) {

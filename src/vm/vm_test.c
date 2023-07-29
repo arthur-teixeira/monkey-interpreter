@@ -10,130 +10,86 @@
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
-#define VM_RUN_TESTS(tests, type)                                              \
-  run_vm_tests(tests, sizeof(tests[0]), ARRAY_LEN(tests), type);
+#define VM_RUN_TESTS(tests) run_vm_tests(tests, ARRAY_LEN(tests));
 
 #define EXPECTED_NULL_SENTINEL 98534921
 
-typedef enum {
-  VM_TEST_INTEGER,
-  VM_TEST_BOOLEAN,
-  VM_TEST_NULL,
-  VM_TEST_STRING,
-  VM_TEST_ARRAY,
-} vmTestCaseType;
-
 typedef struct {
   char *input;
-  bool expected;
-} vmBooleanTestCase;
+  Object *expected;
+} vmTestCase;
 
-typedef struct {
-  char *input;
-  int64_t expected;
-} vmIntTestCase;
-
-typedef struct {
-  char *input;
-} vmNullTestCase;
-
-typedef struct {
-  char *input;
-  char *expected;
-} vmStringTestCase;
-
-typedef struct {
-  char *input;
-  int64_t expected[100];
-  size_t expected_len;
-} vmArrayTestCase;
-
-Program *parse_input(char *input) {
-  Lexer *l = new_lexer(input);
+Program *parse(vmTestCase test) {
+  Lexer *l = new_lexer(test.input);
   Parser *p = new_parser(l);
   Program *program = parse_program(p);
   free_parser(p);
   return program;
 }
 
-Program *parse(void *test, vmTestCaseType type) {
-  char *input;
-  switch (type) {
-  case VM_TEST_INTEGER:
-    input = ((vmIntTestCase *)test)->input;
-    break;
-  case VM_TEST_BOOLEAN:
-    input = ((vmBooleanTestCase *)test)->input;
-    break;
-  case VM_TEST_NULL:
-    input = ((vmNullTestCase *)test)->input;
-    break;
-  case VM_TEST_STRING:
-    input = ((vmStringTestCase *)test)->input;
-    break;
-  case VM_TEST_ARRAY:
-    input = ((vmArrayTestCase *)test)->input;
-    break;
-  }
-
-  return parse_input(input);
-}
-
-void test_integer_object(double expected, Object *actual) {
-  if (expected == EXPECTED_NULL_SENTINEL) {
-    TEST_ASSERT_EQUAL_PTR(&obj_null, actual);
-    return;
-  }
-
+void test_number_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, actual->type);
-  TEST_ASSERT_EQUAL_INT64(expected, ((Number *)actual)->value);
+  TEST_ASSERT_EQUAL(NUMBER_OBJ, expected->type);
+  TEST_ASSERT_EQUAL_INT64(((Number *)expected)->value,
+                          ((Number *)actual)->value);
 }
 
-void test_boolean_object(bool expected, Object *actual) {
+void test_boolean_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(BOOLEAN_OBJ, actual->type);
-  TEST_ASSERT_EQUAL(expected, ((Boolean *)actual)->value);
+  TEST_ASSERT_EQUAL(BOOLEAN_OBJ, expected->type);
+  TEST_ASSERT_EQUAL(((Boolean *)expected)->value, ((Boolean *)actual)->value);
 }
 
-void test_string_object(char *expected, Object *actual) {
+void test_string_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(STRING_OBJ, actual->type);
-  TEST_ASSERT_EQUAL_STRING(expected, ((String *)actual)->value);
+  TEST_ASSERT_EQUAL(STRING_OBJ, expected->type);
+  TEST_ASSERT_EQUAL_STRING(((String *)expected)->value,
+                           ((String *)actual)->value);
 }
 
-void test_expected_object(void *expected, Object *actual, vmTestCaseType type) {
-  switch (type) {
-  case VM_TEST_INTEGER:
-    test_integer_object(((vmIntTestCase *)expected)->expected, actual);
+void test_array_object(Object *expected, Object *actual) {
+  TEST_ASSERT_EQUAL(ARRAY_OBJ, expected->type);
+  TEST_ASSERT_EQUAL(ARRAY_OBJ, actual->type);
+  TEST_ASSERT_EQUAL_INT64(((Array *)expected)->elements.len,
+                          ((Array *)actual)->elements.len);
+
+  for (size_t i = 0; i < ((Array *)expected)->elements.len; i++) {
+    // might need to expend to accept other types
+    test_number_object(((Array *)expected)->elements.arr[i],
+                       ((Array *)actual)->elements.arr[i]);
+  }
+}
+
+void test_expected_object(Object *expected, Object *actual) {
+  switch (actual->type) {
+  case NUMBER_OBJ:
+    test_number_object(expected, actual);
     break;
-  case VM_TEST_BOOLEAN:
-    test_boolean_object(((vmBooleanTestCase *)expected)->expected, actual);
+  case BOOLEAN_OBJ:
+    test_boolean_object(expected, actual);
     break;
-  case VM_TEST_NULL:
+  case NULL_OBJ:
     TEST_ASSERT_EQUAL(NULL_OBJ, actual->type);
     break;
-  case VM_TEST_STRING:
-    test_string_object(((vmStringTestCase *)expected)->expected, actual);
+  case STRING_OBJ:
+    test_string_object(expected, actual);
     break;
-  case VM_TEST_ARRAY: {
-    vmArrayTestCase *test = (vmArrayTestCase *)expected;
-    TEST_ASSERT_EQUAL_INT64(test->expected_len,
-                            ((Array *)actual)->elements.len);
-    for (size_t i = 0; i < test->expected_len; i++) {
-      test_integer_object(test->expected[i],
-                          ((Array *)actual)->elements.arr[i]);
-    }
+  case ARRAY_OBJ:
+    test_array_object(expected, actual);
     break;
+  default:
+    TEST_FAIL_MESSAGE("Unknown object type");
   }
-  }
+
+  free_object(expected);
 }
 
-void run_vm_tests(void *tests, size_t test_size, size_t tests_count,
-                  vmTestCaseType type) {
+void run_vm_tests(vmTestCase *tests, size_t tests_count) {
   for (size_t i = 0; i < tests_count; i++) {
-    void *test = tests + (i * test_size);
-    Program *program = parse(test, type);
+    vmTestCase test = tests[i];
+    Program *program = parse(test);
     Compiler *compiler = new_compiler();
     CompilerResult result = compile_program(compiler, program);
-
     if (result != COMPILER_OK) {
       char msg[100];
       compiler_error(result, msg, 100);
@@ -149,7 +105,7 @@ void run_vm_tests(void *tests, size_t test_size, size_t tests_count,
     }
 
     Object *top = vm_last_popped_stack_elem(vm);
-    test_expected_object(test, top, type);
+    test_expected_object(test.expected, top);
 
     free_program(program);
     free_compiler(compiler);
@@ -158,209 +114,219 @@ void run_vm_tests(void *tests, size_t test_size, size_t tests_count,
 }
 
 void test_integer_arithmetic(void) {
-  vmIntTestCase tests[] = {
-      {"1", 1},
-      {"2", 2},
-      {"1 + 2", 3},
-      {"1 - 2", -1},
-      {"1 * 2", 2},
-      {"4 / 2", 2},
-      {"50 / 2 * 2 + 10 - 5", 55},
-      {"5 + 5 + 5 + 5 - 10", 10},
-      {"2 * 2 * 2 * 2 * 2", 32},
-      {"5 * 2 + 10", 20},
-      {"5 + 2 * 10", 25},
-      {"5 * (2 + 10)", 60},
-      {"4 | 1", 5},
-      {"2 & 1", 0},
-      {"2 ^ 1", 3},
-      {"2 << 1", 4},
-      {"2 >> 1", 1},
-      {"3 % 2", 1},
-      {"3 % 3", 0},
-      {"-5", -5},
-      {"-10", -10},
-      {"-50 + 100 + -50", 0},
-      {"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
+  vmTestCase tests[] = {
+      {"1", new_number(1)},
+      {"2", new_number(2)},
+      {"1 + 2", new_number(3)},
+      {"1 - 2", new_number(-1)},
+      {"1 * 2", new_number(2)},
+      {"4 / 2", new_number(2)},
+      {"50 / 2 * 2 + 10 - 5", new_number(55)},
+      {"5 + 5 + 5 + 5 - 10", new_number(10)},
+      {"2 * 2 * 2 * 2 * 2", new_number(32)},
+      {"5 * 2 + 10", new_number(20)},
+      {"5 + 2 * 10", new_number(25)},
+      {"5 * (2 + 10)", new_number(60)},
+      {"4 | 1", new_number(5)},
+      {"2 & 1", new_number(0)},
+      {"2 ^ 1", new_number(3)},
+      {"2 << 1", new_number(4)},
+      {"2 >> 1", new_number(1)},
+      {"3 % 2", new_number(1)},
+      {"3 % 3", new_number(0)},
+      {"-5", new_number(-5)},
+      {"-10", new_number(-10)},
+      {"-50 + 100 + -50", new_number(0)},
+      {"(5 + 10 * 2 + 15 / 3) * 2 + -10", new_number(50)},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_boolean_expressions(void) {
-  vmBooleanTestCase tests[] = {
-      {"true", true},
-      {"false", false},
-      {"1 < 2", true},
-      {"1 > 2", false},
-      {"1 < 1", false},
-      {"1 > 1", false},
-      {"1 == 1", true},
-      {"1 != 1", false},
-      {"1 == 2", false},
-      {"1 != 2", true},
-      {"true == true", true},
-      {"false == false", true},
-      {"true == false", false},
-      {"true != false", true},
-      {"false != true", true},
-      {"(1 < 2) == true", true},
-      {"(1 < 2) == false", false},
-      {"(1 > 2) == true", false},
-      {"(1 > 2) == false", true},
-      {"!true", false},
-      {"!false", true},
-      {"!5", false},
-      {"!!true", true},
-      {"!!false", false},
-      {"!!5", true},
+  vmTestCase tests[] = {
+      {"true", (Object *)&obj_true},
+      {"1 < 2", (Object *)&obj_true},
+      {"1 == 1", (Object *)&obj_true},
+      {"1 != 2", (Object *)&obj_true},
+      {"true == true", (Object *)&obj_true},
+      {"false == false", (Object *)&obj_true},
+      {"true != false", (Object *)&obj_true},
+      {"false != true", (Object *)&obj_true},
+      {"(1 < 2) == true", (Object *)&obj_true},
+      {"(1 > 2) == false", (Object *)&obj_true},
+      {"!false", (Object *)&obj_true},
+      {"!!true", (Object *)&obj_true},
+      {"!!5", (Object *)&obj_true},
+      {"false", (Object *)&obj_false},
+      {"1 > 2", (Object *)&obj_false},
+      {"1 < 1", (Object *)&obj_false},
+      {"1 > 1", (Object *)&obj_false},
+      {"1 != 1", (Object *)&obj_false},
+      {"1 == 2", (Object *)&obj_false},
+      {"true == false", (Object *)&obj_false},
+      {"(1 < 2) == false", (Object *)&obj_false},
+      {"(1 > 2) == true", (Object *)&obj_false},
+      {"!true", (Object *)&obj_false},
+      {"!5", (Object *)&obj_false},
+      {"!!false", (Object *)&obj_false},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_BOOLEAN);
+  VM_RUN_TESTS(tests);
 }
 
 void test_conditionals(void) {
-  vmIntTestCase tests[] = {
-      {"if (true) { 10 }", 10},
-      {"if (true) { 10 } else { 20 }", 10},
-      {"if (false) { 10 } else { 20 } ", 20},
-      {"if (1) { 10 }", 10},
-      {"if (1 < 2) { 10 }", 10},
-      {"if (1 < 2) { 10 } else { 20 }", 10},
-      {"if (1 > 2) { 10 } else { 20 }", 20},
-      {"if ((if (false) { 10 })) { 10 } else { 20 }", 20},
+  vmTestCase tests[] = {
+      {"if (true) { 10 }", new_number(10)},
+      {"if (true) { 10 } else { 20 }", new_number(10)},
+      {"if (false) { 10 } else { 20 } ", new_number(20)},
+      {"if (1) { 10 }", new_number(10)},
+      {"if (1 < 2) { 10 }", new_number(10)},
+      {"if (1 < 2) { 10 } else { 20 }", new_number(10)},
+      {"if (1 > 2) { 10 } else { 20 }", new_number(20)},
+      {"if ((if (false) { 10 })) { 10 } else { 20 }", new_number(20)},
+      {"if (false) { 10; }", (Object *)&obj_null},
+      {"if (1 > 2) { 10; }", (Object *)&obj_null},
+      {"!(if (false) { 10; })", (Object *)&obj_true},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
-
-  vmNullTestCase null_tests[] = {
-      {"if (false) { 10; }"},
-      {"if (1 > 2) { 10; }"},
-  };
-
-  VM_RUN_TESTS(null_tests, VM_TEST_NULL);
-
-  vmBooleanTestCase bool_tests[] = {
-      {"!(if (false) { 10; })", true},
-  };
-
-  VM_RUN_TESTS(bool_tests, VM_TEST_BOOLEAN);
+  VM_RUN_TESTS(tests);
 }
 
 void test_global_let_statements(void) {
-  vmIntTestCase tests[] = {
-      {"let one = 1; one", 1},
-      {"let one = 1; let two = 2; one + two", 3},
-      {"let one = 1; let two = one + one; one + two", 3},
+  vmTestCase tests[] = {
+      {"let one = 1; one", new_number(1)},
+      {"let one = 1; let two = 2; one + two", new_number(3)},
+      {"let one = 1; let two = one + one; one + two", new_number(3)},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_string_expressions(void) {
-  vmStringTestCase tests[] = {
-      {"\"monkey\"", "monkey"},
-      {"\"mon\" + \"key\"", "monkey"},
-      {"\"mon\" + \"key\" + \"banana\"", "monkeybanana"},
+  vmTestCase tests[] = {
+      {"\"monkey\"", new_string("monkey")},
+      {"\"mon\" + \"key\"", new_string("monkey")},
+      {"\"mon\" + \"key\" + \"banana\"", new_string("monkeybanana")},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_STRING);
+  VM_RUN_TESTS(tests);
 }
 
 void test_array_literals(void) {
-  vmArrayTestCase tests[] = {
-      {"[]", {}, 0},
-      {"[1, 2, 3]", {1, 2, 3}, 3},
-      {"[1 + 2, 3 * 4, 5 + 6]", {3, 12, 11}, 3},
+  vmTestCase tests[] = {
+      {"[]", new_array((Object *[]){}, 0)},
+      {
+          "[1, 2, 3]",
+          new_array(
+              (Object *[]){
+                  new_number(1),
+                  new_number(2),
+                  new_number(3),
+              },
+              3),
+      },
+      {
+          "[1 + 2, 3 * 4, 5 + 6]",
+          new_array(
+              (Object *[]){
+                  new_number(3),
+                  new_number(12),
+                  new_number(11),
+              },
+              3),
+      },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_ARRAY);
+  VM_RUN_TESTS(tests);
 }
 
 void test_index_expressions(void) {
-  vmIntTestCase tests[] = {
-      {"[1, 2, 3][1]", 2},
-      {"[1, 2, 3][0 + 2]", 3},
-      {"[[1, 1, 1]][0][0]", 1},
-      {"[][0]", -1},
-      {"[1, 2, 3][99]", EXPECTED_NULL_SENTINEL},
-      {"[1][-1]", EXPECTED_NULL_SENTINEL},
-      {"{1: 1, 2: 2}[1]", 1},
-      {"{1: 1, 2: 2}[2]", 2},
-      {"{1: 1}[0]", EXPECTED_NULL_SENTINEL},
-      {"{}[0]", EXPECTED_NULL_SENTINEL},
+  vmTestCase tests[] = {
+      {"[1, 2, 3][1]", new_number(2)},
+      {"[1, 2, 3][0 + 2]", new_number(3)},
+      {"[[1, 1, 1]][0][0]", new_number(1)},
+      {"[][0]", new_number(-1)},
+      {"[1, 2, 3][99]", (Object *)&obj_null},
+      {"[1][-1]", (Object *)&obj_null},
+      {"{1: 1, 2: 2}[1]", new_number(1)},
+      {"{1: 1, 2: 2}[2]", new_number(2)},
+      {"{1: 1}[0]", (Object *)&obj_null},
+      {"{}[0]", (Object *)&obj_null},
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_calling_functions(void) {
-  vmIntTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "let fivePlusTen = fn() { 5 + 10; }; fivePlusTen();",
-          .expected = 15,
+          .expected = new_number(15),
       },
       {
           .input = "let one = fn() { 1; };"
                    "let two = fn() { 2; };"
                    "one() + two()",
-          .expected = 3,
+          .expected = new_number(3),
       },
       {
           .input = "let a = fn() { 1 };"
                    "let b = fn() { a() + 1 };"
                    "let c = fn() { b() + 1 };"
                    "c(); ",
-          .expected = 3,
+          .expected = new_number(3),
       },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER)
+  VM_RUN_TESTS(tests);
 }
 
 void test_functions_with_return_statement(void) {
-  vmIntTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "let earlyExit = fn() { return 99; 100; };"
                    "earlyExit();",
-          .expected = 99,
+          .expected = new_number(99),
       },
       {
           .input = "let earlyExit = fn() { return 99; return 100; };"
                    "earlyExit();",
-          .expected = 99,
+          .expected = new_number(99),
       },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_functions_without_return_value(void) {
-  vmNullTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "let noReturn = fn() { }; noReturn();",
+          .expected = (Object *)&obj_null,
       },
       {
           .input = "let noReturn = fn() { };"
                    "let noReturnTwo = fn() { noReturn(); };"
                    "noReturn(); noReturnTwo();",
+          .expected = (Object *)&obj_null,
       },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_NULL);
+  VM_RUN_TESTS(tests);
 }
 
 void test_calling_functions_with_bindings(void) {
-  vmIntTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "let one = fn() { let one = 1; one; }; one();",
-          .expected = 1,
+          .expected = new_number(1),
       },
       {
           .input =
               "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };"
               "oneAndTwo();",
-          .expected = 3,
+          .expected = new_number(3),
       },
       {
           .input =
@@ -368,13 +334,13 @@ void test_calling_functions_with_bindings(void) {
               "let threeAndFour = fn() { let three = 3; let four = 4; three + "
               "four; };"
               "oneAndTwo() + threeAndFour();",
-          .expected = 10,
+          .expected = new_number(10),
       },
       {
           .input = "let firstFoobar = fn() { let foobar = 50; foobar; };"
                    "let secondFoobar = fn() { let foobar = 100; foobar; };"
                    "firstFoobar() + secondFoobar();",
-          .expected = 150,
+          .expected = new_number(150),
       },
       {
           .input = "let globalSeed = 50;"
@@ -387,24 +353,24 @@ void test_calling_functions_with_bindings(void) {
                    "  globalSeed - num;"
                    "};"
                    "minusOne() + minusTwo();",
-          .expected = 97,
+          .expected = new_number(97),
       },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_functions_with_arguments_and_bindings(void) {
-  vmIntTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "let identity = fn(a) { a; };"
                    "identity(4);",
-          .expected = 4,
+          .expected = new_number(4),
       },
       {
           .input = "let sum = fn(a, b) { a + b; };"
                    "sum(1, 2);",
-          .expected = 3,
+          .expected = new_number(3),
       },
       {
           .input = "let sum = fn(a, b) {"
@@ -412,7 +378,7 @@ void test_functions_with_arguments_and_bindings(void) {
                    "c;"
                    "};"
                    "sum(1, 2);",
-          .expected = 3,
+          .expected = new_number(3),
       },
       {
           .input = "let sum = fn(a, b) {"
@@ -420,7 +386,7 @@ void test_functions_with_arguments_and_bindings(void) {
                    "c;"
                    "};"
                    "sum(1, 2) + sum(3, 4)",
-          .expected = 10,
+          .expected = new_number(10),
       },
       {
           .input = "let sum = fn(a, b) {"
@@ -432,7 +398,7 @@ void test_functions_with_arguments_and_bindings(void) {
                    "  sum(1, 2) + sum(3, 4);"
                    "};"
                    "outer();",
-          .expected = 10,
+          .expected = new_number(10),
       },
       {
           .input = "let globalNum = 10;"
@@ -444,31 +410,31 @@ void test_functions_with_arguments_and_bindings(void) {
                    "sum(1, 2) + sum(3, 4) + globalNum;"
                    "};"
                    "outer() + globalNum;",
-          .expected = 50,
+          .expected = new_number(50),
       },
   };
 
-  VM_RUN_TESTS(tests, VM_TEST_INTEGER);
+  VM_RUN_TESTS(tests);
 }
 
 void test_calling_functions_with_wrong_arguments(void) {
-  vmStringTestCase tests[] = {
+  vmTestCase tests[] = {
       {
           .input = "fn() { 1; }(1);",
-          .expected = "wrong number of arguments",
+          .expected = new_string("wrong number of arguments"),
       },
       {
           .input = "fn(a) { a; }();",
-          .expected = "wrong number of arguments",
+          .expected = new_string("wrong number of arguments"),
       },
       {
           .input = "fn(a, b) { a + b; }(1);",
-          .expected = "wrong number of arguments",
+          .expected = new_string("wrong number of arguments"),
       },
   };
 
   for (size_t i = 0; i < ARRAY_LEN(tests); i++) {
-    Program *program = parse_input(tests[i].input);
+    Program *program = parse(tests[i]);
 
     Compiler *compiler = new_compiler();
     CompilerResult compiler_error = compile_program(compiler, program);
@@ -483,8 +449,22 @@ void test_calling_functions_with_wrong_arguments(void) {
     memset(msg, 0, 100);
     vm_error(vm_result, msg, 100);
 
-    TEST_ASSERT_EQUAL_STRING(tests[i].expected, msg);
+    TEST_ASSERT_EQUAL(STRING_OBJ, tests[i].expected->type);
+    String *str = (String *)tests[i].expected;
+    TEST_ASSERT_EQUAL_STRING(str->value, msg);
+
+    free_object(tests[i].expected);
   }
+}
+
+void test_builtin_functions(void) {
+  vmTestCase tests[] = {
+      {"len(\"\")", new_number(0)},
+      {"len(\"four\")", new_number(4)},
+      {"len(\"hello world\")", new_number(11)},
+  };
+
+  (void)tests;
 }
 
 int main(void) {
@@ -501,5 +481,6 @@ int main(void) {
   RUN_TEST(test_calling_functions_with_bindings);
   RUN_TEST(test_functions_with_arguments_and_bindings);
   RUN_TEST(test_calling_functions_with_wrong_arguments);
+  RUN_TEST(test_builtin_functions);
   return UNITY_END();
 }
