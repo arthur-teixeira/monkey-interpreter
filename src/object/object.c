@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 const char *ObjectTypeString[] = {
-    "INTEGER_OBJ", "BOOLEAN_OBJ",  "NULL_OBJ",     "RETURN_OBJ",
+    "NUMBER_OBJ", "BOOLEAN_OBJ",  "NULL_OBJ",     "RETURN_OBJ",
     "ERROR_OBJ",   "FUNCTION_OBJ", "STRING_OBJ",   "BUILTIN_OBJ",
     "ARRAY_OBJ",   "HASH_OBJ",     "CONTINUE_OBJ", "BREAK_OBJ",
 };
@@ -192,12 +192,12 @@ Object *new_number(double value) {
   return (Object *)int_obj;
 }
 
-Object *new_string(char *value, size_t len) {
+Object *new_string(char *value) {
   String *str = malloc(sizeof(String));
   assert(str != NULL && "error allocating memory for string");
 
   str->type = STRING_OBJ;
-  str->len = len;
+  str->len = strlen(value);
   str->value = strdup(value);
 
   return (Object *)str;
@@ -250,9 +250,22 @@ void free_object(Object *obj) {
 
 Object *new_error(char *message) {
   Error *err = malloc(sizeof(Error));
-  assert(err != NULL && "Error allocating memory for error");
-  err->message = strdup(message);
+  assert(err != NULL);
+  err->message = message;
   err->type = ERROR_OBJ;
 
   return (Object *)err;
+}
+
+Object *new_array(Object **arr, size_t len) {
+  Array *array = malloc(sizeof(Array));
+  assert(array != NULL); 
+
+  array->type = ARRAY_OBJ;
+  array_init(&array->elements, len);
+  for (size_t i =0; i < len; i++) {
+    array_append(&array->elements, arr[i]);
+  }
+
+  return (Object *)array;
 }

@@ -1,5 +1,6 @@
 #include "vm.h"
 #include "../big_endian/big_endian.h"
+#include "../object/builtins.h"
 #include "../object/constants.h"
 #include <assert.h>
 #include <stdint.h>
@@ -274,12 +275,26 @@ VMResult execute_index_expression(VM *vm, Object *left, Object *index) {
   return VM_UNINDEXABLE_OBJECT;
 }
 
-VMResult call_function(VM *vm, size_t num_args) {
-  CompiledFunction *fn = (CompiledFunction *)vm->stack[vm->sp - 1 - num_args];
-  if (fn->type != COMPILED_FUNCTION_OBJ) {
-    return VM_CALL_NON_FUNCTION;
+VMResult call_builtin_function(VM *vm, Builtin *fn, size_t num_args) {
+  DynamicArray args;
+  array_init(&args, num_args);
+
+  for (size_t i = 0; i < num_args; i++) {
+    array_append(&args, vm->stack[vm->sp - num_args + i]);
   }
 
+  Object *return_value = fn->fn(args);
+  // Only remove the arguments from the stack after executing the function
+  // to comply with our calling convention
+  vm->sp -= num_args;
+
+  VMResult result = stack_push(vm, return_value);
+
+  free(args.arr);
+  return result;
+}
+
+VMResult call_function(VM *vm, CompiledFunction *fn, size_t num_args) {
   if (num_args != fn->num_parameters) {
     return VM_WRONG_NUMBER_OF_ARGUMENTS;
   }
@@ -290,6 +305,19 @@ VMResult call_function(VM *vm, size_t num_args) {
   vm->sp = frame.base_pointer + fn->num_locals;
 
   return VM_OK;
+}
+
+VMResult execute_call(VM *vm, size_t num_args) {
+  Object *callee = vm->stack[vm->sp - 1 - num_args];
+
+  switch(callee->type) {
+    case BUILTIN_OBJ:
+      return call_builtin_function(vm, (Builtin *)callee, num_args);
+    case COMPILED_FUNCTION_OBJ:
+      return call_function(vm, (CompiledFunction *)callee, num_args);
+    default: 
+      return VM_CALL_NON_FUNCTION;
+  }
 }
 
 VMResult run_vm(VM *vm) {
@@ -468,7 +496,7 @@ VMResult run_vm(VM *vm) {
       uint8_t num_args = ins->arr[ip + 1];
       current_frame(vm)->ip++;
 
-      VMResult result = call_function(vm, num_args);
+      VMResult result = execute_call(vm, num_args);
       if (result != VM_OK) {
         return result;
       }
@@ -500,7 +528,17 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
-    default:
+    case OP_GET_BUILTIN: {
+      uint8_t builtin_index = ins->arr[ip + 1];
+      current_frame(vm)->ip++;
+
+      BuiltinDef definition = builtin_definitions[builtin_index];
+      VMResult result = stack_push(vm, (Object *)&definition.builtin);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }

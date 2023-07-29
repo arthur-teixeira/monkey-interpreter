@@ -63,7 +63,7 @@ Object *inverted_boolean(Boolean *bol) {
 }
 
 Object *eval_string_expression(StringLiteral *expr) {
-  return new_string(expr->value, expr->len);
+  return new_string(expr->value);
 }
 
 Object *cast_int_to_boolean(Number *intt) {

@@ -444,7 +444,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   }
   case STRING_EXPR: {
     StringLiteral *str_lit = (StringLiteral *)expr;
-    Object *str = new_string(str_lit->value, str_lit->len);
+    Object *str = new_string(str_lit->value);
     size_t new_constant_pos = add_constant(compiler, str);
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;

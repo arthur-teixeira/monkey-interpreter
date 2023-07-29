@@ -181,11 +181,11 @@ void test_error_handling(void) {
   struct testCase tests[] = {
       {
           "5 + true;",
-          "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+          "type mismatch: NUMBER_OBJ + BOOLEAN_OBJ",
       },
       {
           "5 + true; 5;",
-          "type mismatch: INTEGER_OBJ + BOOLEAN_OBJ",
+          "type mismatch: NUMBER_OBJ + BOOLEAN_OBJ",
       },
       {
           "-true;",
@@ -346,7 +346,7 @@ void test_builtin_len_function(void) {
   struct testCase tests[] = {
       {"len(\"\")", NULL, 0},
       {"len(\"four\")", NULL, 4},
-      {"len(3)", "argument to 'len' not supported, got INTEGER_OBJ", -1},
+      {"len(3)", "argument to 'len' not supported, got NUMBER_OBJ", -1},
       {"len(\"one\", \"two\")", "wrong number of arguments: Expected 1 got 2",
        -1},
       {"len([1,2,3])", NULL, 3},

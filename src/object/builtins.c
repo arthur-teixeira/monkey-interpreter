@@ -170,16 +170,20 @@ Object *rest(DynamicArray args) {
   }
 
   Object *arg = args.arr[0];
+  Array *old_arr = (Array *)arg;
 
   err = unsupported_arg_error(arg, ARRAY_OBJ, "rest");
   if (err != NULL) {
     return err;
   }
 
+  if (old_arr->elements.len < 1) {
+    return (Object *)&obj_null;
+  }
+
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL && "Error allocating memory for new array");
 
-  Array *old_arr = (Array *)arg;
 
   array_init(&new_arr->elements, old_arr->elements.len - 1);
 
@@ -206,7 +210,7 @@ const BuiltinDef builtin_definitions[] = {
         .builtin =
             (Builtin){
                 .type = BUILTIN_OBJ,
-                .fn = len,
+                .fn = builtin_puts,
             },
     },
     {

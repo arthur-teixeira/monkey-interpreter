@@ -67,7 +67,7 @@ void concat_and_test_instructions(size_t instructions_count,
   int_array_free(&concatted);
 }
 
-void test_integer_object(Object *expected, Object *actual) {
+void test_number_object(Object *expected, Object *actual) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, actual->type);
   TEST_ASSERT_EQUAL(((Number *)expected)->value, ((Number *)actual)->value);
 }
@@ -91,7 +91,7 @@ void test_constants(compilerTestCase test, Bytecode code) {
     Object *constant = code.constants.arr[i];
     switch (constant->type) {
     case NUMBER_OBJ:
-      test_integer_object(test.expected_constants[i], constant);
+      test_number_object(test.expected_constants[i], constant);
       break;
     case STRING_OBJ:
       test_string_object(test.expected_constants[i], constant);
@@ -589,7 +589,7 @@ void test_string_expressions(void) {
           .expected_constants_len = 1,
           .expected_constants =
               {
-                  new_string("monkey", strlen("monkey")),
+                  new_string("monkey"),
               },
           .expected_instructions_len = 2,
           .expected_instructions =
@@ -603,8 +603,8 @@ void test_string_expressions(void) {
           .expected_constants_len = 2,
           .expected_constants =
               {
-                  new_string("mon", strlen("mon")),
-                  new_string("key", strlen("key")),
+                  new_string("mon"),
+                  new_string("key"),
               },
           .expected_instructions_len = 4,
           .expected_instructions =

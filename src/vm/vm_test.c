@@ -60,6 +60,14 @@ void test_array_object(Object *expected, Object *actual) {
   }
 }
 
+void test_error_object(Object *expected, Object *actual) {
+  TEST_ASSERT_EQUAL(ERROR_OBJ, actual->type);
+  TEST_ASSERT_EQUAL(ERROR_OBJ, expected->type);
+
+  TEST_ASSERT_EQUAL_STRING(((Error *)expected)->message,
+                           ((Error *)actual)->message);
+}
+
 void test_expected_object(Object *expected, Object *actual) {
   switch (actual->type) {
   case NUMBER_OBJ:
@@ -77,8 +85,11 @@ void test_expected_object(Object *expected, Object *actual) {
   case ARRAY_OBJ:
     test_array_object(expected, actual);
     break;
+  case ERROR_OBJ:
+    test_error_object(expected, actual);
+    break;
   default:
-    TEST_FAIL_MESSAGE("Unknown object type");
+    TEST_FAIL_MESSAGE("Unknown or unimplemented assertion for object type");
   }
 
   free_object(expected);
@@ -459,12 +470,36 @@ void test_calling_functions_with_wrong_arguments(void) {
 
 void test_builtin_functions(void) {
   vmTestCase tests[] = {
+      {"push([], 1)", new_array((Object *[]){new_number(1)}, 1)},
       {"len(\"\")", new_number(0)},
       {"len(\"four\")", new_number(4)},
       {"len(\"hello world\")", new_number(11)},
+      {"len(1)", new_error("argument to 'len' not supported, got NUMBER_OBJ")},
+      {"len(\"one\", \"two\")",
+       new_error("wrong number of arguments: Expected 1 got 2")},
+      {"len([1, 2, 3])", new_number(3)},
+      {"len([])", new_number(0)},
+      {"first([1, 2, 3])", new_number(1)},
+      {"first([])", (Object *)&obj_null},
+      {"first(1)",
+       new_error("argument to 'first' not supported, got NUMBER_OBJ")},
+      {"last([1, 2, 3])", new_number(3)},
+      {"last([])", (Object *)&obj_null},
+      {"last(1)",
+       new_error("argument to 'last' not supported, got NUMBER_OBJ")},
+      {"rest([1, 2, 3])", new_array(
+                              (Object *[]){
+                                  new_number(2),
+                                  new_number(3),
+                              },
+                              2)},
+      {"rest([])", (Object *)&obj_null},
+      {"puts(\"hello\", \"world!\")", (Object *)&obj_null},
+      {"push(1, 1)",
+       new_error("argument to 'push' not supported, got NUMBER_OBJ")},
   };
 
-  (void)tests;
+  VM_RUN_TESTS(tests);
 }
 
 int main(void) {

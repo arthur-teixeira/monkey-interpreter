@@ -105,9 +105,10 @@ Object *new_concatted_compiled_function(Instructions *, size_t);
 size_t sizeof_object(Object *);
 
 Object *new_number(double);
-Object *new_string(char *, size_t);
+Object *new_string(char *);
 Object *new_concatted_string(String *, String *);
 
 void free_object(Object *);
 Object *new_error(char *);
+Object *new_array(Object **, size_t);
 #endif
