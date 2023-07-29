@@ -192,7 +192,7 @@ Object *rest(DynamicArray args) {
   return (Object *)new_arr;
 }
 
-static const BuiltinDef builtins[] = {
+const BuiltinDef builtin_definitions[] = {
     {
         .name = "len",
         .builtin =
@@ -250,11 +250,12 @@ static const BuiltinDef builtins[] = {
             },
     },
 };
+const size_t builtin_definitions_len = ARRAY_LEN(builtin_definitions);
 
 const Builtin *get_builtin_by_name(char *name) {
-  for (size_t i = 0; i < ARRAY_LEN(builtins); i++) {
-    if (strcmp(name, builtins[i].name) == 0) {
-      return &builtins[i].builtin;
+  for (size_t i = 0; i < ARRAY_LEN(builtin_definitions); i++) {
+    if (strcmp(name, builtin_definitions[i].name) == 0) {
+      return &builtin_definitions[i].builtin;
     }
   }
 

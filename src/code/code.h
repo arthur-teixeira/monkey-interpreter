@@ -43,6 +43,7 @@ typedef enum {
   OP_RETURN,
   OP_GET_LOCAL,
   OP_SET_LOCAL,
+  OP_GET_BUILTIN,
   OP_COUNT,
 } OpCode;
 

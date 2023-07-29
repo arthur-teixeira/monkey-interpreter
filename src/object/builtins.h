@@ -8,6 +8,8 @@ typedef struct {
   Builtin builtin;
 } BuiltinDef;
 
+extern const size_t builtin_definitions_len;
+extern const BuiltinDef builtin_definitions[];
 const Builtin *get_builtin_by_name(char *);
 
 // TODO: remove

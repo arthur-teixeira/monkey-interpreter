@@ -1,10 +1,13 @@
 #include "compiler.h"
 #include "../ast/ast.h"
+#include "../object/builtins.h"
 #include "../object/object.h"
 #include "symbol_table.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #define JUMP_SENTINEL 9999
 
@@ -27,7 +30,12 @@ Compiler *new_compiler() {
   assert(compiler->constants != NULL);
   array_init(compiler->constants, 8);
 
-  compiler->symbol_table = new_symbol_table();
+  SymbolTable *symbol_table = new_symbol_table();
+  for (size_t i = 0; i < builtin_definitions_len; i++) {
+    symbol_define_builtin(symbol_table, i, builtin_definitions[i].name);
+  }
+
+  compiler->symbol_table = symbol_table;
   compiler->scopes[0] = new_compilation_scope();
   compiler->scope_index = 0;
 
@@ -156,10 +164,16 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     const Symbol *symbol =
         symbol_define(compiler->symbol_table, stmt->name->value);
 
-    if (symbol->scope == SYMBOL_GLOBAL_SCOPE) {
+    switch (symbol->scope) {
+    case SYMBOL_GLOBAL_SCOPE:
       emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
-    } else {
+      break;
+    case SYMBOL_LOCAL_SCOPE:
       emit(compiler, OP_SET_LOCAL, (int[]){symbol->index}, 1);
+      break;
+    case SYMBOL_BUILTIN_SCOPE:
+      assert(0 && "unreachable");
+      break;
     }
 
     break;
@@ -364,6 +378,20 @@ int compile_hash_pair(void *const ctx, struct hashmap_element_s *const pair) {
   return 0;
 }
 
+void load_symbol(Compiler *c, Symbol *s) {
+  switch (s->scope) {
+  case SYMBOL_GLOBAL_SCOPE:
+    emit(c, OP_GET_GLOBAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_LOCAL_SCOPE:
+    emit(c, OP_GET_LOCAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_BUILTIN_SCOPE:
+    emit(c, OP_GET_BUILTIN, (int[]){s->index}, 1);
+    break;
+  }
+}
+
 CompilerResult compile_hash_expression(Compiler *compiler, HashLiteral *expr) {
   HashLiteral *hash_lit = (HashLiteral *)expr;
   HashCompilerContext context = {
@@ -406,14 +434,10 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   case IDENT_EXPR: {
     const Symbol *symbol =
         symbol_resolve(compiler->symbol_table, ((Identifier *)expr)->value);
+
+    load_symbol(compiler, (Symbol *)symbol);
     if (!symbol) {
       return COMPILER_UNKNOWN_IDENTIFIER;
-    }
-
-    if (symbol->scope == SYMBOL_GLOBAL_SCOPE) {
-      emit(compiler, OP_GET_GLOBAL, (int[]){symbol->index}, 1);
-    } else {
-      emit(compiler, OP_GET_LOCAL, (int[]){symbol->index}, 1);
     }
 
     break;
@@ -484,7 +508,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
 
     Instructions *instructions = leave_compiler_scope(compiler);
 
-    Object *compiled_fn = new_compiled_function(instructions, num_locals, fn->parameters.len);
+    Object *compiled_fn =
+        new_compiled_function(instructions, num_locals, fn->parameters.len);
     size_t new_constant_pos = add_constant(compiler, compiled_fn);
     emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
     break;
@@ -497,7 +522,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     }
 
     for (size_t i = 0; i < call->arguments.len; i++) {
-      CompilerResult result = compile_expression(compiler, call->arguments.arr[i]);
+      CompilerResult result =
+          compile_expression(compiler, call->arguments.arr[i]);
       if (result != COMPILER_OK) {
         return result;
       }

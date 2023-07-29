@@ -1114,6 +1114,55 @@ void test_let_statement_scopes(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_builtins(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "len([]); push([], 1);",
+          .expected_constants_len = 1,
+          .expected_constants =
+              {
+                  new_number(1),
+              },
+          .expected_instructions_len = 9,
+          .expected_instructions =
+              {
+                  make_instruction(OP_GET_BUILTIN, (int[]){0}, 1),
+                  make_instruction(OP_ARRAY, (int[]){0}, 1),
+                  make_instruction(OP_CALL, (int[]){1}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+                  make_instruction(OP_GET_BUILTIN, (int[]){4}, 1),
+                  make_instruction(OP_ARRAY, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CALL, (int[]){2}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "fn() { len([]); }",
+          .expected_constants_len = 1,
+          .expected_constants =
+              {
+                  new_concatted_compiled_function(
+                      (Instruction[]){
+                          make_instruction(OP_GET_BUILTIN, (int[]){0}, 1),
+                          make_instruction(OP_ARRAY, (int[]){0}, 1),
+                          make_instruction(OP_CALL, (int[]){1}, 1),
+                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                      },
+                      4),
+              },
+          .expected_instructions_len = 2,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -1128,5 +1177,6 @@ int main(void) {
   RUN_TEST(test_compiler_scopes);
   RUN_TEST(test_function_calls);
   RUN_TEST(test_let_statement_scopes);
+  RUN_TEST(test_builtins);
   return UNITY_END();
 }
