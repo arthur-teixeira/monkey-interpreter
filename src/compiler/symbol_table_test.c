@@ -158,11 +158,45 @@ void test_resolve_nested_local(void) {
   free_symbol_table(second_local);
 }
 
+void test_define_resolve_builtins(void) {
+  SymbolTable *global = new_symbol_table();
+  SymbolTable *first_local = new_enclosed_symbol_table(global);
+  SymbolTable *second_local = new_enclosed_symbol_table(first_local);
+
+  Symbol expected[] = {
+      {"a", SYMBOL_BUILTIN_SCOPE, 0},
+      {"c", SYMBOL_BUILTIN_SCOPE, 1},
+      {"e", SYMBOL_BUILTIN_SCOPE, 2},
+      {"f", SYMBOL_BUILTIN_SCOPE, 3},
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(expected); i++) {
+    symbol_define_builtin(global, i, expected[i].name);
+  }
+
+  SymbolTable *tables[] = {
+      global,
+      first_local,
+      second_local,
+  };
+
+  for (size_t i = 0; i < ARRAY_LEN(tables); i++) {
+    for (size_t j = 0; j < ARRAY_LEN(expected); j++) {
+      const Symbol *result = symbol_resolve(tables[i], expected[j].name);
+
+      TEST_ASSERT_NOT_NULL(result);
+
+      test_symbol(&expected[j], result);
+    }
+  }
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_define);
   RUN_TEST(test_resolve_global);
   RUN_TEST(test_resolve_local);
   RUN_TEST(test_resolve_nested_local);
+  RUN_TEST(test_define_resolve_builtins);
   return UNITY_END();
 }

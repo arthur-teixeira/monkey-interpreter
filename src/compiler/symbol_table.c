@@ -53,3 +53,16 @@ SymbolTable *new_enclosed_symbol_table(SymbolTable *outer) {
 
   return table;
 }
+
+const Symbol *symbol_define_builtin(SymbolTable *table, size_t index, char *name) {
+  Symbol *symbol = malloc(sizeof(Symbol));
+  assert(symbol != NULL);
+
+  symbol->name = name;
+  symbol->index = index;
+  symbol->scope = SYMBOL_BUILTIN_SCOPE;
+
+  hashmap_put(&table->store, name, strlen(name), symbol);
+
+  return symbol;
+}
