@@ -172,6 +172,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
       emit(compiler, OP_SET_LOCAL, (int[]){symbol->index}, 1);
       break;
     case SYMBOL_BUILTIN_SCOPE:
+    case SYMBOL_FREE_SCOPE:
       assert(0 && "unreachable");
       break;
     }
@@ -389,6 +390,9 @@ void load_symbol(Compiler *c, Symbol *s) {
   case SYMBOL_BUILTIN_SCOPE:
     emit(c, OP_GET_BUILTIN, (int[]){s->index}, 1);
     break;
+  case SYMBOL_FREE_SCOPE:
+    emit(c, OP_GET_FREE, (int[]){s->index}, 1);
+    break;
   }
 }
 
@@ -407,6 +411,53 @@ CompilerResult compile_hash_expression(Compiler *compiler, HashLiteral *expr) {
   emit(compiler, OP_HASH, (int[]){hash_lit->len * 2}, 1);
 
   return context.result;
+}
+
+CompilerResult compile_function_literal(Compiler *compiler,
+                                        FunctionLiteral *fn) {
+  enter_compiler_scope(compiler);
+
+  for (size_t i = 0; i < fn->parameters.len; i++) {
+    Identifier *param = fn->parameters.arr[i];
+    assert(param->type == IDENT_EXPR);
+    symbol_define(compiler->symbol_table, param->value);
+  }
+
+  CompilerResult result = compile_block_statement(compiler, fn->body);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  if (last_instruction_is(compiler, OP_POP)) {
+    Instruction new_instruction =
+        make_instruction(OP_RETURN_VALUE, (int[]){}, 0);
+    replace_instruction(
+        compiler, compiler_current_scope(compiler)->last_instruction.position,
+        new_instruction);
+  }
+
+  if (!last_instruction_is(compiler, OP_RETURN_VALUE)) {
+    emit_no_operands(compiler, OP_RETURN);
+  }
+
+  Symbol *free_symbols = compiler->symbol_table->free_symbols;
+  size_t free_symbols_len = compiler->symbol_table->free_symbols_len;
+
+  size_t num_locals = compiler->symbol_table->num_definitions;
+
+  Instructions *instructions = leave_compiler_scope(compiler);
+
+  for (size_t i = 0; i < free_symbols_len; i++) {
+    load_symbol(compiler, &free_symbols[i]);
+  }
+
+  Object *compiled_fn =
+      new_compiled_function(instructions, num_locals, fn->parameters.len);
+
+  size_t new_constant_pos = add_constant(compiler, compiled_fn);
+  emit(compiler, OP_CLOSURE, (int[]){new_constant_pos, free_symbols_len}, 2);
+
+  return COMPILER_OK;
 }
 
 CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
@@ -477,43 +528,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit_no_operands(compiler, OP_INDEX);
     break;
   }
-  case FN_EXPR: {
-    FunctionLiteral *fn = (FunctionLiteral *)expr;
-    enter_compiler_scope(compiler);
-
-    for (size_t i = 0; i < fn->parameters.len; i++) {
-      Identifier *param = fn->parameters.arr[i];
-      assert(param->type == IDENT_EXPR);
-      symbol_define(compiler->symbol_table, param->value);
-    }
-
-    CompilerResult result = compile_block_statement(compiler, fn->body);
-    if (result != COMPILER_OK) {
-      return result;
-    }
-
-    if (last_instruction_is(compiler, OP_POP)) {
-      Instruction new_instruction =
-          make_instruction(OP_RETURN_VALUE, (int[]){}, 0);
-      replace_instruction(
-          compiler, compiler_current_scope(compiler)->last_instruction.position,
-          new_instruction);
-    }
-
-    if (!last_instruction_is(compiler, OP_RETURN_VALUE)) {
-      emit_no_operands(compiler, OP_RETURN);
-    }
-
-    size_t num_locals = compiler->symbol_table->num_definitions;
-
-    Instructions *instructions = leave_compiler_scope(compiler);
-
-    Object *compiled_fn =
-        new_compiled_function(instructions, num_locals, fn->parameters.len);
-    size_t new_constant_pos = add_constant(compiler, compiled_fn);
-    emit(compiler, OP_CLOSURE, (int[]){new_constant_pos, 0}, 2);
-    break;
-  }
+  case FN_EXPR:
+    return compile_function_literal(compiler, (FunctionLiteral *)expr);
   case CALL_EXPR: {
     CallExpression *call = (CallExpression *)expr;
     CompilerResult result = compile_expression(compiler, call->function);

@@ -346,6 +346,8 @@ VMResult run_vm(VM *vm) {
     VMResult result;
 
     switch (op) {
+    case OP_GET_FREE: 
+      assert(0 && "OP_GET_FREE not implemented");
     case OP_CONSTANT: {
       uint16_t constant_index = big_endian_read_uint16(ins, ip + 1);
 

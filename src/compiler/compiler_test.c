@@ -1163,6 +1163,152 @@ void test_builtins(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_closures(void) {
+  compilerTestCase tests[] =
+      {
+          {
+              .input = "fn (a) {"
+                       "  fn(b) {"
+                       "    a + b;"
+                       "  }"
+                       "}",
+              .expected_constants_len = 2,
+              .expected_constants =
+                  {
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_FREE, (int[]){0}, 1),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          4),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_CLOSURE, (int[]){0, 1}, 2),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          3),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "fn(a) {"
+                       "  fn(b) {"
+                       "    fn(c) {"
+                       "      a + b + c;"
+                       "    }"
+                       "  }"
+                       "}",
+              .expected_constants_len = 3,
+              .expected_constants =
+                  {
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_FREE, (int[]){0}, 1),
+                              make_instruction(OP_GET_FREE, (int[]){1}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          6),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_FREE, (int[]){0}, 1),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_CLOSURE, (int[]){0, 2}, 2),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          4),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_CLOSURE, (int[]){1, 1}, 2),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          3),
+                  },
+              .expected_instructions_len = 2,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+          {
+              .input = "let global = 55;"
+                       "fn() {"
+                       "  let a = 66;"
+                       "  fn() {"
+                       "    let b = 77;"
+                       "    fn() {"
+                       "      let c = 88;"
+                       "      global + a + b + c;"
+                       "    }"
+                       "  }"
+                       "}",
+              .expected_constants_len = 7,
+              .expected_constants =
+                  {
+                      new_number(55),
+                      new_number(66),
+                      new_number(77),
+                      new_number(88),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                              make_instruction(OP_SET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_FREE, (int[]){0}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_GET_FREE, (int[]){1}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          10),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                              make_instruction(OP_SET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_FREE, (int[]){0}, 1),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_CLOSURE, (int[]){4, 2}, 2),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          6),
+                      new_concatted_compiled_function(
+                          (Instruction[]){
+                              make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                              make_instruction(OP_SET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                              make_instruction(OP_CLOSURE, (int[]){5, 1}, 2),
+                              make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                          },
+                          5),
+                  },
+              .expected_instructions_len = 4,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){6, 0}, 2),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
+      };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -1178,5 +1324,6 @@ int main(void) {
   RUN_TEST(test_function_calls);
   RUN_TEST(test_let_statement_scopes);
   RUN_TEST(test_builtins);
+  RUN_TEST(test_closures);
   return UNITY_END();
 }

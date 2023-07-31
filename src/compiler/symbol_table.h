@@ -7,6 +7,7 @@ typedef enum {
   SYMBOL_GLOBAL_SCOPE,
   SYMBOL_LOCAL_SCOPE,
   SYMBOL_BUILTIN_SCOPE,
+  SYMBOL_FREE_SCOPE,
 } SymbolScope;
 
 typedef struct { 
@@ -19,6 +20,8 @@ typedef struct symbol_table_s {
   hashmap_t store;
   size_t num_definitions;
   struct symbol_table_s *outer;
+  size_t free_symbols_len;
+  Symbol free_symbols[100];
 } SymbolTable;
 
 SymbolTable *new_symbol_table(void);

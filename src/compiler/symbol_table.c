@@ -1,5 +1,6 @@
 #include "symbol_table.h"
 #include <assert.h>
+#include <string.h>
 
 SymbolTable *new_symbol_table(void) {
   SymbolTable *table = malloc(sizeof(SymbolTable));
@@ -8,6 +9,8 @@ SymbolTable *new_symbol_table(void) {
   hashmap_create(10, &table->store);
   table->num_definitions = 0;
   table->outer = NULL;
+  table->free_symbols_len = 0;
+  memset(table->free_symbols, 0, sizeof(table->free_symbols));
 
   return table;
 }
@@ -35,13 +38,34 @@ const Symbol *symbol_define(SymbolTable *table, char *name) {
   return symbol;
 }
 
-const Symbol *symbol_resolve(SymbolTable *table, char *name) {
-  const Symbol *s = NULL;
-  SymbolTable *t = table;
+const Symbol *define_free(SymbolTable *table, Symbol original) {
+  table->free_symbols[table->free_symbols_len++] = original;
 
-  while (!s && t) {
-    s = hashmap_get(&t->store, name, strlen(name));
-    t = t->outer;
+  Symbol *new_symbol = malloc(sizeof(Symbol));
+  assert(new_symbol != NULL);
+  *new_symbol = (Symbol){
+      .name = original.name,
+      .index = table->free_symbols_len - 1,
+      .scope = SYMBOL_FREE_SCOPE,
+  };
+
+  hashmap_put(&table->store, original.name, strlen(original.name), new_symbol);
+  return new_symbol;
+}
+
+const Symbol *symbol_resolve(SymbolTable *table, char *name) {
+  const Symbol *s = hashmap_get(&table->store, name, strlen(name));
+  if (!s && table->outer) {
+    s = symbol_resolve(table->outer, name);
+    if (!s) {
+      return NULL;
+    }
+
+    if (s->scope == SYMBOL_GLOBAL_SCOPE || s->scope == SYMBOL_BUILTIN_SCOPE) {
+      return s;
+    }
+
+    return define_free(table, *s);
   }
 
   return s;
@@ -54,7 +78,8 @@ SymbolTable *new_enclosed_symbol_table(SymbolTable *outer) {
   return table;
 }
 
-const Symbol *symbol_define_builtin(SymbolTable *table, size_t index, char *name) {
+const Symbol *symbol_define_builtin(SymbolTable *table, size_t index,
+                                    char *name) {
   Symbol *symbol = malloc(sizeof(Symbol));
   assert(symbol != NULL);
 
