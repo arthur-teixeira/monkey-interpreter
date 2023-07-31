@@ -47,5 +47,6 @@ $ ./bin/monkey <path-to-file>
 - [ ] File disassembler
 - [ ] VM
 - [ ] Convert objects to tagged unions
+- [ ] Invert memory allocation (constructor functions should return the object, and the caller should allocate memory)
 - [ ] Garbage collection
 - [ ] Concurrent GC
