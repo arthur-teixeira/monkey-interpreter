@@ -322,13 +322,20 @@ VMResult execute_call(VM *vm, size_t num_args) {
   }
 }
 
-VMResult push_closure(VM *vm, size_t const_index) {
+VMResult push_closure(VM *vm, size_t const_index, size_t num_free) {
   Object *constant = vm->constants.arr[const_index];
   assert(constant->type == COMPILED_FUNCTION_OBJ);
 
-  Object *closure = new_closure((CompiledFunction *)constant);
+  Closure *closure = (Closure *)new_closure((CompiledFunction *)constant);
+  closure->num_free_variables = num_free;
 
-  return stack_push(vm, closure);
+  for (size_t i = 0; i < num_free; i++) {
+    closure->free_variables[i] = vm->stack[vm->sp - num_free + i];
+  }
+
+  vm->sp -= num_free;
+
+  return stack_push(vm, (Object *)closure);
 }
 
 VMResult run_vm(VM *vm) {
@@ -346,8 +353,6 @@ VMResult run_vm(VM *vm) {
     VMResult result;
 
     switch (op) {
-    case OP_GET_FREE: 
-      assert(0 && "OP_GET_FREE not implemented");
     case OP_CONSTANT: {
       uint16_t constant_index = big_endian_read_uint16(ins, ip + 1);
 
@@ -554,11 +559,22 @@ VMResult run_vm(VM *vm) {
     }
     case OP_CLOSURE: {
       uint16_t const_index = big_endian_read_uint16(ins, ip + 1);
-      size_t _ = ins->arr[ip + 3];
-      (void)_;
+      size_t num_free = ins->arr[ip + 3];
       current_frame(vm)->ip += 3;
 
-      VMResult result = push_closure(vm, const_index);
+      VMResult result = push_closure(vm, const_index, num_free);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
+    case OP_GET_FREE: {
+      uint8_t free_index = ins->arr[ip + 1];
+      current_frame(vm)->ip++;
+
+      Closure *current_closure = current_frame(vm)->closure;
+
+      VMResult result = stack_push(vm, current_closure->free_variables[free_index]);
       if (result != VM_OK) {
         return result;
       }

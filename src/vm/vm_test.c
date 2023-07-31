@@ -12,8 +12,6 @@
 
 #define VM_RUN_TESTS(tests) run_vm_tests(tests, ARRAY_LEN(tests));
 
-#define EXPECTED_NULL_SENTINEL 98534921
-
 typedef struct {
   char *input;
   Object *expected;
@@ -502,6 +500,21 @@ void test_builtin_functions(void) {
   VM_RUN_TESTS(tests);
 }
 
+void test_closures(void) {
+  vmTestCase tests[] = {
+    {
+      .input = "let newClosure = fn(a) {"
+        "  fn() { a; };"
+        "};"
+        "let closure = newClosure(99);"
+        "closure();",
+      .expected = new_number(99),
+    },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -517,5 +530,6 @@ int main(void) {
   RUN_TEST(test_functions_with_arguments_and_bindings);
   RUN_TEST(test_calling_functions_with_wrong_arguments);
   RUN_TEST(test_builtin_functions);
+  RUN_TEST(test_closures);
   return UNITY_END();
 }
