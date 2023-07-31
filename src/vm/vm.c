@@ -11,7 +11,9 @@ VM *new_vm(Bytecode bytecode) {
   CompiledFunction *main_fn =
       (CompiledFunction *)new_compiled_function(&bytecode.instructions, 0, 0);
 
-  Frame main_frame = new_frame(main_fn, 0);
+  Closure *main_closure = (Closure *)new_closure(main_fn);
+
+  Frame main_frame = new_frame(main_closure, 0);
   VM *vm = malloc(sizeof(VM));
   assert(vm != NULL);
 
@@ -294,15 +296,15 @@ VMResult call_builtin_function(VM *vm, Builtin *fn, size_t num_args) {
   return result;
 }
 
-VMResult call_function(VM *vm, CompiledFunction *fn, size_t num_args) {
-  if (num_args != fn->num_parameters) {
+VMResult call_closure(VM *vm, Closure *closure, size_t num_args) {
+  if (num_args != closure->fn->num_parameters) {
     return VM_WRONG_NUMBER_OF_ARGUMENTS;
   }
 
-  Frame frame = new_frame(fn, vm->sp - num_args);
+  Frame frame = new_frame(closure, vm->sp - num_args);
   push_frame(vm, frame);
 
-  vm->sp = frame.base_pointer + fn->num_locals;
+  vm->sp = frame.base_pointer + closure->fn->num_locals;
 
   return VM_OK;
 }
@@ -310,14 +312,23 @@ VMResult call_function(VM *vm, CompiledFunction *fn, size_t num_args) {
 VMResult execute_call(VM *vm, size_t num_args) {
   Object *callee = vm->stack[vm->sp - 1 - num_args];
 
-  switch(callee->type) {
-    case BUILTIN_OBJ:
-      return call_builtin_function(vm, (Builtin *)callee, num_args);
-    case COMPILED_FUNCTION_OBJ:
-      return call_function(vm, (CompiledFunction *)callee, num_args);
-    default: 
-      return VM_CALL_NON_FUNCTION;
+  switch (callee->type) {
+  case BUILTIN_OBJ:
+    return call_builtin_function(vm, (Builtin *)callee, num_args);
+  case CLOSURE_OBJ:
+    return call_closure(vm, (Closure *)callee, num_args);
+  default:
+    return VM_CALL_NON_FUNCTION;
   }
+}
+
+VMResult push_closure(VM *vm, size_t const_index) {
+  Object *constant = vm->constants.arr[const_index];
+  assert(constant->type == COMPILED_FUNCTION_OBJ);
+
+  Object *closure = new_closure((CompiledFunction *)constant);
+
+  return stack_push(vm, closure);
 }
 
 VMResult run_vm(VM *vm) {
@@ -534,6 +545,18 @@ VMResult run_vm(VM *vm) {
 
       BuiltinDef definition = builtin_definitions[builtin_index];
       VMResult result = stack_push(vm, (Object *)&definition.builtin);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
+    case OP_CLOSURE: {
+      uint16_t const_index = big_endian_read_uint16(ins, ip + 1);
+      size_t _ = ins->arr[ip + 3];
+      (void)_;
+      current_frame(vm)->ip += 3;
+
+      VMResult result = push_closure(vm, const_index);
       if (result != VM_OK) {
         return result;
       }

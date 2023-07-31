@@ -86,6 +86,11 @@ static Definition definitions[OP_COUNT] = {
       .operand_count = 1,
       .operand_widths = {1},
     },
+    {
+      .name = "OP_CLOSURE",
+      .operand_count = 2,
+      .operand_widths = {2, 1},
+    },
 };
 
 Definition *lookup(OpCode opcode) {
@@ -99,11 +104,6 @@ Instruction make_instruction(OpCode op_code, int *operands,
                              size_t operand_count) {
   Definition *def = lookup(op_code);
   assert(def != NULL);
-
-  size_t instruction_len = 1;
-  for (size_t i = 0; i < operand_count; i++) {
-    instruction_len += def->operand_widths[i];
-  }
 
   Instruction instruction;
 
@@ -153,9 +153,12 @@ void format_instruction(char buf[MAX_LEN], const Definition *def,
   case 1:
     sprintf(buf, "%s %d", def->name, operands->arr[0]);
     return;
+  case 2:
+    sprintf(buf, "%s %d %d", def->name, operands->arr[0], operands->arr[1]);
+    return;
+  default:
+    assert(0 && "unhandled operand count");
   };
-
-  assert(0 && "unhandled operand count");
 }
 
 void instructions_to_string(ResizableBuffer *buf,

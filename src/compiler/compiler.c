@@ -511,7 +511,7 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     Object *compiled_fn =
         new_compiled_function(instructions, num_locals, fn->parameters.len);
     size_t new_constant_pos = add_constant(compiler, compiled_fn);
-    emit(compiler, OP_CONSTANT, (int[]){new_constant_pos}, 1);
+    emit(compiler, OP_CLOSURE, (int[]){new_constant_pos, 0}, 2);
     break;
   }
   case CALL_EXPR: {

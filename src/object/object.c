@@ -96,6 +96,14 @@ void inspect_compiled_function_object(ResizableBuffer *buf,
   append_to_buf(buf, "CompiledFunction");
 }
 
+void inspect_closure(ResizableBuffer *buf, Closure *closure) {
+  append_to_buf(buf, "Closure[");
+  char p[8];
+  sprintf(p, "%p", closure);
+  append_to_buf(buf, p);
+  append_to_buf(buf, "]");
+}
+
 void inspect_object(ResizableBuffer *buf, Object *obj) {
   switch (obj->type) {
   case NUMBER_OBJ:
@@ -120,7 +128,10 @@ void inspect_object(ResizableBuffer *buf, Object *obj) {
     return inspect_hash_object(buf, (Hash *)obj);
   case COMPILED_FUNCTION_OBJ:
     return inspect_compiled_function_object(buf, (CompiledFunction *)obj);
-  default:
+  case CLOSURE_OBJ:
+    return inspect_closure(buf, (Closure *)obj);
+  case CONTINUE_OBJ:
+  case BREAK_OBJ:
     return; // break and continue object are sentinel values
   }
 }
@@ -177,6 +188,8 @@ size_t sizeof_object(Object *obj) {
   case CONTINUE_OBJ:
   case BREAK_OBJ:
     return sizeof(Object);
+  case CLOSURE_OBJ:
+    return sizeof(Closure);
   }
 
   assert(0 && "unknown object type");
@@ -268,4 +281,13 @@ Object *new_array(Object **arr, size_t len) {
   }
 
   return (Object *)array;
+}
+
+Object *new_closure(CompiledFunction *fn) {
+  Closure *closure = malloc(sizeof(Closure));
+  closure->type = CLOSURE_OBJ;
+
+  closure->fn = fn;
+
+  return (Object *)closure;
 }

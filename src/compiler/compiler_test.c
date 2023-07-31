@@ -804,7 +804,7 @@ void test_functions(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -827,7 +827,7 @@ void test_functions(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -850,7 +850,7 @@ void test_functions(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -868,7 +868,7 @@ void test_functions(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){0, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -945,7 +945,7 @@ void test_function_calls(void) {
               .expected_instructions_len = 4,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
                       make_instruction(OP_CALL, (int[]){0}, 1),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
@@ -966,7 +966,7 @@ void test_function_calls(void) {
               .expected_instructions_len = 5,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
                       make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_CALL, (int[]){0}, 1),
@@ -989,7 +989,7 @@ void test_function_calls(void) {
               .expected_instructions_len = 6,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){0, 0}, 2),
                       make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_CONSTANT, (int[]){1}, 1),
@@ -1020,7 +1020,7 @@ void test_function_calls(void) {
               .expected_instructions_len = 8,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){0, 0}, 2),
                       make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                       make_instruction(OP_CONSTANT, (int[]){1}, 1),
@@ -1056,7 +1056,7 @@ void test_let_statement_scopes(void) {
                   {
                       make_instruction(OP_CONSTANT, (int[]){0}, 1),
                       make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -1078,7 +1078,7 @@ void test_let_statement_scopes(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -1105,7 +1105,7 @@ void test_let_statement_scopes(void) {
               .expected_instructions_len = 2,
               .expected_instructions =
                   {
-                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
@@ -1154,7 +1154,7 @@ void test_builtins(void) {
           .expected_instructions_len = 2,
           .expected_instructions =
               {
-                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){0, 0}, 2),
                   make_instruction(OP_POP, (int[]){}, 0),
               },
       },

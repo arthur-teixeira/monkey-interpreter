@@ -44,6 +44,7 @@ typedef enum {
   OP_GET_LOCAL,
   OP_SET_LOCAL,
   OP_GET_BUILTIN,
+  OP_CLOSURE,
   OP_COUNT,
 } OpCode;
 

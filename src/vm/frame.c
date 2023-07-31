@@ -1,13 +1,13 @@
 #include "frame.h"
 
-Frame new_frame(CompiledFunction *fn, size_t base_pointer) {
+Frame new_frame(Closure *fn, size_t base_pointer) {
   return (Frame){
-      .fn = fn,
+      .closure = fn,
       .ip = -1,
       .base_pointer = base_pointer,
   };
 }
 
 const Instructions *frame_instructions(Frame *f) {
-  return &f->fn->instructions;
+  return &f->closure->fn->instructions;
 }

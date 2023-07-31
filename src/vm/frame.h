@@ -3,10 +3,10 @@
 #include <stdint.h>
 
 typedef struct {
-  CompiledFunction *fn;
+  Closure *closure;
   int64_t ip;
   size_t base_pointer;
 } Frame;
 
-Frame new_frame(CompiledFunction *, size_t);
+Frame new_frame(Closure *, size_t);
 const Instructions *frame_instructions(Frame *); 
