@@ -42,11 +42,10 @@ $ ./bin/monkey <path-to-file>
 - [X] Floating point number support
 - [X] Turing completeness proof (rule 110)
 - [X] Interpret source files
-- [ ] Compiler
-- [ ] Compile to file and remove compiler from REPL
+- [X] Compiler
+- [X] VM
+- [ ] Compile to and from file and remove compiler from REPL
 - [ ] File disassembler
-- [ ] VM
 - [ ] Convert objects to tagged unions
-- [ ] Invert memory allocation (constructor functions should return the object, and the caller should allocate memory)
 - [ ] Garbage collection
 - [ ] Concurrent GC
