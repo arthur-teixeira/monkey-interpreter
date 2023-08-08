@@ -1309,8 +1309,88 @@ void test_closures(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_recursive_functions(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "let countDown = fn(x) { countDown(x - 1); };"
+                   "countDown(1);",
+          .expected_constants_len = 3,
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_concatted_compiled_function(
+                      (Instruction[]){
+                          make_instruction(OP_CURRENT_CLOSURE, (int[]){}, 0),
+                          make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_SUB, (int[]){}, 0),
+                          make_instruction(OP_CALL, (int[]){1}, 1),
+                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                      },
+                      6),
+                  new_number(1),
+              },
+          .expected_instructions_len = 6,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_CALL, (int[]){1}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   "  let countDown = fn(x) { countDown(x - 1); };"
+                   "  countDown(1);"
+                   "};"
+                   "wrapper();",
+          .expected_constants_len = 4,
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_concatted_compiled_function(
+                      (Instruction[]){
+                          make_instruction(OP_CURRENT_CLOSURE, (int[]){}, 0),
+                          make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                          make_instruction(OP_SUB, (int[]){}, 0),
+                          make_instruction(OP_CALL, (int[]){1}, 1),
+                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                      },
+                      6),
+                  new_number(1),
+                  new_concatted_compiled_function(
+                      (Instruction[]){
+                          make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
+                          make_instruction(OP_SET_LOCAL, (int[]){0}, 1),
+                          make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                          make_instruction(OP_CALL, (int[]){1}, 1),
+                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                      },
+                      6),
+              },
+          .expected_instructions_len = 5,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CALL, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_function_calls);
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
   RUN_TEST(test_conditionals);
@@ -1321,9 +1401,9 @@ int main(void) {
   RUN_TEST(test_index_expressions);
   RUN_TEST(test_functions);
   RUN_TEST(test_compiler_scopes);
-  RUN_TEST(test_function_calls);
   RUN_TEST(test_let_statement_scopes);
   RUN_TEST(test_builtins);
   RUN_TEST(test_closures);
+  RUN_TEST(test_recursive_functions);
   return UNITY_END();
 }

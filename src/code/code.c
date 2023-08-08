@@ -96,6 +96,7 @@ static Definition definitions[OP_COUNT] = {
         .operand_count = 1,
         .operand_widths = {1},
     },
+    {"OP_CURRENT_CLOSURE"},
 };
 
 Definition *lookup(OpCode opcode) {

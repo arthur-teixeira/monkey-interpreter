@@ -65,6 +65,11 @@ void if_to_string(ResizableBuffer *buf, IfExpression *expr) {
 
 void fn_to_string(ResizableBuffer *buf, FunctionLiteral *fn) {
   append_to_buf(buf, fn->token.literal);
+  if (fn->name) {
+    append_to_buf(buf, "<");
+    append_to_buf(buf, fn->name);
+    append_to_buf(buf, ">");
+  }
   append_to_buf(buf, "(");
 
   uint32_t i;

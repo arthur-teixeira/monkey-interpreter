@@ -93,6 +93,30 @@ void test_expected_object(Object *expected, Object *actual) {
   free_object(expected);
 }
 
+void dump_bytecode(Bytecode bt) {
+  for (size_t i = 0; i < bt.constants.len; i++) {
+    Object *obj = bt.constants.arr[i];
+    printf("CONSTANT %ld %p (%s) \n", i, obj, ObjectTypeString[obj->type]);
+
+    switch (obj->type) {
+    case NUMBER_OBJ:
+      printf(" Value: %.1f\n", ((Number *)obj)->value);
+      break;
+    case COMPILED_FUNCTION_OBJ: {
+      ResizableBuffer buf;
+      init_resizable_buffer(&buf, 50);
+      instructions_to_string(&buf, &((CompiledFunction *)obj)->instructions);
+      printf(" Instructions:\n%s\n", buf.buf);
+
+      free(buf.buf);
+      break;
+    }
+    default:
+      break;
+    }
+  }
+}
+
 void run_vm_tests(vmTestCase *tests, size_t tests_count) {
   for (size_t i = 0; i < tests_count; i++) {
     vmTestCase test = tests[i];
@@ -105,7 +129,8 @@ void run_vm_tests(vmTestCase *tests, size_t tests_count) {
       TEST_FAIL_MESSAGE(msg);
     }
 
-    VM *vm = new_vm(bytecode(compiler));
+    Bytecode bt = bytecode(compiler);
+    VM *vm = new_vm(bt);
     VMResult vm_result = run_vm(vm);
     if (vm_result != VM_OK) {
       char msg[100];
@@ -502,14 +527,63 @@ void test_builtin_functions(void) {
 
 void test_closures(void) {
   vmTestCase tests[] = {
-    {
-      .input = "let newClosure = fn(a) {"
-        "  fn() { a; };"
-        "};"
-        "let closure = newClosure(99);"
-        "closure();",
-      .expected = new_number(99),
-    },
+      {
+          .input = "let newClosure = fn(a) {"
+                   "  fn() { a; };"
+                   "};"
+                   "let closure = newClosure(99);"
+                   "closure();",
+          .expected = new_number(99),
+      },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
+void test_recursive_functions(void) {
+  vmTestCase tests[] = {
+      {
+          .input = "let countDown = fn(x) {"
+                   "  if (x == 0) {"
+                   "    return 0;"
+                   "  } else { "
+                   "    countDown(x - 1);"
+                   "  }"
+                   "};"
+                   "countDown(1);",
+          .expected = new_number(0),
+      },
+      {
+          .input = "let countDown = fn(x) {"
+                   "  if (x == 0) {"
+                   "    return 0;"
+                   "  } else { "
+                   "    countDown(x - 1);"
+                   "  }"
+                   "};"
+                   "let wrapper = fn() {"
+                   "  countDown(1);"
+                   "};"
+                   "wrapper();",
+          .expected = new_number(0),
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   "  let countDown = fn(x) {"
+                   "    if (x == 0) {"
+                   "      return 0;"
+                   "    } else { "
+                   "      countDown(x - 1);"
+                   "    }"
+                   "  };"
+                   "  let wrapper = fn() {"
+                   "    countDown(1);"
+                   "  };"
+                   "  countDown(1);"
+                   "};"
+                   "wrapper();",
+          .expected = new_number(0),
+      },
   };
 
   VM_RUN_TESTS(tests);
@@ -531,5 +605,6 @@ int main(void) {
   RUN_TEST(test_calling_functions_with_wrong_arguments);
   RUN_TEST(test_builtin_functions);
   RUN_TEST(test_closures);
+  RUN_TEST(test_recursive_functions);
   return UNITY_END();
 }

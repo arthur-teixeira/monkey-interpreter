@@ -107,8 +107,11 @@ Statement *parse_let_statement(Parser *p) {
   parser_next_token(p);
 
   stmt->expression = parse_expression(p, LOWEST);
-  parser_next_token(p);
+  if (stmt->expression->type == FN_EXPR) {
+    ((FunctionLiteral *)stmt->expression)->name = stmt->name->value;
+  }
 
+  parser_next_token(p);
   if (peek_token_is(p, SEMICOLON)) {
     parser_next_token(p);
   }
@@ -540,8 +543,8 @@ uint32_t parser_hashmap_hasher(uint32_t seed, const void *key,
   }
 }
 
-int parser_hash_comparer(const void *a, hashmap_uint32_t a_len,
-                          const void *b, hashmap_uint32_t b_len) {
+int parser_hash_comparer(const void *a, hashmap_uint32_t a_len, const void *b,
+                         hashmap_uint32_t b_len) {
   if (a_len != b_len) {
     return false;
   }
@@ -562,7 +565,8 @@ int parser_hash_comparer(const void *a, hashmap_uint32_t a_len,
                   ((StringLiteral *)b_expr)->value) == 0;
   }
   case BOOL_EXPR: {
-    return ((BooleanLiteral *)a_expr)->value == ((BooleanLiteral *)b_expr)->value;
+    return ((BooleanLiteral *)a_expr)->value ==
+           ((BooleanLiteral *)b_expr)->value;
   }
   default:
     return false;

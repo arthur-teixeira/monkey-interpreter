@@ -111,6 +111,7 @@ typedef struct {
   Token token;
   DynamicArray parameters; // Identifier*[];
   BlockStatement *body;
+  char *name;
 } FunctionLiteral;
 
 void fn_to_string(ResizableBuffer *, FunctionLiteral *);

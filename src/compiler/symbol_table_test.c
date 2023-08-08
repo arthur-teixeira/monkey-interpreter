@@ -351,6 +351,39 @@ void test_resolve_unresolvable_free(void) {
   }
 }
 
+void test_define_and_resolve_function_name(void) {
+  SymbolTable *global = new_symbol_table();
+  symbol_define_function_name(global, "a");
+
+  Symbol expected = {
+    "a",
+    SYMBOL_FUNCTION_SCOPE,
+    0,
+  };
+
+  const Symbol *result = symbol_resolve(global, "a");
+  TEST_ASSERT_NOT_NULL(result);
+
+  test_symbol(&expected, result);
+}
+
+void test_shadowing_function_name(void) {
+  SymbolTable *global = new_symbol_table();
+  symbol_define_function_name(global, "a");
+  symbol_define(global, "a");
+
+  Symbol expected = {
+    "a",
+    SYMBOL_GLOBAL_SCOPE,
+    0,
+  };
+
+  const Symbol *result = symbol_resolve(global, "a");
+  TEST_ASSERT_NOT_NULL(result);
+
+  test_symbol(&expected, result);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_define);
@@ -360,5 +393,6 @@ int main(void) {
   RUN_TEST(test_define_resolve_builtins);
   RUN_TEST(test_resolve_free_variables);
   RUN_TEST(test_resolve_unresolvable_free);
+  RUN_TEST(test_define_and_resolve_function_name);
   return UNITY_END();
 }

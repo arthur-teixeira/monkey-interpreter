@@ -574,7 +574,16 @@ VMResult run_vm(VM *vm) {
 
       Closure *current_closure = current_frame(vm)->closure;
 
-      VMResult result = stack_push(vm, current_closure->free_variables[free_index]);
+      VMResult result =
+          stack_push(vm, current_closure->free_variables[free_index]);
+      if (result != VM_OK) {
+        return result;
+      }
+      break;
+    }
+    case OP_CURRENT_CLOSURE: {
+      Closure *current_closure = current_frame(vm)->closure;
+      VMResult result = stack_push(vm, (Object *)current_closure);
       if (result != VM_OK) {
         return result;
       }

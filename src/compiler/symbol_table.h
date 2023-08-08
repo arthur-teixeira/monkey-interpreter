@@ -8,6 +8,7 @@ typedef enum {
   SYMBOL_LOCAL_SCOPE,
   SYMBOL_BUILTIN_SCOPE,
   SYMBOL_FREE_SCOPE,
+  SYMBOL_FUNCTION_SCOPE,
 } SymbolScope;
 
 typedef struct { 
@@ -32,4 +33,5 @@ const Symbol *symbol_resolve(SymbolTable *, char *);
 
 void free_symbol_table(SymbolTable *);
 const Symbol *symbol_define_builtin(SymbolTable *, size_t, char *);
+const Symbol *symbol_define_function_name(SymbolTable *, char *);
 #endif // SYMBOL_TABLE_H

@@ -678,6 +678,21 @@ void test_parsing_loop_with_reassignment(void) {
   TEST_ASSERT_EQUAL(REASSIGN_EXPR, loop->update->expression->type);
 }
 
+void test_function_literal_with_name(void) {
+  char *input = "let myFunction = fn() { };";
+
+  Program *p = parse_and_check_errors(input);
+  TEST_ASSERT_EQUAL(1, p->statements.len);
+
+  Statement *stmt = p->statements.arr[0];
+  TEST_ASSERT_EQUAL(LET_STATEMENT, stmt->type);
+
+  FunctionLiteral *fn = (FunctionLiteral *)stmt->expression;
+  TEST_ASSERT_EQUAL(FN_EXPR, fn->type);
+
+  TEST_ASSERT_EQUAL_STRING("myFunction", fn->name);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -708,5 +723,6 @@ int main() {
   RUN_TEST(test_parsing_and);
   RUN_TEST(test_parsing_or);
   RUN_TEST(test_parsing_loop_with_reassignment);
+  RUN_TEST(test_function_literal_with_name);
   return UNITY_END();
 }

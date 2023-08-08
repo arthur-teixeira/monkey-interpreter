@@ -91,3 +91,17 @@ const Symbol *symbol_define_builtin(SymbolTable *table, size_t index,
 
   return symbol;
 }
+
+const Symbol *symbol_define_function_name(SymbolTable *table, char *name) {
+  Symbol *symbol = malloc(sizeof(Symbol));
+  assert(symbol != NULL);
+
+  *symbol = (Symbol) {
+    .name = name,
+    .index = 0, 
+    .scope = SYMBOL_FUNCTION_SCOPE,
+  };
+
+  hashmap_put(&table->store, name, strlen(name), symbol);
+  return symbol;
+}

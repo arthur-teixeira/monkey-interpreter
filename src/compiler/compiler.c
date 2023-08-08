@@ -156,15 +156,17 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     break;
   }
   case LET_STATEMENT: {
+    const Symbol *symbol =
+        symbol_define(compiler->symbol_table, stmt->name->value);
+
     CompilerResult result = compile_expression(compiler, stmt->expression);
     if (result != COMPILER_OK) {
       return result;
     }
 
-    const Symbol *symbol =
-        symbol_define(compiler->symbol_table, stmt->name->value);
-
     switch (symbol->scope) {
+    case SYMBOL_FUNCTION_SCOPE:
+      break;
     case SYMBOL_GLOBAL_SCOPE:
       emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
       break;
@@ -393,6 +395,9 @@ void load_symbol(Compiler *c, Symbol *s) {
   case SYMBOL_FREE_SCOPE:
     emit(c, OP_GET_FREE, (int[]){s->index}, 1);
     break;
+  case SYMBOL_FUNCTION_SCOPE:
+    emit(c, OP_CURRENT_CLOSURE, (int[]){}, 0);
+    break;
   }
 }
 
@@ -416,6 +421,10 @@ CompilerResult compile_hash_expression(Compiler *compiler, HashLiteral *expr) {
 CompilerResult compile_function_literal(Compiler *compiler,
                                         FunctionLiteral *fn) {
   enter_compiler_scope(compiler);
+
+  if (fn->name) {
+    symbol_define_function_name(compiler->symbol_table, fn->name);
+  }
 
   for (size_t i = 0; i < fn->parameters.len; i++) {
     Identifier *param = fn->parameters.arr[i];
