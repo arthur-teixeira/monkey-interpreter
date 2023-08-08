@@ -1,6 +1,6 @@
 typedef enum {
-    REPL_INTERPRET,
-    REPL_COMPILE,
+    MODE_INTERPRET,
+    MODE_COMPILE,
 } ReplMode;
 
 void start_repl(ReplMode);

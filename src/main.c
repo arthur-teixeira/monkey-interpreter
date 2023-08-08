@@ -1,7 +1,9 @@
-#include "./file_reader/file_reader.h"
-#include "./repl/repl.h"
+#include "file_reader/file_reader.h"
+#include "repl/repl.h"
 #include <stdio.h>
 #include <string.h>
+#include "parser/parser.h"
+#include "lexer/lexer.h"
 
 void usage() {
   printf("Usage: monkey [options] [file]\n");
@@ -13,19 +15,19 @@ void usage() {
 
 ReplMode get_repl_mode(char *flag) {
   if (strncmp(flag, "-i", 2) == 0) {
-    return REPL_INTERPRET;
+    return MODE_INTERPRET;
   }
 
   if (strncmp(flag, "-c", 2) == 0) {
-    return REPL_COMPILE;
+    return MODE_COMPILE;
   }
 
-  return REPL_INTERPRET;
+  return MODE_INTERPRET;
 }
 
 int main(int argc, char **argv) {
   if (argc == 1) {
-    start_repl(REPL_INTERPRET);
+    start_repl(MODE_INTERPRET);
     return 0;
   } 
 
@@ -41,7 +43,14 @@ int main(int argc, char **argv) {
   }
 
   if (argc == 3 && strncmp(argv[1], "-", 1) == 0) {
-    eval_file(argv[2]); // TODO: compile file if -c flag is passed
+    switch (get_repl_mode(argv[1])) {
+      case MODE_INTERPRET:
+        eval_file(argv[2]);
+        break;
+      case MODE_COMPILE:
+        compile_file(argv[2]);
+        break;
+    }
     return 0;
   }
 

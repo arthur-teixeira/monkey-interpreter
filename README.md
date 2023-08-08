@@ -20,6 +20,10 @@ To run the REPL in Interpreter mode, run the following command:
 ```sh
 $ ./bin/monkey
 ```
+or
+```sh
+$ ./bin/monkey -i
+```
 
 You can also run the REPL in Compiler mode:
 ```sh 
@@ -27,9 +31,8 @@ $ ./bin/monkey -c
 ```
 
 If you want to run a Monkey source file, pass the path to the file as an argument:
-(currently this only works in Interpreter mode)
 ```sh 
-$ ./bin/monkey <path-to-file>
+$ ./bin/monkey <engine-flag> <path-to-file>
 ```
 
 ## To-do list
@@ -44,7 +47,10 @@ $ ./bin/monkey <path-to-file>
 - [X] Interpret source files
 - [X] Compiler
 - [X] VM
-- [ ] Compile to and from file and remove compiler from REPL
+- [ ] Compile to and from file
+  - [X] Load file as compiler input
+  - [X] Execute in the vm after compilation
+  - [ ] Write bytecode to file
 - [ ] File disassembler
 - [ ] Convert objects to tagged unions
 - [ ] Garbage collection

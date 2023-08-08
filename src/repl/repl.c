@@ -85,10 +85,10 @@ void start_repl(ReplMode mode) {
     ResizableBuffer buf;
     init_resizable_buffer(&buf, 100);
     switch (mode) {
-    case REPL_INTERPRET:
+    case MODE_INTERPRET:
       interpret(&buf, program, env);
       break;
-    case REPL_COMPILE: {
+    case MODE_COMPILE: {
       Compiler *compiler = new_compiler_with_state(symbol_table, &constants);
       CompilerResult compiler_result = compile_program(compiler, program);
       if (compiler_result != COMPILER_OK) {
