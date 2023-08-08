@@ -37,7 +37,9 @@ $ ./bin/monkey <engine-flag> <path-to-file>
 
 ## To-do list
 - [X] For/while loops
+  - [ ] For/while loop in compiler
 - [X] Reassignment expression without let keyword
+  - [ ] Reassignment in compiler
 - [X] Binary numbers
 - [X] Hex numbers
 - [X] Bitwise operators
