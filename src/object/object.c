@@ -98,7 +98,7 @@ void inspect_compiled_function_object(ResizableBuffer *buf,
 
 void inspect_closure(ResizableBuffer *buf, Closure *closure) {
   append_to_buf(buf, "Closure[");
-  char p[8];
+  char p[16];
   sprintf(p, "%p", closure);
   append_to_buf(buf, p);
   append_to_buf(buf, "]");
