@@ -52,4 +52,6 @@ void compiler_error(CompilerResult, char *, size_t);
 void enter_compiler_scope(Compiler *);
 Instructions *leave_compiler_scope(Compiler *);
 
+void save_to_file(Bytecode, const char *);
+
 #endif // COMPILER_H

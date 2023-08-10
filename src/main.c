@@ -1,12 +1,12 @@
 #include "file_reader/file_reader.h"
+#include "lexer/lexer.h"
+#include "parser/parser.h"
 #include "repl/repl.h"
 #include <stdio.h>
 #include <string.h>
-#include "parser/parser.h"
-#include "lexer/lexer.h"
 
 void usage() {
-  printf("Usage: monkey [options] [file]\n");
+  printf("Usage: monkey [options] [input-file] [output-file]\n");
   printf("Options:\n");
   printf("  -i\t\t\tStarts the REPL in interpret mode\n");
   printf("  -c\t\t\tStarts the REPL in compile mode\n");
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     start_repl(MODE_INTERPRET);
     return 0;
-  } 
+  }
 
   if (argc == 2 && strncmp(argv[1], "-h", 2) == 0) {
     usage();
@@ -44,12 +44,24 @@ int main(int argc, char **argv) {
 
   if (argc == 3 && strncmp(argv[1], "-", 1) == 0) {
     switch (get_repl_mode(argv[1])) {
-      case MODE_INTERPRET:
-        eval_file(argv[2]);
-        break;
-      case MODE_COMPILE:
-        compile_file(argv[2]);
-        break;
+    case MODE_INTERPRET:
+      eval_file(argv[2]);
+      break;
+    case MODE_COMPILE:
+      usage();
+      break;
+    }
+    return 0;
+  }
+
+  if (argc == 4) {
+    ReplMode mode = get_repl_mode(argv[1]);
+    if (mode == MODE_INTERPRET) {
+      eval_file(argv[2]);
+    } else {
+      char *in = argv[2];
+      char *out = argv[3];
+      compile_file(in, out);
     }
     return 0;
   }

@@ -5,6 +5,6 @@
 FILE *open_source_file(const char *filename);
 void read_file(char *buf, size_t size, FILE *file);
 void eval_file(const char *filename);
-void compile_file(const char *filename);
+void compile_file(const char *in, const char *out);
 
 #endif // FILE_READER_H

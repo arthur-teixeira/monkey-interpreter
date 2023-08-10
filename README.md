@@ -1,14 +1,14 @@
 # Monkey Interpreter
 
-This is an interpreter for the Monkey programming language, built while reading
-[The Interpreter Book](https://interpreterbook.com) by Thorsten Ball.
+This is an interpreter and a compiler for the Monkey programming language, built while reading
+[The Interpreter Book](https://interpreterbook.com) and [The Compiler Book](https://compilerbook by Thorsten Ball.
 While the original book implementation is written in Go, I wrote it in C as
 an exercise to learn the language.
 
-Currently, I'm working on adding a compiler for the Monkey language alongside 
-[The Compiler Book](https://compilerbook.com/). The compiler
-will compile Monkey source code to bytecode, which will be interpreted by the
-Monkey Virtual Machine (MVM).
+There is also a VM that executes all of the compiler generated instructions.
+Currently, I'm working on the implementation of a bytecode file format, so that
+I can separate compilation time from runtime when using the compiler.
+There are more details regarding this format in the bytecode_format_specs.md file.
 
 ### Quick Start
 First, clone the repository and compile the project:

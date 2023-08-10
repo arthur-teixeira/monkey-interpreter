@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
+void big_endian_as_uint16(uint16_t num, uint8_t* buf) {
+  buf[0] = (num >> 8) & 0xFF;
+  buf[1] = num & 0xFF;
+}
+
 void big_endian_push_uint16(IntArray *arr, uint16_t num) {
   int_array_append(arr, (num >> 8) & 0xFF);
   int_array_append(arr, num & 0xFF);

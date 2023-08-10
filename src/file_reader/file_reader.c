@@ -60,8 +60,8 @@ void eval_file(const char *filename) {
   }
 }
 
-void compile_file(const char *filename) {
-  Program *program = get_program_from_file(filename);
+void compile_file(const char *in, const char *out) {
+  Program *program = get_program_from_file(in);
   if (!program)
     return;
 
@@ -77,23 +77,5 @@ void compile_file(const char *filename) {
   }
 
   Bytecode bt = bytecode(compiler);
-
-  VM *vm = new_vm(bt);
-  VMResult vm_result = run_vm(vm);
-  if (vm_result != VM_OK) {
-    char err[100];
-    vm_error(vm_result, err, 100);
-    fprintf(stderr, "%s\n", err);
-    free_vm(vm);
-    free_compiler(compiler);
-    free_program(program);
-    exit(EXIT_FAILURE);
-  }
-  ResizableBuffer buf;
-  init_resizable_buffer(&buf, 100);
-  Object *top = vm_last_popped_stack_elem(vm);
-  inspect_object(&buf, top);
-  printf("%s\n", buf.buf);
-  free(compiler);
-  free(vm);
+  save_to_file(bt, out);
 }
