@@ -20,7 +20,7 @@ ClassFile { \
     method_info    methods[methods_count]; \
     2 bytes        attributes_count; \
     attribute_info attributes[attributes_count]; \
-} \
+}
 
 The current plan is to make my file quite similar, but with much less features.
 The initial implementation should look something like this:
@@ -31,7 +31,7 @@ MonkeyFile { \
     constant_info  constant_pool[constant_pool_count-1]; \
     2 bytes        instructions_count; \
     n bytes        instructions; \
-} \
+}
 
 Any multi byte value is stored in big endian format.
 
@@ -59,16 +59,29 @@ The constant_type field stores the enum value defining the type of the constant.
 | value | definition            |
 |-------|-----------------------|
 | 0     | NUMBER_OBJ            |
-| 1     | BOOLEAN_OBJ           |
-| 2     | NULL_OBJ              |
-| 3     | RETURN_OBJ            |
-| 4     | ERROR_OBJ             |
-| 5     | FUNCTION_OBJ          |
 | 6     | STRING_OBJ            |
-| 7     | BUILTIN_OBJ           |
-| 8     | ARRAY_OBJ             |
-| 9     | HASH_OBJ              |
-| 10    | CONTINUE_OBJ          |
-| 11    | BREAK_OBJ             |
 | 12    | COMPILED_FUNCTION_OBJ |
-| 13    | CLOSURE_OBJ           |
+
+## Number constant
+A number object contains a double storing the value of the number.
+
+## String constant
+A string constant is defined as the following structure:
+
+string_constant { \
+  2 bytes  string_length; \
+  [string_length] bytes  string; \
+}
+
+where each character of the string is saved as an ASCII value.
+
+## Compiled function constant
+A compiled function constant is defined as the following structure:
+
+function_constant { \
+      2 bytes                     local_variables_count; \
+      1 byte                      parameters_count; \
+      2 bytes                     instructions_length; \
+      [instructions_length] bytes instructions; \
+}
+
