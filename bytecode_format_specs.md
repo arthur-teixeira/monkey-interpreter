@@ -28,9 +28,47 @@ The initial implementation should look something like this:
 MonkeyFile {
     4 bytes        magic;
     2 bytes        constant_pool_count;
-    n bytes        constant_pool[constant_pool_count-1];
+    constant_info  constant_pool[constant_pool_count-1];
     2 bytes        instructions_count;
     n bytes        instructions;
 }
 
-Any multi byte value is stored in big endian.
+Any multi byte value is stored in big endian format.
+
+## The magic number
+The magic number is used to identify the file as a Monkey bytecode file.
+It is used to check if the file is valid, and to check if the file is a Monkey bytecode file.
+The magic number is 6 bytes long, and is the following bytes: 0x4D 0x4F 0x4E 0x4B 0x45 0x59 (MONKEY in ASCII).
+
+## The constant pool
+The constant pool is used to store constants. In the compiler, constants are Object values allocated in memory.
+In the object file, we have to store these values in a specific layout to be able to load them into memory again.
+Each constant has a different structure in the object file, described below.
+
+### The constant_info structure
+The constant_info structure is used to store a constant in the constant pool.
+It has the following structure:
+
+constant_info {
+    1 byte         constant_type;
+    constant_value value;
+}
+
+The constant_type field stores the enum value defining the type of the constant.
+
+| value | definition            |
+|-------|-----------------------|
+| 0     | NUMBER_OBJ            |
+| 1     | BOOLEAN_OBJ           |
+| 2     | NULL_OBJ              |
+| 3     | RETURN_OBJ            |
+| 4     | ERROR_OBJ             |
+| 5     | FUNCTION_OBJ          |
+| 6     | STRING_OBJ            |
+| 7     | BUILTIN_OBJ           |
+| 8     | ARRAY_OBJ             |
+| 9     | HASH_OBJ              |
+| 10    | CONTINUE_OBJ          |
+| 11    | BREAK_OBJ             |
+| 12    | COMPILED_FUNCTION_OBJ |
+| 13    | CLOSURE_OBJ           |
