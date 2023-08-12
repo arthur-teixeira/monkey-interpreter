@@ -1,7 +1,7 @@
 # Monkey Interpreter
 
 This is an interpreter and a compiler for the Monkey programming language, built while reading
-[The Interpreter Book](https://interpreterbook.com) and [The Compiler Book](https://compilerbook by Thorsten Ball.
+[The Interpreter Book](https://interpreterbook.com) and [The Compiler Book](https://compilerbook) by Thorsten Ball.
 While the original book implementation is written in Go, I wrote it in C as
 an exercise to learn the language.
 
@@ -18,14 +18,11 @@ $ make
 
 To run the REPL in Interpreter mode, run the following command:
 ```sh
-$ ./bin/monkey
-```
-or
-```sh
 $ ./bin/monkey -i
 ```
 
 You can also run the REPL in Compiler mode:
+Here, the compiler will compile the input and then execute the bytecode in the VM.
 ```sh 
 $ ./bin/monkey -c
 ```
@@ -33,6 +30,16 @@ $ ./bin/monkey -c
 If you want to run a Monkey source file, pass the path to the file as an argument:
 ```sh 
 $ ./bin/monkey <engine-flag> <path-to-file>
+```
+
+You can also generate a bytecode file from a Monkey source file:
+```sh 
+$ ./bin/monkey -c <path-to-input-file> <path-to-output-file>
+```
+
+And to load and execute a bytecode file:
+```sh
+$ ./bin/monkey -l <path-to-bytecode-file>
 ```
 
 ## To-do list
@@ -49,10 +56,10 @@ $ ./bin/monkey <engine-flag> <path-to-file>
 - [X] Interpret source files
 - [X] Compiler
 - [X] VM
-- [ ] Compile to and from file
+- [X] Compile to and from file
   - [X] Load file as compiler input
   - [X] Execute in the vm after compilation
-  - [ ] Write bytecode to file
+  - [X] Write bytecode to file
 - [ ] File disassembler
 - [ ] Convert objects to tagged unions
 - [ ] Garbage collection
