@@ -85,6 +85,8 @@ void start_repl(ReplMode mode) {
     ResizableBuffer buf;
     init_resizable_buffer(&buf, 100);
     switch (mode) {
+    case MODE_LOAD_BINARY:
+      break;
     case MODE_INTERPRET:
       interpret(&buf, program, env);
       break;

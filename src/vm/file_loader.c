@@ -72,11 +72,6 @@ void load_file(const char *filename) {
     vm_error(result, buf, 100);
     fprintf(stderr, "ERROR: Error running the program: %s\n ", buf);
   }
-  ResizableBuffer buf;
-  init_resizable_buffer(&buf, 10);
-  Object *top = vm_last_popped_stack_elem(vm);
-  inspect_object(&buf, top);
-  printf("%s\n", buf.buf);
 }
 
 static bool test_magic_number(uint8_t *value) {
@@ -151,7 +146,7 @@ static Object *read_string_constant(FILE *file) {
   }
   str_value[i] = '\0';
 
-  str->value = str_value;
+  str->value = strdup(str_value);
 
   return (Object *)str;
 }
