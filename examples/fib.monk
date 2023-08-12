@@ -10,4 +10,7 @@ let fib = fn(x) {
   }
 };
 
-fib(8);
+puts(fib(8));
+
+let string_test = "hello from bytecode";
+puts(string_test);

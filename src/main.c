@@ -4,6 +4,7 @@
 #include "repl/repl.h"
 #include <stdio.h>
 #include <string.h>
+#include "vm/file_loader.h"
 
 void usage() {
   printf("Usage: monkey [options] [input-file] [output-file]\n");
@@ -20,6 +21,10 @@ ReplMode get_repl_mode(char *flag) {
 
   if (strncmp(flag, "-c", 2) == 0) {
     return MODE_COMPILE;
+  }
+
+  if (strncmp(flag, "-l", 2) == 0) {
+    return MODE_LOAD_BINARY;
   }
 
   return MODE_INTERPRET;
@@ -46,6 +51,9 @@ int main(int argc, char **argv) {
     switch (get_repl_mode(argv[1])) {
     case MODE_INTERPRET:
       eval_file(argv[2]);
+      break;
+    case MODE_LOAD_BINARY:
+      load_file(argv[2]);
       break;
     case MODE_COMPILE:
       usage();

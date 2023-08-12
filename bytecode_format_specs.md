@@ -52,7 +52,7 @@ It has the following structure:
 constant_info { \
     1 byte         constant_type;\
     constant_value value;\
-}\
+}
 
 The constant_type field stores the enum value defining the type of the constant.
 
@@ -64,6 +64,10 @@ The constant_type field stores the enum value defining the type of the constant.
 
 ## Number constant
 A number object contains a double storing the value of the number.
+
+number_constant { \
+  8 bytes  value; \
+}
 
 ## String constant
 A string constant is defined as the following structure:
