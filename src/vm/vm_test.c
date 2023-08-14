@@ -589,6 +589,18 @@ void test_recursive_functions(void) {
   VM_RUN_TESTS(tests);
 }
 
+void test_reassignments(void) {
+  vmTestCase tests[] = {
+    {
+      .input = "let a = 1; "
+        " a = 2; a; ",
+      .expected = new_number(2),
+    },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -606,5 +618,6 @@ int main(void) {
   RUN_TEST(test_builtin_functions);
   RUN_TEST(test_closures);
   RUN_TEST(test_recursive_functions);
+  RUN_TEST(test_reassignments);
   return UNITY_END();
 }

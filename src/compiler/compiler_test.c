@@ -1388,6 +1388,32 @@ void test_recursive_functions(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_reassignment(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "let a = 1; a = 2;",
+          .expected_constants_len = 2,
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_number(2),
+              },
+          .expected_instructions_len = 6,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_function_calls);
@@ -1405,5 +1431,6 @@ int main(void) {
   RUN_TEST(test_builtins);
   RUN_TEST(test_closures);
   RUN_TEST(test_recursive_functions);
+  RUN_TEST(test_reassignment);
   return UNITY_END();
 }

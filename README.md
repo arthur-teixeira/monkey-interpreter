@@ -50,8 +50,11 @@ $ ./bin/monkey -d <path-to-bytecode-file>
 ## To-do list
 - [X] For/while loops
   - [ ] For/while loop in compiler
+    - [X] While loop
+  - [ ] For/while closures in compiler
 - [X] Reassignment expression without let keyword
-  - [ ] Reassignment in compiler
+  - [X] Reassignment in compiler
+    - [ ] Reassignment as a separate instruction
 - [X] Binary numbers
 - [X] Hex numbers
 - [X] Bitwise operators

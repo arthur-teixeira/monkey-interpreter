@@ -111,6 +111,45 @@ size_t emit_no_operands(Compiler *compiler, OpCode op) {
   return emit(compiler, op, (int[]){}, 0);
 }
 
+void load_symbol(Compiler *c, Symbol *s) {
+  switch (s->scope) {
+  case SYMBOL_GLOBAL_SCOPE:
+    emit(c, OP_GET_GLOBAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_LOCAL_SCOPE:
+    emit(c, OP_GET_LOCAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_BUILTIN_SCOPE:
+    emit(c, OP_GET_BUILTIN, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_FREE_SCOPE:
+    emit(c, OP_GET_FREE, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_FUNCTION_SCOPE:
+    emit(c, OP_CURRENT_CLOSURE, (int[]){}, 0);
+    break;
+  }
+}
+
+// TODO: this is wrong in the context of a reassignment, since any variable
+// can be reassigned, not only globals and locals
+void save_symbol(Compiler *c, const Symbol *s) {
+  switch (s->scope) {
+  case SYMBOL_FUNCTION_SCOPE:
+    break;
+  case SYMBOL_GLOBAL_SCOPE:
+    emit(c, OP_SET_GLOBAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_LOCAL_SCOPE:
+    emit(c, OP_SET_LOCAL, (int[]){s->index}, 1);
+    break;
+  case SYMBOL_BUILTIN_SCOPE:
+  case SYMBOL_FREE_SCOPE:
+    assert(0 && "unreachable");
+    break;
+  }
+}
+
 bool last_instruction_is(Compiler *c, OpCode op) {
   return compiler_current_scope(c)->last_instruction.op == op;
 }
@@ -137,7 +176,8 @@ void change_operand(Compiler *compiler, size_t opPos, size_t operand) {
 
 CompilerResult compile_program(Compiler *compiler, Program *program) {
   for (size_t i = 0; i < program->statements.len; i++) {
-    int8_t result = compile_statement(compiler, program->statements.arr[i]);
+    CompilerResult result =
+        compile_statement(compiler, program->statements.arr[i]);
     if (result != COMPILER_OK) {
       return result;
     }
@@ -165,20 +205,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
       return result;
     }
 
-    switch (symbol->scope) {
-    case SYMBOL_FUNCTION_SCOPE:
-      break;
-    case SYMBOL_GLOBAL_SCOPE:
-      emit(compiler, OP_SET_GLOBAL, (int[]){symbol->index}, 1);
-      break;
-    case SYMBOL_LOCAL_SCOPE:
-      emit(compiler, OP_SET_LOCAL, (int[]){symbol->index}, 1);
-      break;
-    case SYMBOL_BUILTIN_SCOPE:
-    case SYMBOL_FREE_SCOPE:
-      assert(0 && "unreachable");
-      break;
-    }
+    save_symbol(compiler, symbol);
 
     break;
   }
@@ -194,6 +221,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
   default:
     assert(0 && "not implemented");
   }
+
   return COMPILER_OK;
 }
 
@@ -382,26 +410,6 @@ int compile_hash_pair(void *const ctx, struct hashmap_element_s *const pair) {
   return 0;
 }
 
-void load_symbol(Compiler *c, Symbol *s) {
-  switch (s->scope) {
-  case SYMBOL_GLOBAL_SCOPE:
-    emit(c, OP_GET_GLOBAL, (int[]){s->index}, 1);
-    break;
-  case SYMBOL_LOCAL_SCOPE:
-    emit(c, OP_GET_LOCAL, (int[]){s->index}, 1);
-    break;
-  case SYMBOL_BUILTIN_SCOPE:
-    emit(c, OP_GET_BUILTIN, (int[]){s->index}, 1);
-    break;
-  case SYMBOL_FREE_SCOPE:
-    emit(c, OP_GET_FREE, (int[]){s->index}, 1);
-    break;
-  case SYMBOL_FUNCTION_SCOPE:
-    emit(c, OP_CURRENT_CLOSURE, (int[]){}, 0);
-    break;
-  }
-}
-
 CompilerResult compile_hash_expression(Compiler *compiler, HashLiteral *expr) {
   HashLiteral *hash_lit = (HashLiteral *)expr;
   HashCompilerContext context = {
@@ -466,6 +474,57 @@ CompilerResult compile_function_literal(Compiler *compiler,
 
   size_t new_constant_pos = add_constant(compiler, compiled_fn);
   emit(compiler, OP_CLOSURE, (int[]){new_constant_pos, free_symbols_len}, 2);
+
+  return COMPILER_OK;
+}
+
+CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
+  CompilerResult result = compile_expression(compiler, loop->condition);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  size_t loop_condition_pos =
+      compiler_current_scope(compiler)->last_instruction.position;
+
+  size_t jmp_if_false_pos =
+      emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
+
+  result = compile_block_statement(compiler, loop->body);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  emit(compiler, OP_JMP, (int[]){loop_condition_pos}, 1);
+
+  size_t after_consequence_pos = compiler_current_instructions(compiler)->len;
+  change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
+
+  return COMPILER_OK;
+}
+
+CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
+  const Symbol *old_symbol =
+      symbol_resolve(compiler->symbol_table, expr->name->value);
+
+  if (!old_symbol) {
+    return COMPILER_UNKNOWN_IDENTIFIER;
+  }
+
+  CompilerResult result = compile_expression(compiler, expr->value);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  save_symbol(compiler, old_symbol);
+
+  // Reassignment are also expressions, so we need to push the value back on the
+  // stack.
+  // TODO: This is a bit of a hack, we should probably have a separate
+  // instruction for reassignment, and this doesn't work for reassigning
+  // functions.
+  size_t last_constant_pos = compiler->constants->len - 1;
+  emit(compiler, OP_CONSTANT, (int[]){last_constant_pos}, 1);
 
   return COMPILER_OK;
 }
@@ -558,6 +617,10 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
     emit(compiler, OP_CALL, (int[]){call->arguments.len}, 1);
     break;
   }
+  case WHILE_EXPR:
+    return compile_while_loop(compiler, (WhileLoop *)expr);
+  case REASSIGN_EXPR:
+    return compile_reassignment(compiler, (Reassignment *)expr);
   default:
     return COMPILER_UNKNOWN_OPERATOR;
   }
