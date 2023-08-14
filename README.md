@@ -42,6 +42,11 @@ And to load and execute a bytecode file:
 $ ./bin/monkey -l <path-to-bytecode-file>
 ```
 
+To disassemble a bytecode file:
+```sh 
+$ ./bin/monkey -d <path-to-bytecode-file>
+```
+
 ## To-do list
 - [X] For/while loops
   - [ ] For/while loop in compiler
@@ -60,7 +65,7 @@ $ ./bin/monkey -l <path-to-bytecode-file>
   - [X] Load file as compiler input
   - [X] Execute in the vm after compilation
   - [X] Write bytecode to file
-- [ ] File disassembler
+- [X] File disassembler
 - [ ] Convert objects to tagged unions
 - [ ] Garbage collection
 - [ ] Concurrent GC
