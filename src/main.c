@@ -2,15 +2,17 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "repl/repl.h"
+#include "vm/file_loader.h"
 #include <stdio.h>
 #include <string.h>
-#include "vm/file_loader.h"
+#include "disassembler/disassembler.h"
 
 void usage() {
   printf("Usage: monkey [options] [input-file] [output-file]\n");
   printf("Options:\n");
   printf("  -i\t\t\tStarts the REPL in interpret mode\n");
   printf("  -c\t\t\tStarts the REPL in compile mode\n");
+  printf("  -d\t\t\tDisassembles [input-file]\n");
   printf("  -h\t\t\tPrints this help message\n");
 }
 
@@ -25,6 +27,10 @@ ReplMode get_repl_mode(char *flag) {
 
   if (strncmp(flag, "-l", 2) == 0) {
     return MODE_LOAD_BINARY;
+  }
+
+  if (strncmp(flag, "-d", 2) == 0) {
+    return MODE_DISASSEMBLE;
   }
 
   return MODE_INTERPRET;
@@ -53,7 +59,10 @@ int main(int argc, char **argv) {
       eval_file(argv[2]);
       break;
     case MODE_LOAD_BINARY:
-      load_file(argv[2]);
+      get_bytecode_from_file(argv[2]);
+      break;
+    case MODE_DISASSEMBLE:
+      disassemble_file(argv[2]);
       break;
     case MODE_COMPILE:
       usage();

@@ -123,7 +123,7 @@ static DynamicArray read_constants(FILE *file, size_t num_constants) {
   return constants;
 }
 
-void load_file(const char *filename) {
+Bytecode get_bytecode_from_file(const char *filename) {
   FILE *file = open_source_file(filename);
 
   uint8_t magic_number[6];
@@ -160,10 +160,14 @@ void load_file(const char *filename) {
     int_array_append(&ins, c);
   }
 
-  Bytecode bt = {
+  return (Bytecode) {
       .instructions = ins,
       .constants = constants,
   };
+}
+
+void load_file(const char *filename) {
+  Bytecode bt = get_bytecode_from_file(filename);
 
   VM *vm = new_vm(bt);
   VMResult result = run_vm(vm);
@@ -173,5 +177,4 @@ void load_file(const char *filename) {
     fprintf(stderr, "ERROR: Error running the program: %s\n ", buf);
   }
 }
-
 

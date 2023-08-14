@@ -1,12 +1,12 @@
 #include "repl.h"
 #include "../compiler/compiler.h"
 #include "../evaluator/evaluator.h"
+#include "../object/builtins.h"
 #include "../vm/vm.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../object/builtins.h"
 
 #define PROMPT ">> "
 
@@ -85,8 +85,6 @@ void start_repl(ReplMode mode) {
     ResizableBuffer buf;
     init_resizable_buffer(&buf, 100);
     switch (mode) {
-    case MODE_LOAD_BINARY:
-      break;
     case MODE_INTERPRET:
       interpret(&buf, program, env);
       break;
@@ -119,6 +117,8 @@ void start_repl(ReplMode mode) {
       free(compiler);
       free(vm);
     }
+    default:
+      break;
     }
 
     free(buf.buf);
