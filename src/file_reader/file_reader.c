@@ -78,13 +78,5 @@ void compile_file(const char *in, const char *out) {
 
   Bytecode bt = bytecode(compiler);
 
-  ResizableBuffer buf;
-  init_resizable_buffer(&buf, 100);
-  instructions_to_string(&buf, &bt.instructions);
-
-  printf("Instructions:\n-------------\n%s-------------\n", buf.buf);
-  free(buf.buf);
-  buf.buf = NULL;
-
   save_to_file(bt, out);
 }

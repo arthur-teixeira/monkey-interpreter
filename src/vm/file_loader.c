@@ -2,6 +2,7 @@
 #include "../big_endian/big_endian.h"
 #include "../code/code.h"
 #include "../object/object.h"
+#include "../file_reader/file_reader.h"
 #include "vm.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -11,68 +12,6 @@
 #include <string.h>
 
 #define ARRAY_LEN(x) sizeof(x) / sizeof(x[0])
-
-static bool test_magic_number(uint8_t *);
-static Object *read_number_constant(FILE *);
-static Object *read_string_constant(FILE *);
-static Object *read_function_constant(FILE *);
-static Object *read_constant(FILE *);
-static DynamicArray read_constants(FILE *, size_t);
-
-void load_file(const char *filename) {
-  FILE *file = fopen(filename, "r");
-  if (!file) {
-    perror("ERROR: could not read file:");
-    exit(EXIT_FAILURE);
-  }
-
-  uint8_t magic_number[6];
-  for (size_t i = 0; i < 6; i++) {
-    magic_number[i] = fgetc(file);
-  }
-
-  if (!test_magic_number(magic_number)) {
-    fprintf(stderr, "ERROR: file is not a monkey binary\n");
-    exit(EXIT_FAILURE);
-  }
-
-  int8_t num_constants_buf[2];
-  num_constants_buf[0] = fgetc(file);
-  num_constants_buf[1] = fgetc(file);
-
-  uint16_t num_constants;
-  big_endian_to_uint16(&num_constants, num_constants_buf);
-
-  DynamicArray constants = read_constants(file, num_constants);
-
-  int8_t num_instructions_buf[2];
-  num_instructions_buf[0] = fgetc(file);
-  num_instructions_buf[1] = fgetc(file);
-
-  uint16_t num_instructions;
-  big_endian_to_uint16(&num_instructions, num_instructions_buf);
-
-  Instructions ins;
-  int_array_init(&ins, 10);
-
-  int8_t c;
-  while ((c = fgetc(file)) != EOF) {
-    int_array_append(&ins, c);
-  }
-
-  Bytecode bt = {
-      .instructions = ins,
-      .constants = constants,
-  };
-
-  VM *vm = new_vm(bt);
-  VMResult result = run_vm(vm);
-  if (result != VM_OK) {
-    char buf[100];
-    vm_error(result, buf, 100);
-    fprintf(stderr, "ERROR: Error running the program: %s\n ", buf);
-  }
-}
 
 static bool test_magic_number(uint8_t *value) {
   char magic_number[] = "MONKEY";
@@ -84,31 +23,6 @@ static bool test_magic_number(uint8_t *value) {
   }
 
   return true;
-}
-
-static DynamicArray read_constants(FILE *file, size_t num_constants) {
-  DynamicArray constants;
-  array_init(&constants, num_constants);
-
-  for (size_t i = 0; i < num_constants; i++) {
-    array_append(&constants, read_constant(file));
-  }
-
-  return constants;
-}
-
-static Object *read_constant(FILE *file) {
-  ObjectType type = fgetc(file);
-  switch (type) {
-  case NUMBER_OBJ:
-    return read_number_constant(file);
-  case STRING_OBJ:
-    return read_string_constant(file);
-  case COMPILED_FUNCTION_OBJ:
-    return read_function_constant(file);
-  default:
-    assert(0 && "unknown constant value");
-  }
 }
 
 static Object *read_number_constant(FILE *file) {
@@ -183,3 +97,81 @@ static Object *read_function_constant(FILE *file) {
 
   return (Object *)fn;
 }
+
+static Object *read_constant(FILE *file) {
+  ObjectType type = fgetc(file);
+  switch (type) {
+  case NUMBER_OBJ:
+    return read_number_constant(file);
+  case STRING_OBJ:
+    return read_string_constant(file);
+  case COMPILED_FUNCTION_OBJ:
+    return read_function_constant(file);
+  default:
+    assert(0 && "unknown constant value");
+  }
+}
+
+static DynamicArray read_constants(FILE *file, size_t num_constants) {
+  DynamicArray constants;
+  array_init(&constants, num_constants);
+
+  for (size_t i = 0; i < num_constants; i++) {
+    array_append(&constants, read_constant(file));
+  }
+
+  return constants;
+}
+
+void load_file(const char *filename) {
+  FILE *file = open_source_file(filename);
+
+  uint8_t magic_number[6];
+  for (size_t i = 0; i < 6; i++) {
+    magic_number[i] = fgetc(file);
+  }
+
+  if (!test_magic_number(magic_number)) {
+    fprintf(stderr, "ERROR: file is not a monkey binary\n");
+    exit(EXIT_FAILURE);
+  }
+
+  int8_t num_constants_buf[2];
+  num_constants_buf[0] = fgetc(file);
+  num_constants_buf[1] = fgetc(file);
+
+  uint16_t num_constants;
+  big_endian_to_uint16(&num_constants, num_constants_buf);
+
+  DynamicArray constants = read_constants(file, num_constants);
+
+  int8_t num_instructions_buf[2];
+  num_instructions_buf[0] = fgetc(file);
+  num_instructions_buf[1] = fgetc(file);
+
+  uint16_t num_instructions;
+  big_endian_to_uint16(&num_instructions, num_instructions_buf);
+
+  Instructions ins;
+  int_array_init(&ins, 10);
+
+  int8_t c;
+  while ((c = fgetc(file)) != EOF) {
+    int_array_append(&ins, c);
+  }
+
+  Bytecode bt = {
+      .instructions = ins,
+      .constants = constants,
+  };
+
+  VM *vm = new_vm(bt);
+  VMResult result = run_vm(vm);
+  if (result != VM_OK) {
+    char buf[100];
+    vm_error(result, buf, 100);
+    fprintf(stderr, "ERROR: Error running the program: %s\n ", buf);
+  }
+}
+
+
