@@ -581,6 +581,19 @@ VMResult run_vm(VM *vm) {
       }
       break;
     }
+    case OP_SET_FREE: {
+      uint8_t free_index = ins->arr[ip + 1];
+      current_frame(vm)->ip++;
+
+      Closure *current_closure = current_frame(vm)->closure;
+
+      Object *new_value = stack_pop(vm);
+
+      // Is this dangerous? What if the variables are of different types?
+      // Could not reproduce any errors, but it seems like it could be a problem
+      memcpy(current_closure->free_variables[free_index], new_value, sizeof_object(new_value));
+      break;
+    }
     case OP_CURRENT_CLOSURE: {
       Closure *current_closure = current_frame(vm)->closure;
       VMResult result = stack_push(vm, (Object *)current_closure);

@@ -516,15 +516,24 @@ CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
     return result;
   }
 
-  save_symbol(compiler, old_symbol);
-
-  // Reassignment are also expressions, so we need to push the value back on the
-  // stack.
-  // TODO: This is a bit of a hack, we should probably have a separate
-  // instruction for reassignment, and this doesn't work for reassigning
-  // functions.
-  size_t last_constant_pos = compiler->constants->len - 1;
-  emit(compiler, OP_CONSTANT, (int[]){last_constant_pos}, 1);
+  switch (old_symbol->scope) {
+  case SYMBOL_GLOBAL_SCOPE:
+    emit(compiler, OP_SET_GLOBAL, (int[]){old_symbol->index}, 1);
+    emit(compiler, OP_GET_GLOBAL, (int[]){old_symbol->index}, 1);
+    break;
+  case SYMBOL_LOCAL_SCOPE:
+    emit(compiler, OP_SET_LOCAL, (int[]){old_symbol->index}, 1);
+    emit(compiler, OP_GET_LOCAL, (int[]){old_symbol->index}, 1);
+    break;
+  case SYMBOL_FREE_SCOPE:
+    emit(compiler, OP_SET_FREE, (int[]){old_symbol->index}, 1);
+    emit(compiler, OP_GET_FREE, (int[]){old_symbol->index}, 1);
+    break;
+  case SYMBOL_FUNCTION_SCOPE:
+  case SYMBOL_BUILTIN_SCOPE:
+    assert(0 && "unreachable");
+    break;
+  }
 
   return COMPILER_OK;
 }

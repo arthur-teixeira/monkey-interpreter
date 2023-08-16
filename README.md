@@ -54,7 +54,6 @@ $ ./bin/monkey -d <path-to-bytecode-file>
   - [ ] For/while closures in compiler
 - [X] Reassignment expression without let keyword
   - [X] Reassignment in compiler
-    - [ ] Reassignment as a separate instruction
 - [X] Binary numbers
 - [X] Hex numbers
 - [X] Bitwise operators

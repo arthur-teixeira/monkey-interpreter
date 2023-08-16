@@ -47,6 +47,7 @@ typedef enum {
   OP_CLOSURE,
   OP_GET_FREE,
   OP_CURRENT_CLOSURE,
+  OP_SET_FREE,
   OP_COUNT,
 } OpCode;
 

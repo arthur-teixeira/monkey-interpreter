@@ -591,11 +591,71 @@ void test_recursive_functions(void) {
 
 void test_reassignments(void) {
   vmTestCase tests[] = {
-    {
-      .input = "let a = 1; "
-        " a = 2; a; ",
-      .expected = new_number(2),
-    },
+      {
+          .input = "let a = 1; "
+                   " a = 2; a; ",
+          .expected = new_number(2),
+      },
+      {
+          .input = "let a = fn(x) { x + 2 };"
+                   "a = fn(x) { x * 2 };"
+                   "a(10);",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let a = 10;"
+                   "a = 20;",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let a = 10;"
+                   "let b = fn(x) { a = x; }"
+                   "b(20);",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   " let a = 10;"
+                   " let nestedFn = fn(x) {"
+                   "   a = x; "
+                   " };"
+                   " nestedFn(2);"
+                   "return a;"
+                   "};"
+                   "wrapper();",
+          .expected = new_number(2),
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   " let a = 10;"
+                   " let nestedFn = fn(x) {"
+                   "   a = x; "
+                   " };"
+                   " nestedFn(\"hello world\");"
+                   "return a;"
+                   "};"
+                   "wrapper();",
+          .expected = new_string("hello world"),
+      },
+      {
+        .input = "let a = 1; a = a + 1; a;",
+        .expected = new_number(2),
+      }
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
+void test_while_loop(void) {
+  vmTestCase tests[] = {
+      {
+          .input = "let a = 0;"
+                   "while (a < 10) {"
+                   "  a = a + 1;"
+                   "};"
+                   "a;",
+          .expected = new_number(10),
+      },
   };
 
   VM_RUN_TESTS(tests);
@@ -619,5 +679,6 @@ int main(void) {
   RUN_TEST(test_closures);
   RUN_TEST(test_recursive_functions);
   RUN_TEST(test_reassignments);
+  RUN_TEST(test_while_loop);
   return UNITY_END();
 }

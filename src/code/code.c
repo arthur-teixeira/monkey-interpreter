@@ -97,6 +97,11 @@ static Definition definitions[OP_COUNT] = {
         .operand_widths = {1},
     },
     {"OP_CURRENT_CLOSURE"},
+    {
+      .name = "OP_SET_FREE",
+      .operand_count = 1,
+      .operand_widths = {1},
+    },
 };
 
 Definition *lookup(OpCode opcode) {

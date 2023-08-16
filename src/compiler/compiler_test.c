@@ -1405,7 +1405,38 @@ void test_reassignment(void) {
                   make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_CONSTANT, (int[]){1}, 1),
                   make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+      },
+      {
+          .input = "let a = 1;"
+                   "let b = fn(x) { a = x; };"
+                   "b(2);",
+          .expected_constants_len = 3,
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_concatted_compiled_function(
+                      (Instruction[]){
+                          make_instruction(OP_GET_LOCAL, (int[]){0}, 1),
+                          make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_RETURN_VALUE, (int[]){}, 0),
+                      },
+                      4),
+                  new_number(2),
+              },
+          .expected_instructions_len = 8,
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){1, 0}, 2),
+                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_CALL, (int[]){1}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),
               },
       },
