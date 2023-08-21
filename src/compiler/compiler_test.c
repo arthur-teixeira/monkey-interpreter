@@ -1440,6 +1440,58 @@ void test_reassignment(void) {
                   make_instruction(OP_POP, (int[]){}, 0),
               },
       },
+      {
+          .input = "let a = 1; a = a + 1;",
+          .expected_constants_len = 2,
+          .expected_constants =
+              {
+                  new_number(1),
+                  new_number(1),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+              },
+          .expected_instructions_len = 8,
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
+void test_while_loops(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "while (a > 10) { a = a + 1; };",
+          .expected_constants_len = 2,
+          .expected_constants =
+              {
+                  new_number(10),
+                  new_number(1),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GREATER, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){999}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_JMP, (int[]){999}, 1),
+              },
+          .expected_instructions_len = 11,
+      },
   };
 
   RUN_COMPILER_TESTS(tests);
@@ -1463,5 +1515,6 @@ int main(void) {
   RUN_TEST(test_closures);
   RUN_TEST(test_recursive_functions);
   RUN_TEST(test_reassignment);
+  RUN_TEST(test_while_loops);
   return UNITY_END();
 }
