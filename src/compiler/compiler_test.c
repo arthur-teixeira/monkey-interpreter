@@ -1491,7 +1491,7 @@ void test_while_loops(void) {
                   make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),
-                  make_instruction(OP_JMP, (int[]){4}, 1),
+                  make_instruction(OP_JMP, (int[]){6}, 1),
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),
               },
@@ -1504,6 +1504,22 @@ void test_while_loops(void) {
 
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_function_calls);
+  RUN_TEST(test_integer_arithmetic);
+  RUN_TEST(test_boolean_expressions);
+  RUN_TEST(test_conditionals);
+  RUN_TEST(test_global_let_statements);
+  RUN_TEST(test_string_expressions);
+  RUN_TEST(test_array_literals);
+  RUN_TEST(test_hash_literals);
+  RUN_TEST(test_index_expressions);
+  RUN_TEST(test_functions);
+  RUN_TEST(test_compiler_scopes);
+  RUN_TEST(test_let_statement_scopes);
+  RUN_TEST(test_builtins);
+  RUN_TEST(test_closures);
+  RUN_TEST(test_recursive_functions);
+  RUN_TEST(test_reassignment);
   RUN_TEST(test_while_loops);
   return UNITY_END();
 }

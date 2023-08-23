@@ -485,8 +485,7 @@ CompilerResult compile_function_literal(Compiler *compiler,
 }
 
 CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
-  size_t loop_condition_pos =
-    compiler_current_scope(compiler)->last_instruction.position;
+  size_t before_condition_pos = compiler_current_instructions(compiler)->len;
 
   CompilerResult result = compile_expression(compiler, loop->condition);
   if (result != COMPILER_OK) {
@@ -501,7 +500,7 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
     return result;
   }
 
-  emit(compiler, OP_JMP, (int[]){loop_condition_pos + 1}, 1);
+  emit(compiler, OP_JMP, (int[]){before_condition_pos}, 1);
 
   size_t after_consequence_pos = compiler_current_instructions(compiler)->len;
   change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
