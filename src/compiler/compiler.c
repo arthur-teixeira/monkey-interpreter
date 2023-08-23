@@ -479,13 +479,13 @@ CompilerResult compile_function_literal(Compiler *compiler,
 }
 
 CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
+  size_t loop_condition_pos =
+    compiler_current_scope(compiler)->last_instruction.position;
+
   CompilerResult result = compile_expression(compiler, loop->condition);
   if (result != COMPILER_OK) {
     return result;
   }
-
-  size_t loop_condition_pos =
-      compiler_current_scope(compiler)->last_instruction.position;
 
   size_t jmp_if_false_pos =
       emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
@@ -495,7 +495,7 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
     return result;
   }
 
-  emit(compiler, OP_JMP, (int[]){loop_condition_pos}, 1);
+  emit(compiler, OP_JMP, (int[]){loop_condition_pos + 1}, 1);
 
   size_t after_consequence_pos = compiler_current_instructions(compiler)->len;
   change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
@@ -563,11 +563,11 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   case IDENT_EXPR: {
     const Symbol *symbol =
         symbol_resolve(compiler->symbol_table, ((Identifier *)expr)->value);
-
-    load_symbol(compiler, (Symbol *)symbol);
     if (!symbol) {
       return COMPILER_UNKNOWN_IDENTIFIER;
     }
+
+    load_symbol(compiler, (Symbol *)symbol);
 
     break;
   }
