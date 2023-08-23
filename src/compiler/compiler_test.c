@@ -1492,11 +1492,10 @@ void test_while_loops(void) {
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),
                   make_instruction(OP_JMP, (int[]){4}, 1),
-                  make_instruction(OP_POP, (int[]){}, 0),
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),
               },
-          .expected_instructions_len = 16,
+          .expected_instructions_len = 15,
       },
   };
 

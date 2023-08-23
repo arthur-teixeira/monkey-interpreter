@@ -39,6 +39,7 @@ Compiler *new_compiler() {
   compiler->symbol_table = symbol_table;
   compiler->scopes[0] = new_compilation_scope();
   compiler->scope_index = 0;
+  compiler->is_void_expression = false;
 
   return compiler;
 }
@@ -193,7 +194,12 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     if (result != COMPILER_OK) {
       return result;
     }
-    emit_no_operands(compiler, OP_POP);
+    if (compiler->is_void_expression) {
+      compiler->is_void_expression = false;
+    } else {
+      emit_no_operands(compiler, OP_POP);
+    }
+
     break;
   }
   case LET_STATEMENT: {
@@ -499,6 +505,8 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
 
   size_t after_consequence_pos = compiler_current_instructions(compiler)->len;
   change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
+
+  compiler->is_void_expression = true;
 
   return COMPILER_OK;
 }

@@ -29,6 +29,7 @@ typedef struct {
   SymbolTable *symbol_table;
   CompilationScope scopes[256];
   size_t scope_index;
+  bool is_void_expression;
 } Compiler;
 
 Compiler *new_compiler();
