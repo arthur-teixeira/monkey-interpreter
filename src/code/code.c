@@ -102,6 +102,7 @@ static Definition definitions[OP_COUNT] = {
       .operand_count = 1,
       .operand_widths = {1},
     },
+    {"OP_LOOP"},
 };
 
 Definition *lookup(OpCode opcode) {
