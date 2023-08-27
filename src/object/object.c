@@ -6,8 +6,8 @@
 
 const char *ObjectTypeString[] = {
     "NUMBER_OBJ", "BOOLEAN_OBJ",  "NULL_OBJ",     "RETURN_OBJ",
-    "ERROR_OBJ",   "FUNCTION_OBJ", "STRING_OBJ",   "BUILTIN_OBJ",
-    "ARRAY_OBJ",   "HASH_OBJ",     "CONTINUE_OBJ", "BREAK_OBJ",
+    "ERROR_OBJ",  "FUNCTION_OBJ", "STRING_OBJ",   "BUILTIN_OBJ",
+    "ARRAY_OBJ",  "HASH_OBJ",     "CONTINUE_OBJ", "BREAK_OBJ",
 };
 
 void inspect_number_object(ResizableBuffer *buf, Number *obj) {
@@ -104,6 +104,10 @@ void inspect_closure(ResizableBuffer *buf, Closure *closure) {
   append_to_buf(buf, "]");
 }
 
+void inspect_compiled_loop(ResizableBuffer *buf, CompiledLoop *loop) {
+  append_to_buf(buf, "CompiledLoop");
+}
+
 void inspect_object(ResizableBuffer *buf, Object *obj) {
   switch (obj->type) {
   case NUMBER_OBJ:
@@ -130,6 +134,8 @@ void inspect_object(ResizableBuffer *buf, Object *obj) {
     return inspect_compiled_function_object(buf, (CompiledFunction *)obj);
   case CLOSURE_OBJ:
     return inspect_closure(buf, (Closure *)obj);
+  case COMPILED_LOOP_OBJ:
+    return inspect_compiled_loop(buf, (CompiledLoop *)obj);
   case CONTINUE_OBJ:
   case BREAK_OBJ:
     return; // break and continue object are sentinel values
@@ -190,6 +196,8 @@ size_t sizeof_object(Object *obj) {
     return sizeof(Object);
   case CLOSURE_OBJ:
     return sizeof(Closure);
+  case COMPILED_LOOP_OBJ:
+    return sizeof(CompiledLoop);
   }
 
   assert(0 && "unknown object type");
@@ -244,6 +252,17 @@ Object *new_compiled_function(Instructions *instructions, size_t num_locals,
   return (Object *)fn;
 }
 
+Object *new_compiled_while_loop(Instructions *instructions, size_t num_locals) {
+  CompiledLoop *loop = malloc(sizeof(CompiledLoop));
+  assert(loop != NULL);
+
+  loop->type = COMPILED_LOOP_OBJ;
+  loop->num_locals = num_locals;
+  loop->instructions = *instructions;
+
+  return (Object *)loop;
+}
+
 Object *new_concatted_compiled_function(Instructions *instructions,
                                         size_t instructions_count) {
   CompiledFunction *fn = malloc(sizeof(CompiledFunction));
@@ -272,22 +291,22 @@ Object *new_error(char *message) {
 
 Object *new_array(Object **arr, size_t len) {
   Array *array = malloc(sizeof(Array));
-  assert(array != NULL); 
+  assert(array != NULL);
 
   array->type = ARRAY_OBJ;
   array_init(&array->elements, len);
-  for (size_t i =0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     array_append(&array->elements, arr[i]);
   }
 
   return (Object *)array;
 }
 
-Object *new_closure(CompiledFunction *fn) {
+Object *new_closure(Object *fn) {
   Closure *closure = malloc(sizeof(Closure));
   closure->type = CLOSURE_OBJ;
 
-  closure->fn = fn;
+  closure->enclosed = fn;
 
   return (Object *)closure;
 }

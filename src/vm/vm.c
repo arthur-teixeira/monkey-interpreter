@@ -8,9 +8,7 @@
 #include <stdlib.h>
 
 VM *new_vm(Bytecode bytecode) {
-  CompiledFunction *main_fn =
-      (CompiledFunction *)new_compiled_function(&bytecode.instructions, 0, 0);
-
+  Object *main_fn = new_compiled_function(&bytecode.instructions, 0, 0);
   Closure *main_closure = (Closure *)new_closure(main_fn);
 
   Frame main_frame = new_frame(main_closure, 0);
@@ -297,14 +295,17 @@ VMResult call_builtin_function(VM *vm, Builtin *fn, size_t num_args) {
 }
 
 VMResult call_closure(VM *vm, Closure *closure, size_t num_args) {
-  if (num_args != closure->fn->num_parameters) {
+  assert (closure->enclosed->type == COMPILED_FUNCTION_OBJ);
+  CompiledFunction *fn = (CompiledFunction *)closure->enclosed;
+
+  if (num_args != fn->num_parameters) {
     return VM_WRONG_NUMBER_OF_ARGUMENTS;
   }
 
   Frame frame = new_frame(closure, vm->sp - num_args);
   push_frame(vm, frame);
 
-  vm->sp = frame.base_pointer + closure->fn->num_locals;
+  vm->sp = frame.base_pointer + fn->num_locals;
 
   return VM_OK;
 }
@@ -324,9 +325,8 @@ VMResult execute_call(VM *vm, size_t num_args) {
 
 VMResult push_closure(VM *vm, size_t const_index, size_t num_free) {
   Object *constant = vm->constants.arr[const_index];
-  assert(constant->type == COMPILED_FUNCTION_OBJ);
 
-  Closure *closure = (Closure *)new_closure((CompiledFunction *)constant);
+  Closure *closure = (Closure *)new_closure(constant);
   closure->num_free_variables = num_free;
 
   for (size_t i = 0; i < num_free; i++) {
@@ -353,6 +353,8 @@ VMResult run_vm(VM *vm) {
     VMResult result;
 
     switch (op) {
+    case OP_LOOP:
+      assert(0 && "NOT IMPLEMENTED");
     case OP_CONSTANT: {
       uint16_t constant_index = big_endian_read_uint16(ins, ip + 1);
 

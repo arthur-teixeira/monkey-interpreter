@@ -21,6 +21,7 @@ typedef enum {
   BREAK_OBJ,
   COMPILED_FUNCTION_OBJ,
   CLOSURE_OBJ,
+  COMPILED_LOOP_OBJ,
 } ObjectType;
 
 extern const char *ObjectTypeString[];
@@ -101,8 +102,14 @@ typedef struct {
 } CompiledFunction;
 
 typedef struct {
+  ObjectType type; // COMPILED_LOOP_OBJ
+  Instructions instructions;
+  size_t num_locals;
+} CompiledLoop;
+
+typedef struct {
   ObjectType type; // CLOSURE_OBJ
-  CompiledFunction *fn;
+  Object *enclosed;
   Object *free_variables[100];
   size_t num_free_variables;
 } Closure;
@@ -120,5 +127,6 @@ Object *new_concatted_string(String *, String *);
 
 Object *new_error(char *);
 Object *new_array(Object **, size_t);
-Object *new_closure(CompiledFunction *);
+Object *new_closure(Object *);
+Object *new_compiled_while_loop(Instructions *, size_t);
 #endif

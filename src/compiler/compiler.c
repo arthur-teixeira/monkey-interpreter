@@ -495,10 +495,29 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
   size_t jmp_if_false_pos =
       emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
 
+  enter_compiler_scope(compiler);
   result = compile_block_statement(compiler, loop->body);
   if (result != COMPILER_OK) {
     return result;
   }
+
+  Symbol *free_symbols = compiler->symbol_table->free_symbols;
+  size_t free_symbols_len = compiler->symbol_table->free_symbols_len;
+
+  size_t num_locals = compiler->symbol_table->num_definitions;
+
+  Instructions *loop_instructions = leave_compiler_scope(compiler);
+
+  for (size_t i = 0; i < free_symbols_len; i++) {
+    load_symbol(compiler, &free_symbols[i]);
+  }
+
+  Object *compiled_loop_body =
+      new_compiled_while_loop(loop_instructions, num_locals);
+
+  size_t loop_body_pos = add_constant(compiler, compiled_loop_body);
+  emit(compiler, OP_CLOSURE, (int[]){loop_body_pos, free_symbols_len}, 2);
+  emit_no_operands(compiler, OP_LOOP);
 
   emit(compiler, OP_JMP, (int[]){before_condition_pos}, 1);
 
