@@ -224,6 +224,21 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     emit_no_operands(compiler, OP_RETURN_VALUE);
     break;
   }
+  case CONTINUE_STATEMENT: {
+    if (!compiler->loop.in_loop) {
+      return COMPILER_CONTINUE_OUTSIDE_LOOP;
+    }
+
+    emit_no_operands(compiler, OP_CONTINUE);
+    break;
+  }
+  case BREAK_STATEMENT: {
+    if (!compiler->loop.in_loop) {
+      
+    }
+    emit(compiler, OP_BREAK, (int[]){JUMP_SENTINEL}, 1);
+    break;
+  }
   default:
     assert(0 && "not implemented");
   }
@@ -485,6 +500,8 @@ CompilerResult compile_function_literal(Compiler *compiler,
 }
 
 CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
+  enter_loop(compiler);
+
   size_t before_condition_pos = compiler_current_instructions(compiler)->len;
 
   CompilerResult result = compile_expression(compiler, loop->condition);
@@ -506,8 +523,12 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
 
   size_t num_locals = compiler->symbol_table->num_definitions;
 
-  emit_no_operands(compiler, OP_CONTINUE);
+  if (!last_instruction_is(compiler, OP_CONTINUE)) {
+    emit_no_operands(compiler, OP_CONTINUE);
+  }
+
   Instructions *loop_instructions = leave_compiler_scope(compiler);
+  exit_loop(compiler);
 
   for (size_t i = 0; i < free_symbols_len; i++) {
     load_symbol(compiler, &free_symbols[i]);
@@ -521,8 +542,10 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
 
   emit(compiler, OP_JMP, (int[]){before_condition_pos}, 1);
 
-  size_t after_consequence_pos = compiler_current_instructions(compiler)->len;
-  change_operand(compiler, jmp_if_false_pos, after_consequence_pos);
+  size_t after_loop_pos = compiler_current_instructions(compiler)->len;
+  change_operand(compiler, jmp_if_false_pos, after_loop_pos);
+
+  patch_break_statements(compiler, after_loop_pos);
 
   compiler->is_void_expression = true;
 
@@ -687,6 +710,12 @@ void compiler_error(CompilerResult error, char *buf, size_t bufsize) {
   case COMPILER_UNINDEXABLE_TYPE:
     snprintf(buf, bufsize, "unknown type");
     break;
+  case COMPILER_BREAK_OUTSIDE_LOOP:
+    snprintf(buf, bufsize, "Illegal break statement outside loop");
+    break;
+  case COMPILER_CONTINUE_OUTSIDE_LOOP:
+    snprintf(buf, bufsize, "Illegal continue statement outside loop");
+    break;
   case COMPILER_OK:
     break;
   }
@@ -706,4 +735,27 @@ Instructions *leave_compiler_scope(Compiler *c) {
   free_symbol_table(temp);
 
   return instructions;
+}
+
+void enter_loop(Compiler *c) {
+  c->loop = (CurrentLoop){
+      .in_loop = true,
+      .break_location_index = 0,
+  };
+}
+
+void exit_loop(Compiler *c) {
+  c->loop = (CurrentLoop){
+      .in_loop = false,
+  };
+}
+
+void new_break_statement(Compiler *c, size_t break_pos) {
+  c->loop.break_locations[c->loop.break_location_index++] = break_pos;
+}
+
+void patch_break_statements(Compiler *c, size_t exit_position) {
+  for (size_t i = 0; i < c->loop.break_location_index; i++) {
+    change_operand(c, c->loop.break_locations[i], exit_position);
+  }
 }

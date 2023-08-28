@@ -50,6 +50,7 @@ typedef enum {
   OP_SET_FREE,
   OP_LOOP,
   OP_CONTINUE,
+  OP_BREAK,
   OP_COUNT,
 } OpCode;
 

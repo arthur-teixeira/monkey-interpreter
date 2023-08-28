@@ -11,12 +11,20 @@ typedef enum {
   COMPILER_UNKNOWN_STATEMENT,
   COMPILER_UNKNOWN_IDENTIFIER,
   COMPILER_UNINDEXABLE_TYPE,
+  COMPILER_BREAK_OUTSIDE_LOOP,
+  COMPILER_CONTINUE_OUTSIDE_LOOP,
 } CompilerResult;
 
 typedef struct {
   OpCode op;
   size_t position;
 } EmmittedInstruction;
+
+typedef struct {
+  bool in_loop;
+  size_t break_location_index;
+  size_t break_locations[100];
+} CurrentLoop;
 
 typedef struct {
   Instructions instructions;
@@ -30,6 +38,7 @@ typedef struct {
   CompilationScope scopes[256];
   size_t scope_index;
   bool is_void_expression;
+  CurrentLoop loop;
 } Compiler;
 
 Compiler *new_compiler();
@@ -54,5 +63,8 @@ void enter_compiler_scope(Compiler *);
 Instructions *leave_compiler_scope(Compiler *);
 
 void save_to_file(Bytecode, const char *);
+void enter_loop(Compiler *);
+void exit_loop(Compiler *);
+void patch_break_statements(Compiler *, size_t);
 
 #endif // COMPILER_H

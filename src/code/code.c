@@ -104,6 +104,11 @@ static Definition definitions[OP_COUNT] = {
     },
     {"OP_LOOP"},
     {"OP_CONTINUE"},
+    {
+      .name = "OP_BREAK",
+      .operand_count = 1,
+      .operand_widths = {1},
+    },
 };
 
 Definition *lookup(OpCode opcode) {

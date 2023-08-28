@@ -623,6 +623,14 @@ VMResult run_vm(VM *vm) {
       vm->sp = frame.base_pointer;
       break;
     }
+    case OP_BREAK: {
+      uint16_t pos = big_endian_read_uint16(ins, ip + 1);
+      Frame frame = pop_frame(vm);
+      vm->sp = frame.base_pointer;
+
+      current_frame(vm)->ip = pos - 1;
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }

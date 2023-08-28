@@ -1523,6 +1523,104 @@ void test_while_loops(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_loop_control_statements(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "let a = 0; while (a < 10) { continue; };",
+          .expected_constants_len = 3,
+          .expected_constants =
+              {
+                  new_number(0),
+                  new_number(10),
+                  new_concatted_compiled_loop(
+                      (Instruction[]){
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
+                      },
+                      1, 0),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GREATER, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){24}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
+                  make_instruction(OP_LOOP, (int[]){}, 0),
+                  make_instruction(OP_JMP, (int[]){6}, 1),
+              },
+          .expected_instructions_len = 13,
+      },
+      {
+          .input = "let a = 0; while (a < 10) { if (a == 5) { continue; }; };",
+          .expected_constants_len = 4,
+          .expected_constants =
+              {
+                  new_number(0),
+                  new_number(10),
+                  new_number(5),
+                  new_concatted_compiled_loop(
+                      (Instruction[]){
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                          make_instruction(OP_EQ, (int[]){}, 0),
+                          make_instruction(OP_JMP_IF_FALSE, (int[]){14}, 1),
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
+                          make_instruction(OP_JMP, (int[]){15}, 1),
+                          make_instruction(OP_NULL, (int[]){}, 0),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
+                      },
+                      9, 0),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GREATER, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){24}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
+                  make_instruction(OP_LOOP, (int[]){}, 0),
+                  make_instruction(OP_JMP, (int[]){6}, 1),
+              },
+          .expected_instructions_len = 13,
+      },
+      {
+          .input = "let a = 0; while (a < 10) { break; };",
+          .expected_constants_len = 3,
+          .expected_constants =
+              {
+                  new_number(0),
+                  new_number(10),
+                  new_concatted_compiled_loop(
+                      (Instruction[]){
+                          make_instruction(OP_BREAK, (int[]){6}, 1),
+                      },
+                      1, 0),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_GREATER, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){24}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){2, 0}, 2),
+                  make_instruction(OP_LOOP, (int[]){}, 0),
+                  make_instruction(OP_JMP, (int[]){6}, 1),
+              },
+          .expected_instructions_len = 13,
+      },
+
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_function_calls);
@@ -1542,5 +1640,6 @@ int main(void) {
   RUN_TEST(test_recursive_functions);
   RUN_TEST(test_reassignment);
   RUN_TEST(test_while_loops);
+  RUN_TEST(test_loop_control_statements);
   return UNITY_END();
 }

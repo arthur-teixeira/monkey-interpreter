@@ -54,8 +54,8 @@ $ ./bin/monkey -d <path-to-bytecode-file>
       - [X] While loop as a closure
     - [ ] For loop
   - [X] Compiled loop binary format
+- [X] Continue statements
 - [ ] Break statements
-- [ ] Continue statements
 - [X] Reassignment expression without let keyword
   - [X] Reassignment in compiler
 - [X] Binary numbers
