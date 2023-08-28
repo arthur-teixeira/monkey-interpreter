@@ -60,6 +60,9 @@ static void write_constants(Bytecode bytecode, FILE *file) {
     case COMPILED_FUNCTION_OBJ:
       write_function_constant(file, (CompiledFunction *)constant);
       break;
+    case COMPILED_LOOP_OBJ:
+      write_loop_constant(file, (CompiledLoop *)constant);
+      break;
     default:
       assert(0 && "unknown constant type");
     }
@@ -97,6 +100,18 @@ static void write_function_constant(FILE *file, CompiledFunction *fn) {
   write_byte(file, (uint8_t)fn->num_parameters);
 
   write_instructions(fn->instructions, file);
+}
+
+static void write_loop_constant(FILE *file, CompiledLoop *loop) {
+  write_byte(file, loop->type);
+
+  uint8_t local_variables_count[2];
+  uint16_to_big_endian(loop->num_locals, local_variables_count);
+
+  write_byte(file, local_variables_count[0]);
+  write_byte(file, local_variables_count[1]);
+
+  write_instructions(loop->instructions, file);
 }
 
 static void write_instructions(Instructions instructions, FILE *file) {

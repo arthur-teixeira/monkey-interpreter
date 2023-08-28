@@ -61,6 +61,7 @@ The constant_type field stores the enum value defining the type of the constant.
 | 0     | NUMBER_OBJ            |
 | 6     | STRING_OBJ            |
 | 12    | COMPILED_FUNCTION_OBJ |
+| 14    | COMPILED_LOOP_OBJ     |
 
 ## Number constant
 A number object contains a double storing the value of the number.
@@ -89,3 +90,12 @@ function_constant { \
       [instructions_length] bytes instructions; \
 }
 
+## Compiled loop constant
+A compiled loop constant is defined as the following structure:
+
+loop_constant { \
+      2 bytes                     local_variables_count; \
+      1 byte                      parameters_count; \
+      2 bytes                     instructions_length; \
+      [instructions_length] bytes instructions; \
+}

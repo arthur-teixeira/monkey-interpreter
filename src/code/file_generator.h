@@ -9,4 +9,5 @@ static void write_instructions(Instructions, FILE *);
 static void write_number_constant(FILE *, Number *);
 static void write_string_constant(FILE *, String *);
 static void write_function_constant(FILE *, CompiledFunction *);
+static void write_loop_constant(FILE *, CompiledLoop *);
 void dump_file(const char *);

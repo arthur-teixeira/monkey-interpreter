@@ -51,7 +51,11 @@ $ ./bin/monkey -d <path-to-bytecode-file>
 - [X] For/while loops
   - [ ] For/while loop in compiler
     - [X] While loop
-  - [ ] For/while closures in compiler
+      - [X] While loop as a closure
+    - [ ] For loop
+  - [X] Compiled loop binary format
+- [ ] Break statements
+- [ ] Continue statements
 - [X] Reassignment expression without let keyword
   - [X] Reassignment in compiler
 - [X] Binary numbers
