@@ -659,6 +659,24 @@ void test_while_loop(void) {
   VM_RUN_TESTS(tests);
 }
 
+void test_while_loop_closures(void) {
+  vmTestCase tests[] = {
+      {
+          .input = "let fun = fn(x) {   "
+                   "  let acc = 0;      "
+                   "  while (acc < x) { "
+                   "    acc = acc + 1;  "
+                   "  };                "
+                   "  return acc;       "
+                   "};                  "
+                   "fun(10);            ",
+          .expected = new_number(10),
+      },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -678,5 +696,6 @@ int main(void) {
   RUN_TEST(test_recursive_functions);
   RUN_TEST(test_reassignments);
   RUN_TEST(test_while_loop);
+  RUN_TEST(test_while_loop_closures);
   return UNITY_END();
 }

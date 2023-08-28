@@ -128,5 +128,6 @@ Object *new_concatted_string(String *, String *);
 Object *new_error(char *);
 Object *new_array(Object **, size_t);
 Object *new_closure(Object *);
-Object *new_compiled_while_loop(Instructions *, size_t);
+Object *new_compiled_loop(Instructions *, size_t);
+Object *new_concatted_compiled_loop(Instructions *, size_t, size_t);
 #endif

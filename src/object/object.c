@@ -252,7 +252,17 @@ Object *new_compiled_function(Instructions *instructions, size_t num_locals,
   return (Object *)fn;
 }
 
-Object *new_compiled_while_loop(Instructions *instructions, size_t num_locals) {
+Object *new_concatted_compiled_function(Instructions *instructions,
+                                        size_t instructions_count) {
+  CompiledFunction *fn = malloc(sizeof(CompiledFunction));
+  assert(fn != NULL);
+
+  fn->instructions = concat_instructions(instructions_count, instructions);
+
+  return (Object *)fn;
+}
+
+Object *new_compiled_loop(Instructions *instructions, size_t num_locals) {
   CompiledLoop *loop = malloc(sizeof(CompiledLoop));
   assert(loop != NULL);
 
@@ -263,14 +273,16 @@ Object *new_compiled_while_loop(Instructions *instructions, size_t num_locals) {
   return (Object *)loop;
 }
 
-Object *new_concatted_compiled_function(Instructions *instructions,
-                                        size_t instructions_count) {
-  CompiledFunction *fn = malloc(sizeof(CompiledFunction));
-  assert(fn != NULL);
+Object *new_concatted_compiled_loop(Instructions *instructions,
+                                    size_t instructions_count,
+                                    size_t num_locals) {
+  CompiledLoop *loop = malloc(sizeof(CompiledLoop));
+  assert(loop != NULL);
 
-  fn->instructions = concat_instructions(instructions_count, instructions);
+  loop->instructions = concat_instructions(instructions_count, instructions);
+  loop->num_locals = num_locals;
 
-  return (Object *)fn;
+  return (Object *)loop;
 }
 
 void free_object(Object *obj) {

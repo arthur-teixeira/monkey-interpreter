@@ -295,7 +295,7 @@ VMResult call_builtin_function(VM *vm, Builtin *fn, size_t num_args) {
 }
 
 VMResult call_closure(VM *vm, Closure *closure, size_t num_args) {
-  assert (closure->enclosed->type == COMPILED_FUNCTION_OBJ);
+  assert(closure->enclosed->type == COMPILED_FUNCTION_OBJ);
   CompiledFunction *fn = (CompiledFunction *)closure->enclosed;
 
   if (num_args != fn->num_parameters) {
@@ -353,8 +353,6 @@ VMResult run_vm(VM *vm) {
     VMResult result;
 
     switch (op) {
-    case OP_LOOP:
-      assert(0 && "NOT IMPLEMENTED");
     case OP_CONSTANT: {
       uint16_t constant_index = big_endian_read_uint16(ins, ip + 1);
 
@@ -593,7 +591,8 @@ VMResult run_vm(VM *vm) {
 
       // Is this dangerous? What if the variables are of different types?
       // Could not reproduce any errors, but it seems like it could be a problem
-      memcpy(current_closure->free_variables[free_index], new_value, sizeof_object(new_value));
+      memcpy(current_closure->free_variables[free_index], new_value,
+             sizeof_object(new_value));
       break;
     }
     case OP_CURRENT_CLOSURE: {
@@ -602,6 +601,26 @@ VMResult run_vm(VM *vm) {
       if (result != VM_OK) {
         return result;
       }
+      break;
+    }
+    case OP_LOOP: {
+      Closure *closure = (Closure *)stack_pop(vm);
+
+      assert(closure->type == CLOSURE_OBJ);
+      assert(closure->enclosed->type == COMPILED_LOOP_OBJ);
+
+      CompiledLoop *loop = (CompiledLoop *)closure->enclosed;
+
+      Frame frame = new_frame(closure, vm->sp);
+      push_frame(vm, frame);
+
+      vm->sp = frame.base_pointer + loop->num_locals;
+
+      break;
+    }
+    case OP_CONTINUE: {
+      Frame frame = pop_frame(vm);
+      vm->sp = frame.base_pointer;
       break;
     }
     case OP_COUNT:

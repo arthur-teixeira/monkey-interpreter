@@ -86,8 +86,19 @@ void test_compiled_function(Object *expected, Object *actual) {
   int_array_free(&expected_fn->instructions);
 }
 
+void test_compiled_loop(Object *expected, Object *actual) {
+  CompiledLoop *expected_loop = (CompiledLoop *)expected;
+  CompiledLoop *actual_loop = (CompiledLoop *)actual;
+
+  test_instructions(&expected_loop->instructions, &actual_loop->instructions);
+  TEST_ASSERT_EQUAL(expected_loop->num_locals, actual_loop->num_locals);
+  int_array_free(&expected_loop->instructions);
+}
+
 void test_constants(compilerTestCase test, Bytecode code) {
-  for (size_t i = 0; i < test.expected_constants_len; i++) {
+  TEST_ASSERT_EQUAL(test.expected_constants_len, code.constants.len);
+
+  for (size_t i = 0; i < code.constants.len; i++) {
     Object *constant = code.constants.arr[i];
     switch (constant->type) {
     case NUMBER_OBJ:
@@ -98,6 +109,9 @@ void test_constants(compilerTestCase test, Bytecode code) {
       break;
     case COMPILED_FUNCTION_OBJ:
       test_compiled_function(test.expected_constants[i], constant);
+      break;
+    case COMPILED_LOOP_OBJ:
+      test_compiled_loop(test.expected_constants[i], constant);
       break;
     default:
       TEST_FAIL_MESSAGE("unreachable");
@@ -1470,12 +1484,23 @@ void test_while_loops(void) {
   compilerTestCase tests[] = {
       {
           .input = "let a = 0; while (a < 10) { a = a + 1; }; a;",
-          .expected_constants_len = 3,
+          .expected_constants_len = 4,
           .expected_constants =
               {
                   new_number(0),
                   new_number(10),
                   new_number(1),
+                  new_concatted_compiled_loop(
+                      (Instruction[]){
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                          make_instruction(OP_ADD, (int[]){}, 0),
+                          make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
+                      },
+                      7, 0),
               },
           .expected_instructions =
               {
@@ -1484,13 +1509,9 @@ void test_while_loops(void) {
                   make_instruction(OP_CONSTANT, (int[]){1}, 1),
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_GREATER, (int[]){}, 0),
-                  make_instruction(OP_JMP_IF_FALSE, (int[]){33}, 1),
-                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
-                  make_instruction(OP_ADD, (int[]){}, 0),
-                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_POP, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){24}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
+                  make_instruction(OP_LOOP, (int[]){}, 0),
                   make_instruction(OP_JMP, (int[]){6}, 1),
                   make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
                   make_instruction(OP_POP, (int[]){}, 0),

@@ -506,14 +506,14 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
 
   size_t num_locals = compiler->symbol_table->num_definitions;
 
+  emit_no_operands(compiler, OP_CONTINUE);
   Instructions *loop_instructions = leave_compiler_scope(compiler);
 
   for (size_t i = 0; i < free_symbols_len; i++) {
     load_symbol(compiler, &free_symbols[i]);
   }
 
-  Object *compiled_loop_body =
-      new_compiled_while_loop(loop_instructions, num_locals);
+  Object *compiled_loop_body = new_compiled_loop(loop_instructions, num_locals);
 
   size_t loop_body_pos = add_constant(compiler, compiled_loop_body);
   emit(compiler, OP_CLOSURE, (int[]){loop_body_pos, free_symbols_len}, 2);
