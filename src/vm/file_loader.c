@@ -98,6 +98,36 @@ static Object *read_function_constant(FILE *file) {
   return (Object *)fn;
 }
 
+static Object *read_loop_constant(FILE *file) {
+  CompiledLoop *loop = malloc(sizeof(CompiledLoop));
+  assert(loop);
+  loop->type = COMPILED_LOOP_OBJ;
+
+  int8_t local_variables_count_buf[2];
+  local_variables_count_buf[0] = fgetc(file);
+  local_variables_count_buf[1] = fgetc(file);
+
+  uint16_t local_variables_count;
+  big_endian_to_uint16(&local_variables_count, local_variables_count_buf);
+
+  loop->num_locals = local_variables_count;
+
+  int8_t instructions_len_buf[2];
+  instructions_len_buf[0] = fgetc(file);
+  instructions_len_buf[1] = fgetc(file);
+
+  uint16_t instructions_len;
+  big_endian_to_uint16(&instructions_len, instructions_len_buf);
+
+  int_array_init(&loop->instructions, instructions_len);
+
+  for (size_t i = 0; i < instructions_len; i++) {
+    int_array_append(&loop->instructions, fgetc(file));
+  }
+
+  return (Object *)loop;
+}
+
 static Object *read_constant(FILE *file) {
   ObjectType type = fgetc(file);
   switch (type) {
@@ -107,6 +137,8 @@ static Object *read_constant(FILE *file) {
     return read_string_constant(file);
   case COMPILED_FUNCTION_OBJ:
     return read_function_constant(file);
+  case COMPILED_LOOP_OBJ:
+    return read_loop_constant(file);
   default:
     assert(0 && "unknown constant value");
   }

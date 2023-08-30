@@ -25,6 +25,19 @@ static void disassemble_function_constant(CompiledFunction *fn,
   free(instructions_buf.buf);
 }
 
+static void disassemble_loop_constant(CompiledLoop *loop,
+                                          ResizableBuffer *buf) {
+  append_to_buf(buf, "Loop body:\n-------------\n");
+
+  ResizableBuffer instructions_buf;
+  init_resizable_buffer(&instructions_buf, 100);
+
+  instructions_to_string(&instructions_buf, &loop->instructions);
+  append_to_buf(buf, instructions_buf.buf);
+
+  free(instructions_buf.buf);
+}
+
 static void disassemble_constant(Object *constant, ResizableBuffer *buf) {
   switch (constant->type) {
   case STRING_OBJ:
@@ -41,6 +54,9 @@ static void disassemble_constant(Object *constant, ResizableBuffer *buf) {
     break;
   case COMPILED_FUNCTION_OBJ:
     disassemble_function_constant((CompiledFunction *)constant, buf);
+    break;
+  case COMPILED_LOOP_OBJ:
+    disassemble_loop_constant((CompiledLoop *)constant, buf);
     break;
   default:
     fprintf(stderr, "Unknown constant type: %d\n", constant->type);
