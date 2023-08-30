@@ -55,7 +55,7 @@ $ ./bin/monkey -d <path-to-bytecode-file>
     - [ ] For loop
   - [X] Compiled loop binary format
 - [X] Continue statements
-- [ ] Break statements
+- [X] Break statements
 - [X] Reassignment expression without let keyword
   - [X] Reassignment in compiler
 - [X] Binary numbers
@@ -72,6 +72,5 @@ $ ./bin/monkey -d <path-to-bytecode-file>
   - [X] Execute in the vm after compilation
   - [X] Write bytecode to file
 - [X] File disassembler
-- [ ] Convert objects to tagged unions
 - [ ] Garbage collection
 - [ ] Concurrent GC

@@ -67,7 +67,7 @@ void test_error_object(Object *expected, Object *actual) {
 }
 
 void test_expected_object(Object *expected, Object *actual) {
-  switch (actual->type) {
+  switch (expected->type) {
   case NUMBER_OBJ:
     test_number_object(expected, actual);
     break;
@@ -653,6 +653,17 @@ void test_while_loop(void) {
                    "};"
                    "a;",
           .expected = new_number(10),
+      },
+      {
+          .input = "let a = 0;"
+                   "while (a < 10) {"
+                   "  a = a + 1;    "
+                   "  if (a == 5) { "
+                   "    break;      "
+                   " }              "
+                   "};"
+                   "a;",
+          .expected = new_number(5),
       },
   };
 

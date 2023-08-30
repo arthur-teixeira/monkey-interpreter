@@ -624,11 +624,10 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_BREAK: {
-      uint16_t pos = big_endian_read_uint16(ins, ip + 1);
+      uint16_t pos = ins->arr[ip + 1];
       Frame frame = pop_frame(vm);
       vm->sp = frame.base_pointer;
-
-      current_frame(vm)->ip = pos - 1;
+      current_frame(vm)->ip = pos;
       break;
     }
     case OP_COUNT:
