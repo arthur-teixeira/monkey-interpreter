@@ -506,12 +506,22 @@ CompilerResult compile_function_literal(Compiler *compiler,
   return COMPILER_OK;
 }
 
-CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
+CompilerResult compile_loop(Compiler *compiler, Expression *condition,
+                            Statement *init, BlockStatement *body,
+                            Statement *update) {
   enter_loop(compiler);
+  CompilerResult result;
+
+  if (init) {
+    result = compile_statement(compiler, init);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+  }
 
   size_t before_condition_pos = compiler_current_instructions(compiler)->len;
 
-  CompilerResult result = compile_expression(compiler, loop->condition);
+  result = compile_expression(compiler, condition);
   if (result != COMPILER_OK) {
     return result;
   }
@@ -520,7 +530,7 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
       emit(compiler, OP_JMP_IF_FALSE, (int[]){JUMP_SENTINEL}, 1);
 
   enter_compiler_scope(compiler);
-  result = compile_block_statement(compiler, loop->body);
+  result = compile_block_statement(compiler, body);
   if (result != COMPILER_OK) {
     return result;
   }
@@ -547,6 +557,13 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
   emit(compiler, OP_CLOSURE, (int[]){loop_body_pos, free_symbols_len}, 2);
   emit_no_operands(compiler, OP_LOOP);
 
+  if (update) {
+    result = compile_statement(compiler, update);
+    if (result != COMPILER_OK) {
+      return result;
+    }
+  }
+
   emit(compiler, OP_JMP, (int[]){before_condition_pos}, 1);
 
   size_t after_loop_pos = compiler_current_instructions(compiler)->len;
@@ -558,6 +575,15 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
   compiler->is_void_expression = true;
 
   return COMPILER_OK;
+}
+
+CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
+  return compile_loop(compiler, loop->condition, NULL, loop->body, NULL);
+}
+
+CompilerResult compile_for_loop(Compiler *compiler, ForLoop *loop) {
+  return compile_loop(compiler, loop->condition, loop->initialization,
+                      loop->body, loop->update);
 }
 
 CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
@@ -685,6 +711,8 @@ CompilerResult compile_expression(Compiler *compiler, Expression *expr) {
   }
   case WHILE_EXPR:
     return compile_while_loop(compiler, (WhileLoop *)expr);
+  case FOR_EXPR:
+    return compile_for_loop(compiler, (ForLoop *)expr);
   case REASSIGN_EXPR:
     return compile_reassignment(compiler, (Reassignment *)expr);
   default:

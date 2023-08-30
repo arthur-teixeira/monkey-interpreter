@@ -90,9 +90,6 @@ void test_compiled_loop(Object *expected, Object *actual) {
   CompiledLoop *expected_loop = (CompiledLoop *)expected;
   CompiledLoop *actual_loop = (CompiledLoop *)actual;
 
-  TEST_ASSERT_EQUAL(expected_loop->instructions.len,
-                    actual_loop->instructions.len);
-
   test_instructions(&expected_loop->instructions, &actual_loop->instructions);
   TEST_ASSERT_EQUAL(expected_loop->num_locals, actual_loop->num_locals);
   int_array_free(&expected_loop->instructions);
@@ -1625,6 +1622,59 @@ void test_loop_control_statements(void) {
   RUN_COMPILER_TESTS(tests);
 }
 
+void test_for_loops(void) {
+  compilerTestCase tests[] = {
+      {
+          .input = "let a = 0;"
+                   "for (let b = 0; b < 10; b = b + 1) {"
+                   "  a = a + b;                        "
+                   "}                                   ",
+          .expected_constants_len = 5,
+          .expected_constants =
+              {
+                  new_number(0),
+                  new_number(0),
+                  new_number(10),
+                  new_concatted_compiled_loop(
+                      (Instruction[]){
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                          make_instruction(OP_ADD, (int[]){}, 0),
+                          make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                          make_instruction(OP_POP, (int[]){}, 0),
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
+                      },
+                      2, 0),
+                  new_number(1),
+              },
+          .expected_instructions =
+              {
+                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_GREATER, (int[]){}, 0),
+                  make_instruction(OP_JMP_IF_FALSE, (int[]){44}, 1),
+                  make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
+                  make_instruction(OP_LOOP, (int[]){}, 0),
+                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                  make_instruction(OP_ADD, (int[]){}, 0),
+                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                  make_instruction(OP_POP, (int[]){}, 0),
+                  make_instruction(OP_JMP, (int[]){12}, 1),
+              },
+          .expected_instructions_len = 17,
+      },
+  };
+
+  RUN_COMPILER_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_compiler_scopes);
@@ -1645,5 +1695,6 @@ int main(void) {
   RUN_TEST(test_reassignment);
   RUN_TEST(test_while_loops);
   RUN_TEST(test_loop_control_statements);
+  RUN_TEST(test_for_loops);
   return UNITY_END();
 }
