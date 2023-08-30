@@ -20,10 +20,10 @@ typedef struct {
   size_t position;
 } EmmittedInstruction;
 
-typedef struct {
-  bool in_loop;
+typedef struct CurrentLoop {
   size_t break_location_index;
   size_t break_locations[100];
+  struct CurrentLoop *enclosing;
 } CurrentLoop;
 
 typedef struct {
@@ -38,7 +38,7 @@ typedef struct {
   CompilationScope scopes[256];
   size_t scope_index;
   bool is_void_expression;
-  CurrentLoop loop;
+  CurrentLoop *loop;
 } Compiler;
 
 Compiler *new_compiler();

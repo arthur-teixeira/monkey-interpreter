@@ -688,6 +688,41 @@ void test_while_loop_closures(void) {
   VM_RUN_TESTS(tests);
 }
 
+void test_for_loop(void) {
+  vmTestCase tests[] = {
+      {
+          .input = "let a = 0;"
+                   "for (let b = 0; b < 11; b = b + 1) {"
+                   "  a = a + b;                        "
+                   "}"
+                   "a; ",
+          .expected = new_number(55),
+      },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
+void test_nested_loops(void) {
+  vmTestCase tests[] = {
+      {
+          .input = "let a = 0;         "
+                   "while (a < 2) {    "
+                   "  let b = 0;       "
+                   "  while (b < 10) { "
+                   "    a = a + b;     "
+                   "    b = b + 1;     "
+                   "  }                "
+                   "  a = a + 1;       "
+                   "}                  "
+                   "a;                 ",
+          .expected = new_number(46),
+      },
+  };
+
+  VM_RUN_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_integer_arithmetic);
@@ -708,5 +743,7 @@ int main(void) {
   RUN_TEST(test_reassignments);
   RUN_TEST(test_while_loop);
   RUN_TEST(test_while_loop_closures);
+  RUN_TEST(test_for_loop);
+  RUN_TEST(test_nested_loops);
   return UNITY_END();
 }

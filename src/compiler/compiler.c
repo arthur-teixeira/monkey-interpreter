@@ -40,6 +40,7 @@ Compiler *new_compiler() {
   compiler->scopes[0] = new_compilation_scope();
   compiler->scope_index = 0;
   compiler->is_void_expression = false;
+  compiler->loop = NULL;
 
   return compiler;
 }
@@ -232,7 +233,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     break;
   }
   case CONTINUE_STATEMENT: {
-    if (!compiler->loop.in_loop) {
+    if (!compiler->loop) {
       return COMPILER_CONTINUE_OUTSIDE_LOOP;
     }
 
@@ -240,7 +241,7 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
     break;
   }
   case BREAK_STATEMENT: {
-    if (!compiler->loop.in_loop) {
+    if (!compiler->loop) {
       return COMPILER_BREAK_OUTSIDE_LOOP;
     }
     new_break_statement(compiler);
@@ -774,24 +775,30 @@ Instructions *leave_compiler_scope(Compiler *c) {
 }
 
 void enter_loop(Compiler *c) {
-  c->loop = (CurrentLoop){
-      .in_loop = true,
+  CurrentLoop *new_loop = malloc(sizeof(CurrentLoop));
+  assert(new_loop != NULL);
+
+  *new_loop = (CurrentLoop){
+      .break_locations = {0},
       .break_location_index = 0,
+      .enclosing = c->loop,
   };
+
+  c->loop = new_loop;
 }
 
 CurrentLoop exit_loop(Compiler *c) {
-  CurrentLoop temp = c->loop;
-  c->loop = (CurrentLoop){
-      .in_loop = false,
-  };
+  CurrentLoop temp = *c->loop;
+  free(c->loop);
+
+  c->loop = temp.enclosing;
 
   return temp;
 }
 
 void new_break_statement(Compiler *c) {
   size_t break_pos = emit(c, OP_BREAK, (int[]){JUMP_SENTINEL}, 1);
-  c->loop.break_locations[c->loop.break_location_index++] = break_pos;
+  c->loop->break_locations[c->loop->break_location_index++] = break_pos;
 }
 
 void patch_break_statements(Compiler *c, size_t exit_position,

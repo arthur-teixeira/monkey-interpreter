@@ -1686,8 +1686,6 @@ int main(void) {
   RUN_TEST(test_string_expressions);
   RUN_TEST(test_array_literals);
   RUN_TEST(test_hash_literals);
-  RUN_TEST(test_index_expressions);
-  RUN_TEST(test_functions);
   RUN_TEST(test_let_statement_scopes);
   RUN_TEST(test_builtins);
   RUN_TEST(test_closures);
@@ -1696,5 +1694,7 @@ int main(void) {
   RUN_TEST(test_while_loops);
   RUN_TEST(test_loop_control_statements);
   RUN_TEST(test_for_loops);
+  RUN_TEST(test_index_expressions);
+  RUN_TEST(test_functions);
   return UNITY_END();
 }

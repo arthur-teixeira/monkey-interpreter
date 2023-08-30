@@ -95,7 +95,6 @@ A compiled loop constant is defined as the following structure:
 
 loop_constant { \
       2 bytes                     local_variables_count; \
-      1 byte                      parameters_count; \
       2 bytes                     instructions_length; \
       [instructions_length] bytes instructions; \
 }
