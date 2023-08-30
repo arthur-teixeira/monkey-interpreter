@@ -11,7 +11,7 @@ void usage() {
   printf("Usage: monkey [options] [input-file] [output-file]\n");
   printf("Options:\n");
   printf("  -i\t\t\tStarts the REPL in interpret mode\n");
-  printf("  -c\t\t\tStarts the REPL in compile mode\n");
+  printf("  -c\t\t\tCompiles [input-file] and writes binary to [output-file]\n");
   printf("  -d\t\t\tDisassembles [input-file]\n");
   printf("  -h\t\t\tPrints this help message\n");
 }
