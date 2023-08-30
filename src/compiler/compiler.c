@@ -161,18 +161,25 @@ void remove_last_pop(Compiler *c) {
       compiler_current_scope(c)->previous_instruction;
 }
 
-void replace_instruction(Compiler *compiler, size_t pos, Instruction ins) {
+void replace_instruction(Compiler *compiler, size_t pos, Instruction ins,
+                         Instructions *instructions) {
   for (size_t i = 0; i < ins.len; i++) {
-    compiler_current_instructions(compiler)->arr[pos + i] = ins.arr[i];
+    instructions->arr[pos + i] = ins.arr[i];
   }
 }
 
-void change_operand(Compiler *compiler, size_t opPos, size_t operand) {
-  OpCode op = compiler_current_instructions(compiler)->arr[opPos];
+void change_operand_ex(Compiler *compiler, size_t opPos, size_t operand,
+                       Instructions *ins) {
+  OpCode op = ins->arr[opPos];
   Instruction new_instruction = make_instruction(op, (int[]){operand}, 1);
 
-  replace_instruction(compiler, opPos, new_instruction);
+  replace_instruction(compiler, opPos, new_instruction, ins);
   int_array_free(&new_instruction);
+}
+
+void change_operand(Compiler *compiler, size_t opPos, size_t operand) {
+  return change_operand_ex(compiler, opPos, operand,
+                           compiler_current_instructions(compiler));
 }
 
 CompilerResult compile_program(Compiler *compiler, Program *program) {
@@ -234,9 +241,9 @@ CompilerResult compile_statement(Compiler *compiler, Statement *stmt) {
   }
   case BREAK_STATEMENT: {
     if (!compiler->loop.in_loop) {
-      
+      return COMPILER_BREAK_OUTSIDE_LOOP;
     }
-    emit(compiler, OP_BREAK, (int[]){JUMP_SENTINEL}, 1);
+    new_break_statement(compiler);
     break;
   }
   default:
@@ -472,7 +479,7 @@ CompilerResult compile_function_literal(Compiler *compiler,
         make_instruction(OP_RETURN_VALUE, (int[]){}, 0);
     replace_instruction(
         compiler, compiler_current_scope(compiler)->last_instruction.position,
-        new_instruction);
+        new_instruction, compiler_current_instructions(compiler));
   }
 
   if (!last_instruction_is(compiler, OP_RETURN_VALUE)) {
@@ -528,7 +535,7 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
   }
 
   Instructions *loop_instructions = leave_compiler_scope(compiler);
-  exit_loop(compiler);
+  CurrentLoop loop_info = exit_loop(compiler);
 
   for (size_t i = 0; i < free_symbols_len; i++) {
     load_symbol(compiler, &free_symbols[i]);
@@ -545,7 +552,8 @@ CompilerResult compile_while_loop(Compiler *compiler, WhileLoop *loop) {
   size_t after_loop_pos = compiler_current_instructions(compiler)->len;
   change_operand(compiler, jmp_if_false_pos, after_loop_pos);
 
-  patch_break_statements(compiler, after_loop_pos);
+  patch_break_statements(compiler, after_loop_pos, loop_info,
+                         loop_instructions);
 
   compiler->is_void_expression = true;
 
@@ -744,18 +752,23 @@ void enter_loop(Compiler *c) {
   };
 }
 
-void exit_loop(Compiler *c) {
+CurrentLoop exit_loop(Compiler *c) {
+  CurrentLoop temp = c->loop;
   c->loop = (CurrentLoop){
       .in_loop = false,
   };
+
+  return temp;
 }
 
-void new_break_statement(Compiler *c, size_t break_pos) {
+void new_break_statement(Compiler *c) {
+  size_t break_pos = emit(c, OP_BREAK, (int[]){JUMP_SENTINEL}, 1);
   c->loop.break_locations[c->loop.break_location_index++] = break_pos;
 }
 
-void patch_break_statements(Compiler *c, size_t exit_position) {
-  for (size_t i = 0; i < c->loop.break_location_index; i++) {
-    change_operand(c, c->loop.break_locations[i], exit_position);
+void patch_break_statements(Compiler *c, size_t exit_position,
+                            CurrentLoop loop_info, Instructions *ins) {
+  for (size_t i = 0; i < loop_info.break_location_index; i++) {
+    change_operand_ex(c, loop_info.break_locations[i], exit_position, ins);
   }
 }

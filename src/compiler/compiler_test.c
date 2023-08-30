@@ -90,6 +90,9 @@ void test_compiled_loop(Object *expected, Object *actual) {
   CompiledLoop *expected_loop = (CompiledLoop *)expected;
   CompiledLoop *actual_loop = (CompiledLoop *)actual;
 
+  TEST_ASSERT_EQUAL(expected_loop->instructions.len,
+                    actual_loop->instructions.len);
+
   test_instructions(&expected_loop->instructions, &actual_loop->instructions);
   TEST_ASSERT_EQUAL(expected_loop->num_locals, actual_loop->num_locals);
   int_array_free(&expected_loop->instructions);
@@ -1597,9 +1600,10 @@ void test_loop_control_statements(void) {
                   new_number(10),
                   new_concatted_compiled_loop(
                       (Instruction[]){
-                          make_instruction(OP_BREAK, (int[]){6}, 1),
+                          make_instruction(OP_BREAK, (int[]){24}, 1),
+                          make_instruction(OP_CONTINUE, (int[]){}, 0),
                       },
-                      1, 0),
+                      2, 0),
               },
           .expected_instructions =
               {
@@ -1623,6 +1627,7 @@ void test_loop_control_statements(void) {
 
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_compiler_scopes);
   RUN_TEST(test_function_calls);
   RUN_TEST(test_integer_arithmetic);
   RUN_TEST(test_boolean_expressions);
@@ -1633,7 +1638,6 @@ int main(void) {
   RUN_TEST(test_hash_literals);
   RUN_TEST(test_index_expressions);
   RUN_TEST(test_functions);
-  RUN_TEST(test_compiler_scopes);
   RUN_TEST(test_let_statement_scopes);
   RUN_TEST(test_builtins);
   RUN_TEST(test_closures);

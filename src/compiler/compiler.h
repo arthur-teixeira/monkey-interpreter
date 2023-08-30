@@ -64,7 +64,8 @@ Instructions *leave_compiler_scope(Compiler *);
 
 void save_to_file(Bytecode, const char *);
 void enter_loop(Compiler *);
-void exit_loop(Compiler *);
-void patch_break_statements(Compiler *, size_t);
+CurrentLoop exit_loop(Compiler *);
+void patch_break_statements(Compiler *, size_t, CurrentLoop, Instructions *);
+void new_break_statement(Compiler *);
 
 #endif // COMPILER_H
