@@ -49,10 +49,9 @@ $ ./bin/monkey -d <path-to-bytecode-file>
 
 ## To-do list
 - [X] For/while loops
-  - [ ] For/while loop in compiler
+  - [X] For/while loop in compiler
     - [X] While loop
-      - [X] While loop as a closure
-    - [ ] For loop
+    - [X] For loop
   - [X] Compiled loop binary format
 - [X] Continue statements
 - [X] Break statements
@@ -72,5 +71,9 @@ $ ./bin/monkey -d <path-to-bytecode-file>
   - [X] Execute in the vm after compilation
   - [X] Write bytecode to file
 - [X] File disassembler
+- [ ] Implement bubble sort
 - [ ] Garbage collection
 - [ ] Concurrent GC
+
+## Known bugs
+- [ ] Cannot print to stdout from compiled file
