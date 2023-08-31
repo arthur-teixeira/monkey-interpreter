@@ -1499,6 +1499,30 @@ void test_reassignment(void) {
                       make_instruction(OP_POP, (int[]){}, 0),
                   },
           },
+          {
+              .input = "let hash = { \"a\": 1 }; hash[\"a\"] = 2;",
+              .expected_constants_len = 4,
+              .expected_constants =
+                  {
+                      new_string("a"),
+                      new_number(1),
+                      new_string("a"),
+                      new_number(2),
+                  },
+              .expected_instructions_len = 9,
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_HASH, (int[]){2}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){3}, 1),
+                      make_instruction(OP_REASSIGN_INDEX, (int[]){}, 0),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                  },
+          },
       };
 
   RUN_COMPILER_TESTS(tests);
