@@ -651,8 +651,8 @@ void test_reassignments(void) {
               3),
       },
       {
-        .input = "let a = { \"key\": 10 }; a[\"key\"] = 5; a[\"key\"]",
-        .expected = new_number(5),
+          .input = "let a = { \"key\": 10 }; a[\"key\"] = 5; a[\"key\"]",
+          .expected = new_number(5),
       },
   };
 
