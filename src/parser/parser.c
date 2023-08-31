@@ -805,13 +805,11 @@ Expression *parse_index_expression(Parser *p, Expression *left) {
 }
 
 Expression *parse_reassignment_expression(Parser *p, Expression *left) {
-  assert(left->type == IDENT_EXPR);
-
   Reassignment *reassignment = malloc(sizeof(Reassignment));
   assert(reassignment != NULL);
 
   reassignment->type = REASSIGN_EXPR;
-  reassignment->name = (Identifier *)left;
+  reassignment->name = left;
   reassignment->token = p->cur_token;
 
   parser_next_token(p);

@@ -163,7 +163,7 @@ void hash_literal_to_string(ResizableBuffer *, HashLiteral *);
 typedef struct {
   ExprType type; // REASSIGN_EXPR
   Token token;
-  Identifier *name;
+  Expression *name;
   Expression *value;
 } Reassignment;
 

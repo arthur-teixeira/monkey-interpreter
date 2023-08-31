@@ -599,7 +599,7 @@ CompilerResult compile_for_loop(Compiler *compiler, ForLoop *loop) {
 
 CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
   const Symbol *old_symbol =
-      symbol_resolve(compiler->symbol_table, expr->name->value);
+      symbol_resolve(compiler->symbol_table, ((Identifier *)expr->name)->value);
 
   if (!old_symbol) {
     return COMPILER_UNKNOWN_IDENTIFIER;

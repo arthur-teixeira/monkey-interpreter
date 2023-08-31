@@ -176,7 +176,7 @@ void for_to_string(ResizableBuffer *buf, ForLoop *loop) {
 }
 
 void reassign_to_string(ResizableBuffer *buf, Reassignment *expr) {
-  append_to_buf(buf, expr->name->value);
+  value_to_string(buf, expr->name);
   append_to_buf(buf, " = ");
   value_to_string(buf, expr->value);
 }

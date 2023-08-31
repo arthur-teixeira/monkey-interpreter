@@ -661,17 +661,18 @@ Object *inner_env_get(Environment *env, char *key) {
 }
 
 Object *eval_reassignment(Reassignment *stmt, Environment *env) {
-  Object *cur_value = inner_env_get(env, stmt->name->value);
+  Identifier *name = (Identifier *)stmt->name;
+  Object *cur_value = inner_env_get(env, name->value);
   bool val_in_outer_env = !cur_value;
 
   if (val_in_outer_env) {
-    cur_value = env_get(env, stmt->name->value);
+    cur_value = env_get(env, name->value);
     val_in_outer_env = cur_value;
   }
 
   if (cur_value == NULL) {
     char error_message[255];
-    sprintf(error_message, "%s is not defined", stmt->name->value);
+    sprintf(error_message, "%s is not defined", name->value);
 
     return new_error(error_message);
   }
@@ -684,14 +685,14 @@ Object *eval_reassignment(Reassignment *stmt, Environment *env) {
   if (val_in_outer_env) {
     Environment *cur_env = env->outer;
     Object *outer_env_value;
-    while ((outer_env_value = env_get(cur_env, stmt->name->value)) == NULL) {
+    while ((outer_env_value = env_get(cur_env, name->value)) == NULL) {
       cur_env = cur_env->outer;
     }
 
     assert(cur_env != NULL);
-    env_set(cur_env, stmt->name->value, val);
+    env_set(cur_env, name->value, val);
   } else {
-    env_set(env, stmt->name->value, val);
+    env_set(env, name->value, val);
   }
 
   return NULL;

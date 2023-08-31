@@ -91,7 +91,7 @@ void test_let_statements() {
     TEST_ASSERT_NOT_NULL(program);
     TEST_ASSERT_EQUAL(1, program->statements.len);
 
-    Statement *stmt =program->statements.arr[0]; 
+    Statement *stmt = program->statements.arr[0];
 
     TEST_ASSERT_EQUAL_STRING("let", stmt->token.literal);
     TEST_ASSERT_EQUAL(LET_STATEMENT, stmt->type);
@@ -605,7 +605,10 @@ void test_parsing_reassignment(void) {
 
   Reassignment *reassign = (Reassignment *)stmt->expression;
 
-  TEST_ASSERT_EQUAL_STRING("b", reassign->name->value);
+  TEST_ASSERT_EQUAL(IDENT_EXPR, reassign->name->type);
+  Identifier *name = (Identifier *)reassign->name;
+
+  TEST_ASSERT_EQUAL_STRING("b", name->value);
   TEST_ASSERT_EQUAL(INT_EXPR, reassign->value->type);
 
   NumberLiteral *intt = (NumberLiteral *)reassign->value;
@@ -693,6 +696,30 @@ void test_function_literal_with_name(void) {
   TEST_ASSERT_EQUAL_STRING("myFunction", fn->name);
 }
 
+void test_array_reassignment(void) {
+  char *input = "arr[1] = 2";
+  Program *p = parse_and_check_errors(input);
+  Reassignment *expr = test_single_expression_in_program(p, REASSIGN_EXPR);
+
+  TEST_ASSERT_EQUAL(INDEX_EXPR, expr->name->type);
+  IndexExpression *left = (IndexExpression *)expr->name;
+
+  TEST_ASSERT_EQUAL(IDENT_EXPR, left->left->type);
+  Identifier *left_ident = (Identifier *)left->left;
+
+  TEST_ASSERT_EQUAL_STRING("arr", left_ident->value);
+
+  TEST_ASSERT_EQUAL(INT_EXPR, left->index->type);
+  NumberLiteral *index = (NumberLiteral *)left->index;
+
+  TEST_ASSERT_EQUAL(1, index->value);
+
+  TEST_ASSERT_EQUAL(INT_EXPR, expr->value->type);
+  NumberLiteral *num = (NumberLiteral *)expr->value;
+
+  TEST_ASSERT_EQUAL(2, num->value);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_let_statements);
@@ -724,5 +751,6 @@ int main() {
   RUN_TEST(test_parsing_or);
   RUN_TEST(test_parsing_loop_with_reassignment);
   RUN_TEST(test_function_literal_with_name);
+  RUN_TEST(test_array_reassignment);
   return UNITY_END();
 }
