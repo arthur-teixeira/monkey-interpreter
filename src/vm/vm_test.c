@@ -590,56 +590,72 @@ void test_recursive_functions(void) {
 }
 
 void test_reassignments(void) {
-  vmTestCase tests[] = {{
-                            .input = "let a = 1; "
-                                     " a = 2; a; ",
-                            .expected = new_number(2),
-                        },
-                        {
-                            .input = "let a = fn(x) { x + 2 };"
-                                     "a = fn(x) { x * 2 };"
-                                     "a(10);",
-                            .expected = new_number(20),
-                        },
-                        {
-                            .input = "let a = 10;"
-                                     "a = 20;",
-                            .expected = new_number(20),
-                        },
-                        {
-                            .input = "let a = 10;"
-                                     "let b = fn(x) { a = x; }"
-                                     "b(20);",
-                            .expected = new_number(20),
-                        },
-                        {
-                            .input = "let wrapper = fn() {"
-                                     " let a = 10;"
-                                     " let nestedFn = fn(x) {"
-                                     "   a = x; "
-                                     " };"
-                                     " nestedFn(2);"
-                                     "return a;"
-                                     "};"
-                                     "wrapper();",
-                            .expected = new_number(2),
-                        },
-                        {
-                            .input = "let wrapper = fn() {"
-                                     " let a = 10;"
-                                     " let nestedFn = fn(x) {"
-                                     "   a = x; "
-                                     " };"
-                                     " nestedFn(\"hello world\");"
-                                     "return a;"
-                                     "};"
-                                     "wrapper();",
-                            .expected = new_string("hello world"),
-                        },
-                        {
-                            .input = "let a = 1; a = a + 1; a;",
-                            .expected = new_number(2),
-                        }};
+  vmTestCase tests[] = {
+      {
+          .input = "let a = 1; "
+                   " a = 2; a; ",
+          .expected = new_number(2),
+      },
+      {
+          .input = "let a = fn(x) { x + 2 };"
+                   "a = fn(x) { x * 2 };"
+                   "a(10);",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let a = 10;"
+                   "a = 20;",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let a = 10;"
+                   "let b = fn(x) { a = x; }"
+                   "b(20);",
+          .expected = new_number(20),
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   " let a = 10;"
+                   " let nestedFn = fn(x) {"
+                   "   a = x; "
+                   " };"
+                   " nestedFn(2);"
+                   "return a;"
+                   "};"
+                   "wrapper();",
+          .expected = new_number(2),
+      },
+      {
+          .input = "let wrapper = fn() {"
+                   " let a = 10;"
+                   " let nestedFn = fn(x) {"
+                   "   a = x; "
+                   " };"
+                   " nestedFn(\"hello world\");"
+                   "return a;"
+                   "};"
+                   "wrapper();",
+          .expected = new_string("hello world"),
+      },
+      {
+          .input = "let a = 1; a = a + 1; a;",
+          .expected = new_number(2),
+      },
+      {
+          .input = "let a = [1, 2, 3]; a[1] = 7; a;",
+          .expected = new_array(
+              (Object *[]){
+                  new_number(1),
+                  new_number(7),
+                  new_number(3),
+              },
+              3),
+      },
+      {
+        .input = "let a = { \"key\": 10 }; a[\"key\"] = 5; a[\"key\"]",
+        .expected = new_number(5),
+      },
+  };
 
   VM_RUN_TESTS(tests);
 }
@@ -726,39 +742,59 @@ void test_nested_loops(void) {
 
 void test_nested_closures(void) {
   vmTestCase tests[] = {
-    {
-        .input = "let foo = fn (x) { "
-                 "  let buffer = \"\";                 "
-                 "  let i = 0;                         "
-                 "  while (i < x) {                    "
-                 "    buffer = buffer + \"a\";         "
-                 "    i = i + 1;                       "
-                 "  };                                 "
-                 "  return buffer;                     "
-                 "};                                   "
-                 "foo(1);                              "
-                 "foo(2);                              ",
-        .expected = new_string("aa"),
-    },
-    {
-        .input = "let foo = fn (x) { "
-                 "  let buffer = \"\";                 "
-                 "  for (let i = 0; i < x; i = i + 1) {"
-                 "    buffer = buffer + \"a\";         "
-                 "  };                                 "
-                 "  return buffer;                     "
-                 "};                                   "
-                 "foo(1);                              "
-                 "foo(2);                              ",
-        .expected = new_string("aa"),
-    },
-    };
+      {
+          .input = "let foo = fn (x) { "
+                   "  let buffer = \"\";                 "
+                   "  let i = 0;                         "
+                   "  while (i < x) {                    "
+                   "    buffer = buffer + \"a\";         "
+                   "    i = i + 1;                       "
+                   "  };                                 "
+                   "  return buffer;                     "
+                   "};                                   "
+                   "foo(1);                              "
+                   "foo(2);                              ",
+          .expected = new_string("aa"),
+      },
+      {
+          .input = "let foo = fn (x) { "
+                   "  let buffer = \"\";                 "
+                   "  for (let i = 0; i < x; i = i + 1) {"
+                   "    buffer = buffer + \"a\";         "
+                   "  };                                 "
+                   "  return buffer;                     "
+                   "};                                   "
+                   "foo(1);                              "
+                   "foo(2);                              ",
+          .expected = new_string("aa"),
+      },
+  };
 
   VM_RUN_TESTS(tests);
 }
 
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_integer_arithmetic);
+  RUN_TEST(test_boolean_expressions);
+  RUN_TEST(test_conditionals);
+  RUN_TEST(test_global_let_statements);
+  RUN_TEST(test_string_expressions);
+  RUN_TEST(test_array_literals);
+  RUN_TEST(test_calling_functions);
+  RUN_TEST(test_functions_with_return_statement);
+  RUN_TEST(test_functions_without_return_value);
+  RUN_TEST(test_calling_functions_with_bindings);
+  RUN_TEST(test_functions_with_arguments_and_bindings);
+  RUN_TEST(test_calling_functions_with_wrong_arguments);
+  RUN_TEST(test_builtin_functions);
+  RUN_TEST(test_closures);
+  RUN_TEST(test_recursive_functions);
+  RUN_TEST(test_reassignments);
+  RUN_TEST(test_while_loop);
+  RUN_TEST(test_while_loop_closures);
+  RUN_TEST(test_for_loop);
+  RUN_TEST(test_nested_loops);
   RUN_TEST(test_nested_closures);
   return UNITY_END();
 }

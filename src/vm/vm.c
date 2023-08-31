@@ -243,6 +243,7 @@ Object *vm_build_array(VM *vm, size_t start, size_t end) {
 
 Object *vm_build_hash(VM *vm, size_t start, size_t end) {
   Hash *hash = malloc(sizeof(Hash));
+  hash->type = HASH_OBJ;
   assert(hash != NULL);
   hashmap_create(end - start, &hash->pairs);
 
@@ -280,12 +281,12 @@ VMResult execute_array_index(VM *vm, Array *left, Number *index) {
 }
 
 VMResult execute_hash_index(VM *vm, Hash *hash, Object *index) {
-  int32_t hask_key = get_hash_key(index);
-  if (hask_key < 0) {
+  int32_t hash_key = get_hash_key(index);
+  if (hash_key < 0) {
     return VM_UNHASHABLE_OBJECT;
   }
 
-  HashPair *pair = hashmap_get(&hash->pairs, &hask_key, sizeof(int32_t));
+  HashPair *pair = hashmap_get(&hash->pairs, &hash_key, sizeof(int32_t));
   if (!pair) {
     return stack_push(vm, (Object *)&obj_null);
   }
@@ -366,6 +367,53 @@ VMResult push_closure(VM *vm, size_t const_index, size_t num_free) {
   vm->sp -= num_free;
 
   return stack_push(vm, (Object *)closure);
+}
+
+VMResult reassign_index(VM *vm) {
+  Object *new_value = stack_pop(vm);
+  Object *index = stack_pop(vm);
+  Object *indexed = stack_pop(vm);
+
+  switch (indexed->type) {
+  case ARRAY_OBJ: {
+    Array *arr = (Array *)indexed;
+
+    if (index->type != NUMBER_OBJ) {
+      return VM_UNUSABLE_AS_INDEX;
+    }
+    Number *num_index = (Number *)index;
+
+    arr->elements.arr[(size_t)num_index->value] = new_value;
+    return stack_push(vm, new_value);
+  }
+  case HASH_OBJ: {
+    Hash *hash = (Hash *)indexed;
+    int32_t key = get_hash_key(index);
+    if (key == -1) {
+      return VM_UNUSABLE_AS_INDEX;
+    }
+
+    HashPair *pair = malloc(sizeof(HashPair));
+    assert(pair != NULL);
+    pair->key = index;
+    pair->value = new_value;
+
+    HashPair *old_pair = hashmap_get(&hash->pairs, &key, sizeof(int32_t));
+    if (old_pair) {
+      free(old_pair);
+    }
+
+    int32_t *hash_key_in_heap = malloc(sizeof(int32_t));
+    assert(hash_key_in_heap != NULL);
+    *hash_key_in_heap = key;
+
+    hashmap_put(&hash->pairs, hash_key_in_heap, sizeof(int32_t), pair);
+
+    return stack_push(vm, pair->value);
+  }
+  default:
+    return VM_UNINDEXABLE_OBJECT;
+  }
 }
 
 VMResult run_vm(VM *vm) {
@@ -662,6 +710,14 @@ VMResult run_vm(VM *vm) {
       current_frame(vm)->ip = pos;
       break;
     }
+    case OP_REASSIGN_INDEX: {
+      VMResult result = reassign_index(vm);
+      if (result != VM_OK) {
+        return result;
+      }
+
+      break;
+    }
     case OP_COUNT:
       assert(0 && "unreachable");
     }
@@ -696,6 +752,9 @@ void vm_error(VMResult error, char *buf, size_t bufsize) {
     return;
   case VM_WRONG_NUMBER_OF_ARGUMENTS:
     snprintf(buf, bufsize, "wrong number of arguments");
+    return;
+  case VM_UNUSABLE_AS_INDEX:
+    snprintf(buf, bufsize, "value unusable as index");
     return;
   }
 }

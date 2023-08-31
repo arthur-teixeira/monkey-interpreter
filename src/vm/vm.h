@@ -28,6 +28,7 @@ typedef enum {
   VM_UNINDEXABLE_OBJECT,
   VM_CALL_NON_FUNCTION,
   VM_WRONG_NUMBER_OF_ARGUMENTS,
+  VM_UNUSABLE_AS_INDEX,
 } VMResult;
 
 VM *new_vm(Bytecode);
