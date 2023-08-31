@@ -71,7 +71,7 @@ $ ./bin/monkey -d <path-to-bytecode-file>
   - [X] Execute in the vm after compilation
   - [X] Write bytecode to file
 - [X] File disassembler
-- [ ] Implement bubble sort
+- [X] Implement bubble sort
 - [ ] Garbage collection
 - [ ] Concurrent GC
 
