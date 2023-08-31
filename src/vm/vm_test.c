@@ -1,7 +1,6 @@
 #include "../ast/ast.h"
 #include "../compiler/compiler.h"
 #include "../lexer/lexer.h"
-#include "../object/constants.h"
 #include "../object/object.h"
 #include "../parser/parser.h"
 #include "../unity/src/unity.h"
@@ -179,31 +178,31 @@ void test_integer_arithmetic(void) {
 
 void test_boolean_expressions(void) {
   vmTestCase tests[] = {
-      {"true", (Object *)&obj_true},
-      {"1 < 2", (Object *)&obj_true},
-      {"1 == 1", (Object *)&obj_true},
-      {"1 != 2", (Object *)&obj_true},
-      {"true == true", (Object *)&obj_true},
-      {"false == false", (Object *)&obj_true},
-      {"true != false", (Object *)&obj_true},
-      {"false != true", (Object *)&obj_true},
-      {"(1 < 2) == true", (Object *)&obj_true},
-      {"(1 > 2) == false", (Object *)&obj_true},
-      {"!false", (Object *)&obj_true},
-      {"!!true", (Object *)&obj_true},
-      {"!!5", (Object *)&obj_true},
-      {"false", (Object *)&obj_false},
-      {"1 > 2", (Object *)&obj_false},
-      {"1 < 1", (Object *)&obj_false},
-      {"1 > 1", (Object *)&obj_false},
-      {"1 != 1", (Object *)&obj_false},
-      {"1 == 2", (Object *)&obj_false},
-      {"true == false", (Object *)&obj_false},
-      {"(1 < 2) == false", (Object *)&obj_false},
-      {"(1 > 2) == true", (Object *)&obj_false},
-      {"!true", (Object *)&obj_false},
-      {"!5", (Object *)&obj_false},
-      {"!!false", (Object *)&obj_false},
+      {"true", new_boolean(true)},
+      {"1 < 2", new_boolean(true)},
+      {"1 == 1", new_boolean(true)},
+      {"1 != 2", new_boolean(true)},
+      {"true == true", new_boolean(true)},
+      {"false == false", new_boolean(true)},
+      {"true != false", new_boolean(true)},
+      {"false != true", new_boolean(true)},
+      {"(1 < 2) == true", new_boolean(true)},
+      {"(1 > 2) == false", new_boolean(true)},
+      {"!false", new_boolean(true)},
+      {"!!true", new_boolean(true)},
+      {"!!5", new_boolean(true)},
+      {"false", new_boolean(false)},
+      {"1 > 2", new_boolean(false)},
+      {"1 < 1", new_boolean(false)},
+      {"1 > 1", new_boolean(false)},
+      {"1 != 1", new_boolean(false)},
+      {"1 == 2", new_boolean(false)},
+      {"true == false", new_boolean(false)},
+      {"(1 < 2) == false", new_boolean(false)},
+      {"(1 > 2) == true", new_boolean(false)},
+      {"!true", new_boolean(false)},
+      {"!5", new_boolean(false)},
+      {"!!false", new_boolean(false)},
   };
 
   VM_RUN_TESTS(tests);
@@ -219,9 +218,9 @@ void test_conditionals(void) {
       {"if (1 < 2) { 10 } else { 20 }", new_number(10)},
       {"if (1 > 2) { 10 } else { 20 }", new_number(20)},
       {"if ((if (false) { 10 })) { 10 } else { 20 }", new_number(20)},
-      {"if (false) { 10; }", (Object *)&obj_null},
-      {"if (1 > 2) { 10; }", (Object *)&obj_null},
-      {"!(if (false) { 10; })", (Object *)&obj_true},
+      {"if (false) { 10; }", new_null()},
+      {"if (1 > 2) { 10; }", new_null()},
+      {"!(if (false) { 10; })", new_boolean(true)},
   };
 
   VM_RUN_TESTS(tests);
@@ -281,12 +280,12 @@ void test_index_expressions(void) {
       {"[1, 2, 3][0 + 2]", new_number(3)},
       {"[[1, 1, 1]][0][0]", new_number(1)},
       {"[][0]", new_number(-1)},
-      {"[1, 2, 3][99]", (Object *)&obj_null},
-      {"[1][-1]", (Object *)&obj_null},
+      {"[1, 2, 3][99]", new_null()},
+      {"[1][-1]", new_null()},
       {"{1: 1, 2: 2}[1]", new_number(1)},
       {"{1: 1, 2: 2}[2]", new_number(2)},
-      {"{1: 1}[0]", (Object *)&obj_null},
-      {"{}[0]", (Object *)&obj_null},
+      {"{1: 1}[0]", new_null()},
+      {"{}[0]", new_null()},
   };
 
   VM_RUN_TESTS(tests);
@@ -337,13 +336,13 @@ void test_functions_without_return_value(void) {
   vmTestCase tests[] = {
       {
           .input = "let noReturn = fn() { }; noReturn();",
-          .expected = (Object *)&obj_null,
+          .expected = new_null(),
       },
       {
           .input = "let noReturn = fn() { };"
                    "let noReturnTwo = fn() { noReturn(); };"
                    "noReturn(); noReturnTwo();",
-          .expected = (Object *)&obj_null,
+          .expected = new_null(),
       },
   };
 
@@ -503,11 +502,11 @@ void test_builtin_functions(void) {
       {"len([1, 2, 3])", new_number(3)},
       {"len([])", new_number(0)},
       {"first([1, 2, 3])", new_number(1)},
-      {"first([])", (Object *)&obj_null},
+      {"first([])", new_null()},
       {"first(1)",
        new_error("argument to 'first' not supported, got NUMBER_OBJ")},
       {"last([1, 2, 3])", new_number(3)},
-      {"last([])", (Object *)&obj_null},
+      {"last([])", new_null()},
       {"last(1)",
        new_error("argument to 'last' not supported, got NUMBER_OBJ")},
       {"rest([1, 2, 3])", new_array(
@@ -516,8 +515,8 @@ void test_builtin_functions(void) {
                                   new_number(3),
                               },
                               2)},
-      {"rest([])", (Object *)&obj_null},
-      {"puts(\"hello\", \"world!\")", (Object *)&obj_null},
+      {"rest([])", new_null()},
+      {"puts(\"hello\", \"world!\")", new_null()},
       {"push(1, 1)",
        new_error("argument to 'push' not supported, got NUMBER_OBJ")},
   };

@@ -1,7 +1,6 @@
 #include "vm.h"
 #include "../big_endian/big_endian.h"
 #include "../object/builtins.h"
-#include "../object/constants.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -117,11 +116,9 @@ VMResult execute_binary_boolean_operation(VM *vm, OpCode op, Boolean *left,
                                           Boolean *right) {
   switch (op) {
   case OP_AND:
-    return stack_push(
-        vm, native_bool_to_boolean_object(left->value && right->value));
+    return stack_push(vm, new_boolean(left->value && right->value));
   case OP_OR:
-    return stack_push(
-        vm, native_bool_to_boolean_object(left->value || right->value));
+    return stack_push(vm, new_boolean(left->value || right->value));
   default:
     return VM_UNSUPPORTED_OPERATION;
   }
@@ -145,9 +142,6 @@ VMResult execute_binary_operation(VM *vm, OpCode op) {
                                             (Boolean *)right);
   }
 
-  Definition *def = lookup(op);
-  printf("UNSUPPORTED: LEFT IS %d AND RIGHT IS %d, OPCODE IS %s\n", left->type,
-         right->type, def->name);
   return VM_UNSUPPORTED_OPERATION;
 }
 
@@ -155,14 +149,11 @@ VMResult execute_number_comparison(VM *vm, OpCode op, Number *left,
                                    Number *right) {
   switch (op) {
   case OP_EQ:
-    return stack_push(
-        vm, native_bool_to_boolean_object(left->value == right->value));
+    return stack_push(vm, new_boolean(left->value == right->value));
   case OP_NOT_EQ:
-    return stack_push(
-        vm, native_bool_to_boolean_object(left->value != right->value));
+    return stack_push(vm, new_boolean(left->value != right->value));
   case OP_GREATER:
-    return stack_push(
-        vm, native_bool_to_boolean_object(left->value > right->value));
+    return stack_push(vm, new_boolean(left->value > right->value));
   default:
     return VM_UNSUPPORTED_OPERATION;
   }
@@ -171,38 +162,55 @@ VMResult execute_number_comparison(VM *vm, OpCode op, Number *left,
 VMResult execute_comparison(VM *vm, OpCode op) {
   Object *right = stack_pop(vm);
   Object *left = stack_pop(vm);
+
+  if (right->type != left->type) {
+    return stack_push(vm, new_boolean(false));
+  }
+
   if (right->type == NUMBER_OBJ && left->type == NUMBER_OBJ) {
     return execute_number_comparison(vm, op, (Number *)left, (Number *)right);
   }
 
-  switch (op) {
-  case OP_EQ:
-    return stack_push(vm, native_bool_to_boolean_object(right == left));
-  case OP_NOT_EQ:
-    return stack_push(vm, native_bool_to_boolean_object(right != left));
-  default:
-    break;
+  if (right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ) {
+    Boolean *r_as_bool = (Boolean *)right;
+    Boolean *l_as_bool = (Boolean *)left;
+
+    switch (op) {
+    case OP_EQ:
+      return stack_push(vm, new_boolean(r_as_bool->value == l_as_bool->value));
+    case OP_NOT_EQ:
+      return stack_push(vm, new_boolean(r_as_bool->value != l_as_bool->value));
+    default:
+      break;
+    }
   }
 
-  return VM_UNSUPPORTED_OPERATION;
+  switch (op) {
+  case OP_EQ:
+    return stack_push(vm, new_boolean(right->type == NULL_OBJ && right->type == left->type));
+  case OP_NOT_EQ:
+    return stack_push(vm, new_boolean(right->type == NULL_OBJ && right->type != left->type));
+  default:
+    printf("running op %d with right->type = %d and left->type %d\n", op,
+           right->type, left->type);
+    return VM_UNSUPPORTED_OPERATION;
+  }
 }
 
 VMResult execute_bang_operator(VM *vm) {
   Object *operand = stack_pop(vm);
 
-  if (operand == (Object *)&obj_true) {
-    return stack_push(vm, (Object *)&obj_false);
+  if (operand->type == BOOLEAN_OBJ) {
+    Boolean *as_bool = (Boolean *)operand;
+
+    return stack_push(vm, new_boolean(!as_bool->value));
   }
 
-  if (operand == (Object *)&obj_false) {
-    return stack_push(vm, (Object *)&obj_true);
+  if (operand->type == NULL_OBJ) {
+    return stack_push(vm, new_boolean(true));
   }
 
-  if (operand == (Object *)&obj_null) {
-    return stack_push(vm, (Object *)&obj_true);
-  }
-
-  return stack_push(vm, (Object *)&obj_false);
+  return stack_push(vm, new_boolean(false));
 }
 
 VMResult execute_minus_operator(VM *vm) {
@@ -274,7 +282,7 @@ VMResult execute_array_index(VM *vm, Array *left, Number *index) {
   size_t max_index = left->elements.len - 1;
 
   if (i < 0 || i > max_index) {
-    return stack_push(vm, (Object *)&obj_null);
+    return stack_push(vm, new_null());
   }
 
   return stack_push(vm, left->elements.arr[i]);
@@ -288,7 +296,7 @@ VMResult execute_hash_index(VM *vm, Hash *hash, Object *index) {
 
   HashPair *pair = hashmap_get(&hash->pairs, &hash_key, sizeof(int32_t));
   if (!pair) {
-    return stack_push(vm, (Object *)&obj_null);
+    return stack_push(vm, new_null());
   }
 
   return stack_push(vm, pair->value);
@@ -462,13 +470,13 @@ VMResult run_vm(VM *vm) {
       stack_pop(vm);
       break;
     case OP_TRUE:
-      result = stack_push(vm, (Object *)&obj_true);
+      result = stack_push(vm, new_boolean(true));
       if (result != VM_OK) {
         return result;
       }
       break;
     case OP_FALSE:
-      result = stack_push(vm, (Object *)&obj_false);
+      result = stack_push(vm, new_boolean(false));
       if (result != VM_OK) {
         return result;
       }
@@ -509,7 +517,7 @@ VMResult run_vm(VM *vm) {
       break;
     }
     case OP_NULL:
-      result = stack_push(vm, (Object *)&obj_null);
+      result = stack_push(vm, new_null());
       if (result != VM_OK) {
         return result;
       }
@@ -620,7 +628,7 @@ VMResult run_vm(VM *vm) {
       Frame frame = pop_frame(vm);
       vm->sp = frame.base_pointer - 1;
 
-      VMResult result = stack_push(vm, (Object *)&obj_null);
+      VMResult result = stack_push(vm, new_null());
       if (result != VM_OK) {
         return result;
       }

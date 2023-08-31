@@ -1,6 +1,5 @@
 #include "./evaluator.h"
 #include "../object/builtins.h"
-#include "../object/constants.h"
 #include "../object/object.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
@@ -16,6 +15,28 @@ bool is_error(Object *obj) {
   }
 
   return false;
+}
+
+Boolean obj_true = {
+    .type = BOOLEAN_OBJ,
+    .value = true,
+};
+
+Boolean obj_false = {
+    .type = BOOLEAN_OBJ,
+    .value = false,
+};
+
+Null obj_null = {
+    .type = NULL_OBJ,
+};
+
+Object *native_bool_to_boolean_object(bool condition) {
+  if (condition) {
+    return (Object *)&obj_true;
+  }
+
+  return (Object *)&obj_false;
 }
 
 Object *eval_block_statement(DynamicArray *statements, Environment *env) {
@@ -54,7 +75,7 @@ Object *eval_program(Program *program, Environment *env) {
   return result;
 }
 
-Object *new_boolean(BooleanLiteral *bol) {
+static Object *new_object_boolean(BooleanLiteral *bol) {
   return native_bool_to_boolean_object(bol->value);
 }
 
@@ -790,7 +811,7 @@ Object *eval_expression(Expression *expr, Environment *env) {
   case INT_EXPR:
     return new_number(((NumberLiteral *)expr)->value);
   case BOOL_EXPR:
-    return new_boolean((BooleanLiteral *)expr);
+    return new_object_boolean((BooleanLiteral *)expr);
   case STRING_EXPR:
     return eval_string_expression((StringLiteral *)expr);
   case PREFIX_EXPR:

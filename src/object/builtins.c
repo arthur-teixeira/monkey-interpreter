@@ -1,5 +1,4 @@
 #include "builtins.h"
-#include "constants.h"
 #include "object.h"
 #include <assert.h>
 #include <string.h>
@@ -69,7 +68,7 @@ Object *builtin_puts(DynamicArray args) {
     free(buf.buf);
   }
 
-  return (Object *)&obj_null;
+  return new_null();
 }
 
 Object *first(DynamicArray args) {
@@ -88,7 +87,7 @@ Object *first(DynamicArray args) {
   Array *arr = (Array *)arg;
 
   if (arr->elements.len < 1) {
-    return (Object *)&obj_null;
+    return new_null();
   }
 
   return arr->elements.arr[0];
@@ -109,7 +108,7 @@ Object *last(DynamicArray args) {
 
   Array *arr = (Array *)arg;
   if (arr->elements.len < 1) {
-    return (Object *)&obj_null;
+    return new_null();
   }
 
   return arr->elements.arr[arr->elements.len - 1];
@@ -178,12 +177,11 @@ Object *rest(DynamicArray args) {
   }
 
   if (old_arr->elements.len < 1) {
-    return (Object *)&obj_null;
+    return new_null();
   }
 
   Array *new_arr = malloc(sizeof(Array));
   assert(new_arr != NULL && "Error allocating memory for new array");
-
 
   array_init(&new_arr->elements, old_arr->elements.len - 1);
 

@@ -322,3 +322,22 @@ Object *new_closure(Object *fn) {
 
   return (Object *)closure;
 }
+
+Object *new_boolean(bool value) {
+  Boolean *boolean = malloc(sizeof(Boolean));
+  assert(boolean);
+
+  boolean->type = BOOLEAN_OBJ;
+  boolean->value = value;
+
+  return (Object *)boolean;
+}
+
+Object *new_null() {
+  Object *nil = malloc(sizeof(Object));
+  assert(nil);
+
+  nil->type = NULL_OBJ;
+
+  return nil;
+}
