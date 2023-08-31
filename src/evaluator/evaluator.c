@@ -1,4 +1,7 @@
 #include "./evaluator.h"
+#include "../object/builtins.h"
+#include "../object/constants.h"
+#include "../object/object.h"
 #include "../str_utils/str_utils.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -6,9 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../object/constants.h"
-#include "../object/object.h"
-#include "../object/builtins.h"
 
 bool is_error(Object *obj) {
   if (obj != NULL) {
@@ -36,19 +36,19 @@ Object *eval_block_statement(DynamicArray *statements, Environment *env) {
 Object *eval_program(Program *program, Environment *env) {
   Object *result;
 
-  for (uint32_t i = 0; i < program->statements.len; i ++) {
-      result = eval(program->statements.arr[i], env);
+  for (uint32_t i = 0; i < program->statements.len; i++) {
+    result = eval(program->statements.arr[i], env);
 
-      if (result != NULL && result->type == RETURN_OBJ) {
-          ReturnValue *ret = (ReturnValue *)result;
-          Object *ret_value = ret->value;
-          free_object(result);
-          return ret_value;
-      }
+    if (result != NULL && result->type == RETURN_OBJ) {
+      ReturnValue *ret = (ReturnValue *)result;
+      Object *ret_value = ret->value;
+      free_object(result);
+      return ret_value;
+    }
 
-      if (result != NULL && result->type == ERROR_OBJ) {
-          return result;
-      }
+    if (result != NULL && result->type == ERROR_OBJ) {
+      return result;
+    }
   }
 
   return result;
@@ -656,46 +656,133 @@ Object *eval_for_loop(ForLoop *loop, Environment *env) {
   return eval_loop(loop->condition, loop->body, loop->update, extended_env);
 }
 
-Object *inner_env_get(Environment *env, char *key) {
-  return hashmap_get(env->store, key, strlen(key));
+Object *resolve_ident(char *name, Environment *env, int *level) {
+  *level = 0;
+  Environment *cur_env = env;
+  Object *value = NULL;
+
+  while (!value && cur_env) {
+    value = hashmap_get(cur_env->store, name, strlen(name));
+    cur_env = env->outer;
+    if (!value) {
+      (*level)++;
+    }
+  }
+
+  return value;
+}
+
+void set_ident(char *name, Environment *env, int level, Object *value) {
+  Environment *cur_env = env;
+  while (level > 0) {
+    cur_env = cur_env->outer;
+    level--;
+  }
+
+  env_set(cur_env, name, value);
+}
+
+Object *undefined_variable_error(char *name) {
+  char error_message[255];
+  sprintf(error_message, "%s is not defined", name);
+
+  return new_error(error_message);
+}
+
+Object *eval_ident_reassignment(Identifier *name, Object *new_value,
+                                Environment *env) {
+  int level = 0;
+  Object *cur_value = resolve_ident(name->value, env, &level);
+
+  if (!cur_value) {
+    return undefined_variable_error(name->value);
+  }
+
+  set_ident(name->value, env, level, new_value);
+
+  return NULL;
+}
+
+Object *eval_array_index_reassignment(Expression *index_expr, Object *new_value,
+                                      Array *arr, Environment *env) {
+  assert(index_expr->type == INT_EXPR);
+  NumberLiteral *index = (NumberLiteral *)index_expr;
+
+  // TODO: if reassigning to greater index, resize array and set previous values
+  // to null.
+  assert((size_t)index->value < arr->elements.len);
+  arr->elements.arr[(size_t)index->value] = new_value;
+
+  return (Object *)arr;
+}
+
+Object *eval_array_literal_index_reassignment(IndexExpression *value,
+                                              Object *new_value,
+                                              Environment *env) {
+  Array *arr = (Array *)eval_expression(value->left, env);
+
+  return eval_array_index_reassignment(value->index, new_value, arr, env);
+}
+
+Object *unhandled_object_reassignment_error(ObjectType type) {
+  char error_message[255];
+  sprintf(error_message, "cannot reassign type %s", ObjectTypeString[type]);
+
+  return new_error(error_message);
+}
+
+Object *eval_ident_index_reassignment(IndexExpression *index_expr,
+                                      Object *new_value, Environment *env) {
+  Identifier *ident = (Identifier *)index_expr->left;
+
+  int level;
+  Object *cur_value = resolve_ident(ident->value, env, &level);
+
+  if (!cur_value) {
+    return undefined_variable_error(ident->value);
+  }
+
+  switch (cur_value->type) {
+  case ARRAY_OBJ:
+    return eval_array_index_reassignment(index_expr->index, new_value,
+                                         (Array *)cur_value, env);
+  default:
+    return unhandled_object_reassignment_error(cur_value->type);
+  }
+}
+
+Object *unhandled_reassignment_error(ExprType type) {
+  char error_message[255];
+  sprintf(error_message, "cannot reassign type %d", type);
+
+  return new_error(error_message);
+}
+
+Object *eval_index_reassignment(Reassignment *stmt, Object *new_value,
+                                Environment *env) {
+  IndexExpression *value = (IndexExpression *)stmt->name;
+
+  switch (value->left->type) {
+  case IDENT_EXPR:
+    return eval_ident_index_reassignment(value, new_value, env);
+  case ARRAY_EXPR:
+    return eval_array_literal_index_reassignment(value, new_value, env);
+  default:
+    return unhandled_reassignment_error(value->left->type);
+  }
 }
 
 Object *eval_reassignment(Reassignment *stmt, Environment *env) {
-  Identifier *name = (Identifier *)stmt->name;
-  Object *cur_value = inner_env_get(env, name->value);
-  bool val_in_outer_env = !cur_value;
+  Object *new_value = eval_expression(stmt->value, env);
 
-  if (val_in_outer_env) {
-    cur_value = env_get(env, name->value);
-    val_in_outer_env = cur_value;
+  switch (stmt->name->type) {
+  case IDENT_EXPR:
+    return eval_ident_reassignment((Identifier *)stmt->name, new_value, env);
+  case INDEX_EXPR:
+    return eval_index_reassignment(stmt, new_value, env);
+  default:
+    return unhandled_reassignment_error(stmt->name->type);
   }
-
-  if (cur_value == NULL) {
-    char error_message[255];
-    sprintf(error_message, "%s is not defined", name->value);
-
-    return new_error(error_message);
-  }
-
-  Object *val = eval_expression(stmt->value, env);
-  if (is_error(val)) {
-    return val;
-  }
-
-  if (val_in_outer_env) {
-    Environment *cur_env = env->outer;
-    Object *outer_env_value;
-    while ((outer_env_value = env_get(cur_env, name->value)) == NULL) {
-      cur_env = cur_env->outer;
-    }
-
-    assert(cur_env != NULL);
-    env_set(cur_env, name->value, val);
-  } else {
-    env_set(env, name->value, val);
-  }
-
-  return NULL;
 }
 
 Object *eval_expression(Expression *expr, Environment *env) {

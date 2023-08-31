@@ -24,6 +24,13 @@ Object *test_eval(char *input) {
   return result;
 }
 
+void fail_if_object_is_error(Object *evaluated) {
+  if (evaluated->type == ERROR_OBJ) {
+    Error *err = (Error *)evaluated;
+    TEST_FAIL_MESSAGE(err->message);
+  }
+}
+
 void test_number_object(Object *evaluated, double expected) {
   TEST_ASSERT_EQUAL(NUMBER_OBJ, evaluated->type);
   Number *num = (Number *)evaluated;
@@ -657,8 +664,41 @@ void test_floats(void) {
   test_number_object(evaluated, 4.00f);
 }
 
+void test_array_literal_index_reassignment(void) {
+  char *input = "[1, 2, 3][1] = 1;";
+
+  Object *evaluated = test_eval(input);
+
+  fail_if_object_is_error(evaluated);
+  TEST_ASSERT_EQUAL(ARRAY_OBJ, evaluated->type);
+
+  Array *arr = (Array *)evaluated;
+
+  TEST_ASSERT_EQUAL(3, arr->elements.len);
+  test_number_object(arr->elements.arr[0], 1);
+  test_number_object(arr->elements.arr[1], 1);
+  test_number_object(arr->elements.arr[2], 3);
+}
+
+void test_array_ident_index_reassignment(void) {
+  char *input = "let a = [1, 2, 3]; a[1] = 1; a;";
+
+  Object *evaluated = test_eval(input);
+
+  fail_if_object_is_error(evaluated);
+  TEST_ASSERT_EQUAL(ARRAY_OBJ, evaluated->type);
+
+  Array *arr = (Array *)evaluated;
+
+  TEST_ASSERT_EQUAL(3, arr->elements.len);
+  test_number_object(arr->elements.arr[0], 1);
+  test_number_object(arr->elements.arr[1], 1);
+  test_number_object(arr->elements.arr[2], 3);
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_while_loops);
   RUN_TEST(test_eval_integer_expression);
   RUN_TEST(test_eval_boolean_expression);
   RUN_TEST(test_bang_operator);
@@ -678,12 +718,13 @@ int main() {
   RUN_TEST(test_builtin_array_functions);
   RUN_TEST(test_hash_index_expressions);
   RUN_TEST(test_hash_literals);
-  RUN_TEST(test_while_loops);
-  RUN_TEST(test_loop_break);
   RUN_TEST(test_reassignment);
+  RUN_TEST(test_loop_break);
   RUN_TEST(test_bit_shift);
   RUN_TEST(test_bitwise);
   RUN_TEST(test_and_and_or);
   RUN_TEST(test_floats);
+  RUN_TEST(test_array_literal_index_reassignment);
+  RUN_TEST(test_array_ident_index_reassignment);
   return UNITY_END();
 }
