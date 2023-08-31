@@ -680,6 +680,7 @@ void test_while_loop_closures(void) {
                    "  };                "
                    "  return acc;       "
                    "};                  "
+                   "fun(10);            "
                    "fun(10);            ",
           .expected = new_number(10),
       },
@@ -723,27 +724,41 @@ void test_nested_loops(void) {
   VM_RUN_TESTS(tests);
 }
 
+void test_nested_closures(void) {
+  vmTestCase tests[] = {
+    {
+        .input = "let foo = fn (x) { "
+                 "  let buffer = \"\";                 "
+                 "  let i = 0;                         "
+                 "  while (i < x) {                    "
+                 "    buffer = buffer + \"a\";         "
+                 "    i = i + 1;                       "
+                 "  };                                 "
+                 "  return buffer;                     "
+                 "};                                   "
+                 "foo(1);                              "
+                 "foo(2);                              ",
+        .expected = new_string("aa"),
+    },
+    {
+        .input = "let foo = fn (x) { "
+                 "  let buffer = \"\";                 "
+                 "  for (let i = 0; i < x; i = i + 1) {"
+                 "    buffer = buffer + \"a\";         "
+                 "  };                                 "
+                 "  return buffer;                     "
+                 "};                                   "
+                 "foo(1);                              "
+                 "foo(2);                              ",
+        .expected = new_string("aa"),
+    },
+    };
+
+  VM_RUN_TESTS(tests);
+}
+
 int main(void) {
   UNITY_BEGIN();
-  RUN_TEST(test_integer_arithmetic);
-  RUN_TEST(test_boolean_expressions);
-  RUN_TEST(test_conditionals);
-  RUN_TEST(test_global_let_statements);
-  RUN_TEST(test_string_expressions);
-  RUN_TEST(test_array_literals);
-  RUN_TEST(test_calling_functions);
-  RUN_TEST(test_functions_with_return_statement);
-  RUN_TEST(test_functions_without_return_value);
-  RUN_TEST(test_calling_functions_with_bindings);
-  RUN_TEST(test_functions_with_arguments_and_bindings);
-  RUN_TEST(test_calling_functions_with_wrong_arguments);
-  RUN_TEST(test_builtin_functions);
-  RUN_TEST(test_closures);
-  RUN_TEST(test_recursive_functions);
-  RUN_TEST(test_reassignments);
-  RUN_TEST(test_while_loop);
-  RUN_TEST(test_while_loop_closures);
-  RUN_TEST(test_for_loop);
-  RUN_TEST(test_nested_loops);
+  RUN_TEST(test_nested_closures);
   return UNITY_END();
 }

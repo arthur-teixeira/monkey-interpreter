@@ -98,17 +98,19 @@ static Definition definitions[OP_COUNT] = {
     },
     {"OP_CURRENT_CLOSURE"},
     {
-      .name = "OP_SET_FREE",
-      .operand_count = 1,
-      .operand_widths = {1},
+        .name = "OP_SET_FREE",
+        .operand_count = 1,
+        .operand_widths = {1},
     },
     {"OP_LOOP"},
     {"OP_CONTINUE"},
     {
-      .name = "OP_BREAK",
-      .operand_count = 1,
-      .operand_widths = {1},
+        .name = "OP_BREAK",
+        .operand_count = 1,
+        .operand_widths = {1},
     },
+    {"OP_AND"},
+    {"OP_OR"},
 };
 
 Definition *lookup(OpCode opcode) {

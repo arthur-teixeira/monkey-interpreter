@@ -51,6 +51,8 @@ typedef enum {
   OP_LOOP,
   OP_CONTINUE,
   OP_BREAK,
+  OP_AND,
+  OP_OR,
   OP_COUNT,
 } OpCode;
 

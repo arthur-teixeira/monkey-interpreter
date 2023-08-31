@@ -76,4 +76,6 @@ $ ./bin/monkey -d <path-to-bytecode-file>
 - [ ] Concurrent GC
 
 ## Known bugs
-- [ ] Cannot print to stdout from compiled file
+- [X] Running with -l flag is not loading the binary to the VM.
+- [X] Reassigning free variables loaded from a constant changes the value of the constant
+- [ ] Cannot call nested functions

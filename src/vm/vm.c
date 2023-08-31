@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 VM *new_vm(Bytecode bytecode) {
   Object *main_fn = new_compiled_function(&bytecode.instructions, 0, 0);
@@ -62,7 +63,13 @@ VMResult stack_push(VM *vm, Object *value) {
 }
 
 VMResult stack_push_constant(VM *vm, uint16_t constant_index) {
-  return stack_push(vm, vm->constants.arr[constant_index]);
+  size_t sizeof_constant = sizeof_object(vm->constants.arr[constant_index]);
+
+  void *constant_copy = malloc(sizeof_constant);
+  assert(constant_copy);
+
+  memcpy(constant_copy, vm->constants.arr[constant_index], sizeof_constant);
+  return stack_push(vm, (Object *)constant_copy);
 }
 
 Object *stack_pop(VM *vm) { return vm->stack[--vm->sp]; }
@@ -106,6 +113,20 @@ VMResult execute_binary_string_operation(VM *vm, OpCode op, String *left,
   }
 }
 
+VMResult execute_binary_boolean_operation(VM *vm, OpCode op, Boolean *left,
+                                          Boolean *right) {
+  switch (op) {
+  case OP_AND:
+    return stack_push(
+        vm, native_bool_to_boolean_object(left->value && right->value));
+  case OP_OR:
+    return stack_push(
+        vm, native_bool_to_boolean_object(left->value || right->value));
+  default:
+    return VM_UNSUPPORTED_OPERATION;
+  }
+}
+
 VMResult execute_binary_operation(VM *vm, OpCode op) {
   Object *right = stack_pop(vm);
   Object *left = stack_pop(vm);
@@ -118,6 +139,15 @@ VMResult execute_binary_operation(VM *vm, OpCode op) {
     return execute_binary_string_operation(vm, op, (String *)left,
                                            (String *)right);
   }
+
+  if (right->type == BOOLEAN_OBJ && left->type == BOOLEAN_OBJ) {
+    return execute_binary_boolean_operation(vm, op, (Boolean *)left,
+                                            (Boolean *)right);
+  }
+
+  Definition *def = lookup(op);
+  printf("UNSUPPORTED: LEFT IS %d AND RIGHT IS %d, OPCODE IS %s\n", left->type,
+         right->type, def->name);
   return VM_UNSUPPORTED_OPERATION;
 }
 
@@ -373,6 +403,8 @@ VMResult run_vm(VM *vm) {
     case OP_RSHIFT:
     case OP_LSHIFT:
     case OP_ADD:
+    case OP_AND:
+    case OP_OR:
       result = execute_binary_operation(vm, op);
       if (result != VM_OK) {
         return result;

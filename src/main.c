@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
       eval_file(argv[2]);
       break;
     case MODE_LOAD_BINARY:
-      get_bytecode_from_file(argv[2]);
+      load_file(argv[2]);
       break;
     case MODE_DISASSEMBLE:
       disassemble_file(argv[2]);

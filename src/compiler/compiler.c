@@ -272,6 +272,16 @@ static CompilerResult compile_infix_operand(Compiler *compiler, char *operand) {
     return COMPILER_OK;
   }
 
+  if (strncmp(operand, "||", 2) == 0) {
+    emit_no_operands(compiler, OP_OR);
+    return COMPILER_OK;
+  }
+
+  if (strncmp(operand, "&&", 2) == 0) {
+    emit_no_operands(compiler, OP_AND);
+    return COMPILER_OK;
+  }
+
   switch (operand[0]) {
   case '+':
     emit_no_operands(compiler, OP_ADD);

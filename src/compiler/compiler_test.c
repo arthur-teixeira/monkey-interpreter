@@ -138,7 +138,6 @@ void run_compiler_tests(compilerTestCase *test_cases, size_t test_count) {
 
     concat_and_test_instructions(test.expected_instructions_len,
                                  test.expected_instructions, code.instructions);
-
     test_constants(test, code);
 
     free_program(program);
@@ -1623,54 +1622,55 @@ void test_loop_control_statements(void) {
 }
 
 void test_for_loops(void) {
-  compilerTestCase tests[] = {
+  compilerTestCase tests[] =
       {
-          .input = "let a = 0;"
-                   "for (let b = 0; b < 10; b = b + 1) {"
-                   "  a = a + b;                        "
-                   "}                                   ",
-          .expected_constants_len = 5,
-          .expected_constants =
-              {
-                  new_number(0),
-                  new_number(0),
-                  new_number(10),
-                  new_concatted_compiled_loop(
-                      (Instruction[]){
-                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-                          make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
-                          make_instruction(OP_ADD, (int[]){}, 0),
-                          make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                          make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
-                          make_instruction(OP_POP, (int[]){}, 0),
-                          make_instruction(OP_CONTINUE, (int[]){}, 0),
-                      },
-                      2, 0),
-                  new_number(1),
-              },
-          .expected_instructions =
-              {
-                  make_instruction(OP_CONSTANT, (int[]){0}, 1),
-                  make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
-                  make_instruction(OP_CONSTANT, (int[]){1}, 1),
-                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
-                  make_instruction(OP_CONSTANT, (int[]){2}, 1),
-                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
-                  make_instruction(OP_GREATER, (int[]){}, 0),
-                  make_instruction(OP_JMP_IF_FALSE, (int[]){44}, 1),
-                  make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
-                  make_instruction(OP_LOOP, (int[]){}, 0),
-                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
-                  make_instruction(OP_CONSTANT, (int[]){4}, 1),
-                  make_instruction(OP_ADD, (int[]){}, 0),
-                  make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
-                  make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
-                  make_instruction(OP_POP, (int[]){}, 0),
-                  make_instruction(OP_JMP, (int[]){12}, 1),
-              },
-          .expected_instructions_len = 17,
-      },
-  };
+          {
+              .input = "let a = 0;"
+                       "for (let b = 0; b < 10; b = b + 1) {"
+                       "  a = a + b;                        "
+                       "}                                   ",
+              .expected_constants_len = 5,
+              .expected_constants =
+                  {
+                      new_number(0),
+                      new_number(0),
+                      new_number(10),
+                      new_concatted_compiled_loop(
+                          (Instruction[]){
+                              make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                              make_instruction(OP_ADD, (int[]){}, 0),
+                              make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                              make_instruction(OP_GET_GLOBAL, (int[]){0}, 1),
+                              make_instruction(OP_POP, (int[]){}, 0),
+                              make_instruction(OP_CONTINUE, (int[]){}, 0),
+                          },
+                          2, 0),
+                      new_number(1),
+                  },
+              .expected_instructions =
+                  {
+                      make_instruction(OP_CONSTANT, (int[]){0}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){0}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){1}, 1),
+                      make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){2}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                      make_instruction(OP_GREATER, (int[]){}, 0),
+                      make_instruction(OP_JMP_IF_FALSE, (int[]){44}, 1),
+                      make_instruction(OP_CLOSURE, (int[]){3, 0}, 2),
+                      make_instruction(OP_LOOP, (int[]){}, 0),
+                      make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                      make_instruction(OP_CONSTANT, (int[]){4}, 1),
+                      make_instruction(OP_ADD, (int[]){}, 0),
+                      make_instruction(OP_SET_GLOBAL, (int[]){1}, 1),
+                      make_instruction(OP_GET_GLOBAL, (int[]){1}, 1),
+                      make_instruction(OP_POP, (int[]){}, 0),
+                      make_instruction(OP_JMP, (int[]){12}, 1),
+                  },
+              .expected_instructions_len = 17,
+          },
+      };
 
   RUN_COMPILER_TESTS(tests);
 }
