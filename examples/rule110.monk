@@ -27,7 +27,8 @@ let computeCell = fn(a, b, c) {
 let computeNextGen = fn(prev) {
   let new = [DEAD];
   for (let i = 1; i < COLS - 1; i = i + 1) {
-    new = push(new, computeCell(prev[i - 1], prev[i], prev[i + 1]));
+    let new_cell = computeCell(prev[i - 1], prev[i], prev[i + 1]);
+    new = push(new, new_cell);
   }
   return new;
 };
