@@ -22,8 +22,7 @@ ClassFile { \
     attribute_info attributes[attributes_count]; \
 }
 
-The current plan is to make my file quite similar, but with much less features.
-The initial implementation should look something like this:
+The implementation looks like this:
 
 MonkeyFile { \
     4 bytes        magic; \
