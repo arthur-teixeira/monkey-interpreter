@@ -597,7 +597,7 @@ CompilerResult compile_for_loop(Compiler *compiler, ForLoop *loop) {
                       loop->body, loop->update);
 }
 
-CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
+CompilerResult compile_ident_reassignment(Compiler *compiler, Reassignment *expr) {
   const Symbol *old_symbol =
       symbol_resolve(compiler->symbol_table, ((Identifier *)expr->name)->value);
 
@@ -630,6 +630,37 @@ CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
   }
 
   return COMPILER_OK;
+}
+
+CompilerResult compile_index_reassignment(Compiler *compiler, Reassignment *expr) {
+  IndexExpression *index = (IndexExpression *)expr->name;
+
+  CompilerResult result = compile_expression(compiler, index->left);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  result = compile_expression(compiler, index->index);
+  if (result != COMPILER_OK) {
+    return result;
+  }
+
+  result = compile_expression(compiler, expr->value);
+
+  emit_no_operands(compiler, OP_REASSIGN_INDEX);
+
+  return result;
+}
+
+CompilerResult compile_reassignment(Compiler *compiler, Reassignment *expr) {
+  switch(expr->name->type) {
+    case IDENT_EXPR:
+      return compile_ident_reassignment(compiler, expr);
+    case INDEX_EXPR:
+      return compile_index_reassignment(compiler, expr);
+    default:
+      return COMPILER_UNINDEXABLE_TYPE;
+  }
 }
 
 CompilerResult compile_expression(Compiler *compiler, Expression *expr) {

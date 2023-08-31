@@ -53,6 +53,7 @@ typedef enum {
   OP_BREAK,
   OP_AND,
   OP_OR,
+  OP_REASSIGN_INDEX,
   OP_COUNT,
 } OpCode;
 

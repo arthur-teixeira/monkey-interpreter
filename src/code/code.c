@@ -111,6 +111,7 @@ static Definition definitions[OP_COUNT] = {
     },
     {"OP_AND"},
     {"OP_OR"},
+    {"OP_REASSIGN_INDEX"},
 };
 
 Definition *lookup(OpCode opcode) {
